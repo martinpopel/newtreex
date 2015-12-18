@@ -14,18 +14,34 @@ Finally, run `make benchmark`.
 The benchmark command should do several tasks and after finishing each task print the task name on STDOUT.
 Nothing else should be printed on STDOUT. The tasks are:
 
-1. **init** intialize whatever is needed
-2. **load** load the CoNLL-U file (specified as parameter) to memory
-3. **save** save the in-memory document to an output CoNLL-U file (specified as parameter), it should have exactly the same content as the input file (`diff` check will be added later)
+1. **init** Intialize whatever is needed.
+2. **load** Load the CoNLL-U file (specified as parameter) to memory.
+3. **save** Save the in-memory document to an output CoNLL-U file (specified as parameter). It should have exactly the same content as the input file (TODO `diff` check can be added later).
+4. **iter** Iterate over all nodes in all sentences by their word order.
+5. **iterF** Iterate over all nodes (fast). Nodes within one sentence may be iterated in any order.
+6. **read** Iterate over all nodes (by their word order, this holds for the rest of the tasks) and create a variable with concatenated *form* and *lemma*.
+7. **write** Set `deprel` attribute of each node to the value `dep`.
+8. **rehang** Rehang each node to a random parent in the same sentence. Method `set_parent` should raise an exception if this would lead to a cycle. Catch such exceptions and leave such nodes under their original parents.
+9. **remove** Delete random 10% of nodes. That is `if (rand() < 0.1 ){ $node->remove()}`, so it does not need to be exactly 10%. Removing a node by default removes all its descendants. (Note that if you iterate over a list of original nodes, you may encounter already deleted nodes. You should check this case and don't try to delete already deleted nodes.)
+10. **add** Select random 10% of nodes (as above) and add a child under them (*lemma*=x, *form*=x). It should be the last child according to word order (and last=rightmost descendant).
+11. **reorder** Shift 10% of nodes (with their whole subtree) after random node (except when that random node is a descendant). From the rest of the nodes, shift 10% of nodes without their subtree before a random subtree. That is:
+```
+  if (rand() < 0.1 ){
+    try{$node->shift_after_node($nodes[$rand_index]);}
+    # catch '$reference_node is a descendant of $self'
+  } elsif (rand() < 0.1) {
+    $node->shift_before_subtree($nodes[$rand_index], {without_children=>1});
+  }
+```
 
-TODO: more tasks will be added here in future (rehanging random nodes, adding&deleting nodes, changing word order of nodes, accessing attributes, adding&deleting sentences...).
+TODO: adding&deleting sentences,...
 
 ### Current results
 MAXMEM is maximum (virtual) memory (`ps -ovsz`) in MiB.
 Other columns are time in seconds. Run on x86_64.
 For start, I've selected Romanian dev set (on of the smallest files in UD 1.2), later we'll add experiments on bigger files (Czech is the biggest).
 
-| experiment       | init | load | save | TOTAL | MAXMEM |
-|------------------|-----:|-----:|-----:|------:|-------:|
-| old_treex-ro_dev |    2 |    8 |    1 |    11 |    195 |
-
+experiment        |TOTAL |MAXMEM |init |load  |save |iter |iterF|read |write|rehang|remove|add  |reorder|
+------------------|-----:|------:|----:|-----:|----:|----:|----:|----:|----:|-----:|-----:|----:|------:|
+old_Treex_ro_dev  |12.618|195.262|1.754| 9.072|0.800|0.025|0.019|0.022|0.040|0.208 |0.171 |0.199|0.134  |     
+old_Treex_ro_train|81.406|390.973|2.252|70.607|3.786|0.122|0.045|0.143|0.194|1.004 |0.892 |0.980|0.680  |
