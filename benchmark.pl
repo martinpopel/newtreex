@@ -28,11 +28,11 @@ sub run {
         my $now = time;
         my $mem = `ps -ovsz $pid`;
         $mem =~ s/[^\d]//g;
-        $mem /= 1024;
+        $mem = sprintf "%.3f", $mem/1024;
         $maxmem = $mem if $mem > $maxmem;
         chomp;
         $t{$_} = $now - $last;
-        printf STDERR "%20s %5ds %5dMiB\n", $_, $now-$last, $mem;
+        printf STDERR "%20s %5ds %8sMiB\n", $_, $now-$last, $mem;
         $last = $now;
     }
     $t{TOTAL} = time - $start;
@@ -49,6 +49,10 @@ foreach my $exp (@experiments){
     push @results, [$name, @$stats{@header}, $other];
 }
 
-my $table = Text::Table->new('experiment', @header, 'other');
+my $table = Text::Table->new('experiment', map {(\'|',$_)} @header, 'other');
 $table->load(@results);
-print $table."\n";
+my $rule = $table->rule(
+    sub {my ($i, $len) = @_; $i ? ('-' x ($len-1)).':' : '-' x $len;},
+    sub {my ($i, $len) = @_; '|';},
+);
+print $table->title, $rule, $table->body, "\n";
