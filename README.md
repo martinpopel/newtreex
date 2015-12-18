@@ -33,13 +33,12 @@ Nothing else should be printed on STDOUT. The tasks are:
     $node->shift_before_subtree($nodes[$rand_index], {without_children=>1});
   }
 ```
-
-TODO: adding&deleting sentences,...
+The command/script running the task should do each task independently, not keeping any datastructure (e.g. array of all bundles, or even sorted nodes) except for the one document. This means that iteration over all nodes should be done again for each task (to simulate the real usage).
 
 ### Current results
 MAXMEM is maximum (virtual) memory (`ps -ovsz`) in MiB.
 Other columns are time in seconds. Run on x86_64.
-For start, I've selected Romanian dev set (on of the smallest files in UD 1.2), later we'll add experiments on bigger files (Czech is the biggest).
+For start, I've selected Romanian dev set and train set (on of the smallest files in UD 1.2), later we'll add experiments on bigger files (Czech is the biggest).
 
 experiment        |TOTAL |MAXMEM |init |load  |save |iter |iterF|read |write|rehang|remove|add  |reorder|
 ------------------|-----:|------:|----:|-----:|----:|----:|----:|----:|----:|-----:|-----:|----:|------:|
