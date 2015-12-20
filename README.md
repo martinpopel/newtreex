@@ -33,14 +33,16 @@ Nothing else should be printed on STDOUT. The tasks are:
     $node->shift_before_subtree($nodes[$rand_index], {without_children=>1});
   }
 ```
-The command/script running the task should do each task independently, not keeping any datastructure (e.g. array of all bundles, or even sorted nodes) except for the one document. This means that iteration over all nodes should be done again for each task (to simulate the real usage).
+The command/script running the task should do each task independently, not keeping any datastructure (e.g. array of all bundles, or even sorted nodes) except for the one document. This means that iteration over all nodes should be done again for each task (to simulate the real usage). Don't forget to switch off stdout buffering, so the task names are printed immediately (and timing is accurate).
 
 ### Current results
 MAXMEM is maximum (virtual) memory (`ps -ovsz`) in MiB.
 Other columns are time in seconds. Run on x86_64.
-For start, I've selected Romanian dev set and train set (on of the smallest files in UD 1.2), later we'll add experiments on bigger files (Czech is the biggest).
+For start, I've selected Romanian (its dev set is one of the smallest files in UD 1.2), later we'll add experiments on bigger files (Czech is the biggest).
 
-experiment        |TOTAL |MAXMEM |init |load  |save |iter |iterF|read |write|rehang|remove|add  |reorder|
-------------------|-----:|------:|----:|-----:|----:|----:|----:|----:|----:|-----:|-----:|----:|------:|
-old_Treex_ro_dev  |12.618|195.262|1.754| 9.072|0.800|0.025|0.019|0.022|0.040|0.208 |0.171 |0.199|0.134  |     
-old_Treex_ro_train|81.406|390.973|2.252|70.607|3.786|0.122|0.045|0.143|0.194|1.004 |0.892 |0.980|0.680  |
+`data/UD_Romanian/ro-ud-train.conllu`:
+
+experiment|TOTAL |MAXMEM |init |load  |save |iter |iterF|read |write|rehang|remove|add  |reorder|
+----------|-----:|------:|----:|-----:|----:|----:|----:|----:|----:|-----:|-----:|----:|------:|
+old_Treex |67.788|390.973|1.825|55.963|3.860|0.129|0.045|0.145|0.198|1.320 |1.189 |1.356|0.934  |     
+pytreex   | 4.100| 94.637|0.101| 3.318|0.194|0.067|0.021|0.078|0.074|0.170 |0.014 |0.017|0.019  |
