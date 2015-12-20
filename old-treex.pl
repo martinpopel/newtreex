@@ -40,7 +40,7 @@ print "iterF\n";
 foreach my $bundle ($doc->get_bundles()){
     foreach my $tree ($bundle->get_all_trees()){
         foreach my $node ($tree->get_descendants({ordered=>1})){
-            my $form_lemma_tag = $node->form . $node->lemma;
+            my $form_lemma = $node->form . $node->lemma;
         }
     }
 }

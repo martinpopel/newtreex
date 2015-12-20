@@ -11,8 +11,17 @@ data:
 .perl-install:
 	cpanm Text::Table && touch $@
 
+.python-install:
+	sudo pip install virtualenv
+	cd python
+	virtualenv venv
+	source venv/bin/activate
+	pip install unidecode pyyaml
+	# git clone git@github.com:ufal/pytreex.git .
+	touch $@
+
 #.old-treex-install:
 #	cpanm Treex::Core
 
 benchmark: data .perl-install
-	./benchmark.pl | tee results.txt
+	./benchmark.pl data/UD_Romanian/ro-ud-train.conllu | tee results.txt

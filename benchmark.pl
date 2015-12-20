@@ -6,14 +6,15 @@ use Time::HiRes qw (time);
 
 my @header = qw(TOTAL MAXMEM init load save iter iterF read write rehang remove add reorder);
 my %in_header = map {$_ => 1} @header;
+my $IN = $ARGV[0] || 'data/UD_Romanian/ro-ud-dev.conllu';
 
 # Don't use any shell metacharacters (e.g. redirections) in the commands below.
 # That would result in executing shell subprocess and the memory consumption
 # would be of that subprocess not of the main process we want to evaluate.
 my @experiments = (
-    #[dummy              => './dummy.pl'],
-    [old_Treex_ro_dev   => './old-treex.pl data/UD_Romanian/ro-ud-dev.conllu /tmp/out.conllu'],
-    [old_Treex_ro_train => './old-treex.pl data/UD_Romanian/ro-ud-train.conllu /tmp/out.conllu'],
+    #[dummy    => './dummy.pl'],
+    [old_Treex => "./old-treex.pl $IN /tmp/out.conllu"],
+    [pytreex   => "python -u python/bench_pytreex.py $IN /tmp/out.conllu"],
 );
 
 sub run {
@@ -42,6 +43,7 @@ sub run {
     return \%t;
 }
 
+warn "IN=$IN\n";
 my @results;
 foreach my $exp (@experiments){
     my ($name, $command) = @$exp;
