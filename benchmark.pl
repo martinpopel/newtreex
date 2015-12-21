@@ -13,7 +13,7 @@ my $IN = $ARGV[0] || 'data/UD_Romanian/ro-ud-dev.conllu';
 # would be of that subprocess not of the main process we want to evaluate.
 my @experiments = (
     #[dummy    => './dummy.pl'],
-    [old_Treex => "./old-treex.pl $IN /tmp/out.conllu"],
+    [old_Treex => "perl/old-treex.pl $IN /tmp/out.conllu"],
     [pytreex   => "python -u python/bench_pytreex.py $IN /tmp/out.conllu"],
 );
 
