@@ -15,6 +15,7 @@ my @experiments = (
     #[dummy    => './dummy.pl'],
     [old_Treex => "perl/old-treex.pl $IN /tmp/out.conllu"],
     [pytreex   => "python -u python/bench_pytreex.py $IN /tmp/out.conllu"],
+    [cpp_raw    => "cpp_raw/benchmark $IN /tmp/out.conllu"],
 );
 
 sub run {
