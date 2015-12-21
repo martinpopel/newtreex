@@ -1,0 +1,5 @@
+Simple benchmark using Parsito CoNLL-U reader and writer.
+
+The data structure used by Parsito does not allow generic editing,
+so only the basic benchmarks (loading, saving, iterating, reading
+and writing) are performed.
