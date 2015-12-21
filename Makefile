@@ -20,8 +20,11 @@ data:
 	# git clone git@github.com:ufal/pytreex.git .
 	touch $@
 
+.cpp_raw-compile:
+	make -C cpp_raw
+
 #.old-treex-install:
 #	cpanm Treex::Core
 
-benchmark: data .perl-install
+benchmark: data .perl-install .cpp_raw-compile
 	./benchmark.pl data/UD_Romanian/ro-ud-train.conllu | tee results.txt
