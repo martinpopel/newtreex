@@ -17,7 +17,7 @@ my @experiments = (
     [pytreex    => "python -u python/bench_pytreex.py $IN /tmp/out.conllu"],
     [cpp_raw    => "cpp_raw/benchmark $IN /tmp/out.conllu"],
     [perl_plain => "perl/bench_plain.pl $IN /tmp/out.conllu"],
-    [java       => "java -jar java/build/libs/newtreex.jar data/UD_Romanian/ro-ud-train.conllu /tmp/out.conllu"]
+    [java       => "java -jar java/build/libs/newtreex.jar $IN /tmp/out.conllu"]
 );
 
 sub run {
