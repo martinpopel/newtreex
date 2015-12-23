@@ -81,29 +81,27 @@ foreach my $bundle ($doc->bundles){
 }
 print "remove\n";
 
-__END__
-
 foreach my $bundle ($doc->bundles){
     foreach my $tree ($bundle->trees){
         foreach my $node ($tree->descendants){
             if (rand() < 0.1) {
-                $node->create_child({form=>'x', lemma=>'x'})->shift_after_subtree($node);
+                $node->create_child(form=>'x', lemma=>'x')->shift_after_subtree($node);
             }
         }
     }
 }
 print "add\n";
 
-foreach my $bundle ($doc->get_bundles()){
-    foreach my $tree ($bundle->get_all_trees()){
-        my @nodes = $tree->get_descendants({ordered=>1});
+foreach my $bundle ($doc->bundles){
+    foreach my $tree ($bundle->trees){
+        my @nodes = $tree->descendants;
         foreach my $node (@nodes){
             my $rand_index = int(rand($#nodes+1));
             if (rand() < 0.1) {
-                # Catch an exception if $nodes[$rand_index] is a descendant of $node
-                local $SIG{__WARN__} = sub {};
-                eval {
+                try {
                     $node->shift_after_node($nodes[$rand_index]);
+                } catch {
+                    confess $_ if !/reference_node is a descendant/;
                 }
             } elsif (rand() < 0.1) {
                 $node->shift_before_subtree($nodes[$rand_index], {without_children=>1});

@@ -1,14 +1,15 @@
 package UD::Node;
 use strict;
 use warnings;
-use Carp;
+use Carp qw(confess cluck);
 use Scalar::Util qw(weaken);
+use List::Util qw(first);
 
 # TODO: 
 use Class::XSAccessor {
 #my $spec = {
     constructor => 'new',
-    setters => { map {("set_$_" => $_)} qw(form lemma upos xpos deprel feats deps misc)},
+    setters => { map {("set_$_" => $_)} qw(form lemma upos xpos deprel feats deps misc ord)},
     getters => {
          (map {($_ => $_)} qw(form lemma upos xpos deprel feats deps misc ord)),
          (map {($_ => "_$_")} qw(parent root)),
@@ -40,7 +41,7 @@ my $CHECK_FOR_CYCLES = 1;
 
 sub set_parent {
     my ($self, $parent) = @_;
-    confess 'set_parent(undef) not allowed' if !defined $parent;
+    confess('set_parent(undef) not allowed') if !defined $parent;
 
     if ( $self == $parent || $CHECK_FOR_CYCLES && $parent->is_descendant_of($self) ) {
         my $b_id = $self->bundle->id;
@@ -99,7 +100,7 @@ sub remove {
 
     # TODO: order normalizing can be done in a more efficient way
     # (update just the following ords)
-    #$root->_normalize_node_ordering();
+    $self->{_root}->_normalize_node_ordering();
 
     # By reblessing we make sure that
     # all methods called on removed nodes will result in fatal errors.
@@ -108,6 +109,16 @@ sub remove {
     }
     return;
 
+}
+
+sub _normalize_node_ordering {
+    my $self = shift;
+    confess 'Ordering normalization can be applied only on root nodes!' if $self->parent;
+    my $new_ord = 1;
+    foreach my $node ( $self->descendants ) {
+        $node->{ord} = $new_ord++;
+    }
+    return;
 }
 
 sub create_child {
@@ -136,15 +147,33 @@ sub _descendantsF {
 }
 
 sub descendants {
-    my ($self) = @_;
+    my ($self, $args) = @_;
+    my $except = $args ? ($args->{except}||0) : 0;
+    return () if $self == $except;
     my @descs = ();
     my @stack = $self->children;
     while (@stack) {
         my $node = pop @stack;
+        next if $node == $except;
         push @descs, $node;
         push @stack, $node->children;
     }
-    return sort {$a->{ord} <=> $b->{ord}} @descs;
+
+    # TODO nicer code
+    if ($args){
+        push @descs, $self if $args->{add_self};
+        if ($args->{first_only}){
+            my ($first) = sort {$a->{ord} <=> $b->{ord}} @descs;
+            return $first;
+        }
+        if ($args->{last_only}){
+            my ($last) = reverse sort {$a->{ord} <=> $b->{ord}} @descs;
+            return $last;
+        }
+    }
+
+    # TODO forbid undef ord?
+    return sort {($a->{ord}||0) <=> ($b->{ord}||0)} @descs;
 }
 
 sub is_descendant_of {
@@ -164,6 +193,154 @@ sub document { $_[0]->{_root}{_bundle}{_doc}}
 sub address { $_[0]->bundle->id . '-' . $_[0]->ord; } #???
 
 sub is_root { !$_[0]->{_parent}; }
+
+sub log_fatal { confess @_; }
+sub log_warn { cluck @_; }
+
+sub _check_shifting_method_args {
+    my ( $self, $reference_node, $arg_ref ) = @_;
+    my @c     = caller 1;
+    my $stack = "$c[3] called from $c[1], line $c[2]";
+    log_fatal( 'Incorrect number of arguments for ' . $stack ) if @_ < 2 || @_ > 3;
+    log_fatal( 'Undefined reference node for ' . $stack ) if !$reference_node;
+    log_fatal( 'Reference node must be from the same tree. In ' . $stack )
+        if $reference_node->root != $self->root;
+
+    log_fatal '$reference_node is a descendant of $self.'
+        . ' Maybe you have forgotten {without_children=>1}. ' . "\n" . $stack
+        if !$arg_ref->{without_children} && $reference_node->is_descendant_of($self);
+
+    return if !defined $arg_ref;
+
+    log_fatal(
+        'Second argument for shifting methods can be only options hash reference. In ' . $stack
+    ) if ref $arg_ref ne 'HASH';
+    my $unknown = first { $_ ne 'without_children' } keys %{$arg_ref};
+    log_warn("Unknown switch '$unknown' for $stack") if defined $unknown;
+    return;
+}
+
+sub shift_after_node {
+    my ( $self, $reference_node, $arg_ref ) = @_;
+    return if $self == $reference_node;
+    _check_shifting_method_args(@_);
+    return $self->_shift_to_node( $reference_node, 1, $arg_ref->{without_children} ) if $arg_ref;
+    return $self->_shift_to_node( $reference_node, 1, 0 );
+}
+
+sub shift_before_node {
+    my ( $self, $reference_node, $arg_ref ) = @_;
+    return if $self == $reference_node;
+    _check_shifting_method_args(@_);
+    return $self->_shift_to_node( $reference_node, 0, $arg_ref->{without_children} ) if $arg_ref;
+    return $self->_shift_to_node( $reference_node, 0, 0 );
+}
+
+sub shift_after_subtree {
+    my ( $self, $reference_node, $arg_ref ) = @_;
+    _check_shifting_method_args(@_);
+
+    my $last_node;
+    if ( $arg_ref->{without_children} ) {
+        ($last_node) = reverse grep { $_ != $self } $reference_node->descendants( { add_self => 1 } );
+    }
+    else {
+        $last_node = $reference_node->descendants( { except => $self, last_only => 1, add_self => 1 } );
+    }
+    return if !defined $last_node;
+    return $self->_shift_to_node( $last_node, 1, $arg_ref->{without_children} ) if $arg_ref;
+    return $self->_shift_to_node( $last_node, 1, 0 );
+}
+
+sub shift_before_subtree {
+    my ( $self, $reference_node, $arg_ref ) = @_;
+    _check_shifting_method_args(@_);
+
+    my $first_node;
+    if ( $arg_ref->{without_children} ) {
+        ($first_node) = grep { $_ != $self } $reference_node->descendants( {  add_self => 1 } );
+    }
+    else {
+        $first_node = $reference_node->descendants( { except => $self, first_only => 1, add_self => 1 } );
+    }
+    return if !defined $first_node;
+    return $self->_shift_to_node( $first_node, 0, $arg_ref->{without_children} ) if $arg_ref;
+    return $self->_shift_to_node( $first_node, 0, 0 );
+}
+
+# This method does the real work for all shift_* methods.
+# However, due to unfriendly name and arguments it's not public.
+sub _shift_to_node {
+    my ( $self, $reference_node, $after, $without_children ) = @_;
+    my @all_nodes = $self->root->descendants();
+
+    # Make sure that ord of all nodes is defined
+    #my $maximal_ord = @all_nodes; -this does not work, since there may be gaps in ordering
+    my $maximal_ord = 10000;
+    foreach my $d (@all_nodes) {
+        if ( !defined $d->ord ) {
+            $d->set_ord( $maximal_ord++ );
+        }
+    }
+
+    # Which nodes are to be moved?
+    # $self only (the {without_children=>1} switch)
+    # or $self and all its descendants (the default)?
+    my @nodes_to_move;
+    if ($without_children) {
+        @nodes_to_move = ($self);
+    }
+    else {
+        @nodes_to_move = $self->descendants( { add_self => 1 } );
+    }
+
+    # Let's make a hash, so we can easily recognize which nodes are to be moved.
+    my %is_moving = map { $_ => 1 } @nodes_to_move;
+
+    # Recompute ord of all nodes.
+    # The technical root has ord=0 and the first node will have ord=1.
+    my $counter     = 1;
+    my $nodes_moved = 0;
+    @all_nodes = sort { $a->ord <=> $b->ord } @all_nodes;
+    foreach my $node (@all_nodes) {
+
+        # We skip nodes that are being moved.
+        # Their ord is recomuted elsewhere (look 8 lines down).
+        next if $is_moving{$node};
+
+        # If moving "after" a reference node
+        # then ord of the $node can be recomputed now
+        # even if it is actually the $reference_node.
+        if ($after) {
+            $node->set_ord( $counter++ );
+        }
+
+        # Now we insert (i.e. recompute ord of) all nodes which are being moved.
+        # The nodes are inserted in the original order.
+        if ( $node == $reference_node ) {
+            foreach my $moving_node (@nodes_to_move) {
+                $moving_node->set_ord( $counter++ );
+            }
+            $nodes_moved = 1;
+        }
+
+        # If moving "before" a node, then now it is the right moment
+        # for recomputing ord of the $node
+        if ( !$after ) {
+            $node->set_ord( $counter++ );
+        }
+    }
+
+    # If $is_moving{$reference_node}, e.g. when there is just one node in the tree,
+    # we need to do the reordering now (otherwise the ord would be still 10000).
+    if ( !$nodes_moved ) {
+        foreach my $moving_node (@nodes_to_move) {
+            $moving_node->set_ord( $counter++ );
+        }
+    }
+    return;
+}
+
 
 
 # TODO: How to do this in an elegant way?
