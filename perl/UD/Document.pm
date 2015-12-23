@@ -1,24 +1,34 @@
 package UD::Document;
 use autodie;
 use Scalar::Util qw(weaken);
-use UD::Node;
-
-# TODO bundles instead of trees
+use UD::Bundle;
 
 #use Moo;
-#has trees => (is=>'ro', builder => sub {[]});
+#has _bundles => (is=>'ro', builder => sub {[]});
 
 sub new {
     my ($class) = @_;
-    my $self = {trees=>[]};
+    my $self = {_bundles=>[]};
     return bless $self, $class;
+}
+
+sub bundles {@{$_[0]->{_bundles}};}
+
+sub create_bundle {
+    my ($self, $args) = @_;
+    # TODO args->{before} args->{after}
+    my $bundle = UD::Bundle->new({id=>1 + @{$self->{_bundles}}});
+    weaken( $bundle->{_doc} = $self );
+    push @{$self->{_bundles}}, $bundle;
+    return $bundle;
 }
 
 sub load_conllu {
     my ($self, $conllu_file) = @_;
     open my $fh, '<:utf8', $conllu_file;
     
-    my $root = $self->create_tree();
+    my $bundle = $self->create_bundle();
+    my $root = $bundle->create_tree(); # {selector=>''}
     my @nodes = ($root);
     my @parents = (0);
     LINE:
@@ -29,7 +39,8 @@ sub load_conllu {
             foreach my $i (1..$#nodes){
                 $nodes[$i]->set_parent( $nodes[ $parents[$i] ] );
             }
-            $root = $self->create_tree();
+            my $bundle = $self->create_bundle();
+            $root = $bundle->create_tree(); # {selector=>''}
             @nodes = ($root);
             @parents = (0);
         } elsif ($line =~ /^#/ ){
@@ -42,7 +53,7 @@ sub load_conllu {
                 next LINE;
             }
             my $new_node = $root->create_child(
-                ord=>scalar(@nodes), form=>$form, lemma=>$lemma, upos=>$upos, xpos=>$xpos, feats=>$feats, deprel=>$deprel, misc=>$misc);
+                ord=>scalar(@nodes), form=>$form, lemma=>$lemma, upos=>$upos, xpos=>$xpos, feats=>$feats, deprel=>$deprel, deps=>$deps, misc=>$misc);
             push @nodes, $new_node;
             push @parents, $head;
             # TODO deps
@@ -54,7 +65,7 @@ sub load_conllu {
     # The last bundle should be empty (if the file ended with an empty line),
     # so we need to remove it. But let's check it.
     if (@nodes == 1){
-        pop @{$self->{trees}};
+        pop @{$self->{_bundles}};
     } else {
         foreach my $i (1..$#nodes) {
             $nodes[$i]->set_parent( $nodes[ $parents[$i] ] );
@@ -66,26 +77,19 @@ sub load_conllu {
 sub save_conllu {
     my ($self, $conllu_file) = @_;
     open my $fh, '>:utf8', $conllu_file;
-    foreach my $tree (@{$self->{trees}}){
-        foreach my $node ($tree->descendants){
-            print {$fh} join("\t", map {defined $_ and $_ ne '' ? $_ : '_'}
-                $node->ord, $node->form, $node->lemma, $node->upos, $node->xpos,
-                $node->feats, $node->parent->ord, $node->deprel, $node->misc,
-            ), "\n";
+    foreach my $bundle ($self->bundles){
+        foreach my $tree ($bundle->trees){
+            foreach my $node ($tree->descendants){
+                print {$fh} join("\t", map {(defined $_ and $_ ne '') ? $_ : '_'}
+                    $node->ord, $node->form, $node->lemma, $node->upos, $node->xpos,
+                    $node->feats, $node->parent->ord, $node->deprel, $node->deps, $node->misc,
+                ), "\n";
+            }
         }
         print {$fh} "\n";
     }
     close $fh;
-
-}
-
-sub create_tree {
-    my ($self, $args) = @_;
-    # TODO args->{before} args->{after}
-    my $root = UD::Node->new();
-    weaken( $root->{_root} = $root );
-    push @{$self->{trees}}, $root;
-    return $root;
+    return;
 }
 
 1;

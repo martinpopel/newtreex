@@ -1,6 +1,12 @@
 #!/usr/bin/env perl
+use v5.10;
 use strict;
 use warnings;
+use FindBin;
+use lib "$FindBin::Bin/";
+use Carp;
+use Try::Tiny;
+
 STDOUT->autoflush(1);
 use UD::Document;
 my ($in_conllu, $out_conllu) = @ARGV;
@@ -13,76 +19,73 @@ print "load\n";
 $doc->save_conllu($out_conllu);
 print "save\n";
 
-__END__
-
-
-foreach my $bundle ($doc->get_bundles()){
+foreach my $bundle ($doc->bundles){
     # There is just one tree in each bundle, but let's make the code more general
-    foreach my $tree ($bundle->get_all_trees()){
-        foreach my $node ($tree->get_descendants({ordered=>1})){
+    foreach my $tree ($bundle->trees){
+        foreach my $node ($tree->descendants){
             # no op
         }
     }
 }
 print "iter\n";
 
-foreach my $bundle ($doc->get_bundles()){
-    foreach my $tree ($bundle->get_all_trees()){
-        foreach my $node ($tree->get_descendants()){
+foreach my $bundle ($doc->bundles){
+    foreach my $tree ($bundle->trees){
+        foreach my $node ($tree->_descendantsF){
             # no op
         }
     }
 }
 print "iterF\n";
 
-
-foreach my $bundle ($doc->get_bundles()){
-    foreach my $tree ($bundle->get_all_trees()){
-        foreach my $node ($tree->get_descendants({ordered=>1})){
+foreach my $bundle ($doc->bundles){
+    foreach my $tree ($bundle->trees){
+        foreach my $node ($tree->descendants){
             my $form_lemma = $node->form . $node->lemma;
         }
     }
 }
 print "read\n";
 
-foreach my $bundle ($doc->get_bundles()){
-    foreach my $tree ($bundle->get_all_trees()){
-        foreach my $node ($tree->get_descendants({ordered=>1})){
-            $node->set_conll_deprel('dep');
+foreach my $bundle ($doc->bundles){
+    foreach my $tree ($bundle->trees){
+        foreach my $node ($tree->descendants){
+            $node->set_deprel('dep');
         }
     }
 }
 print "write\n";
 
-foreach my $bundle ($doc->get_bundles()){
-    foreach my $tree ($bundle->get_all_trees()){
-        my @nodes = $tree->get_descendants({ordered=>1});
+foreach my $bundle ($doc->bundles){
+    foreach my $tree ($bundle->trees){
+        my @nodes = $tree->descendants;
         foreach my $node (@nodes){
             # rehanging to a random parent may result in cycles, which should result in exception
-            # eval {} is the pure-Perl way of try-catch.
-            # Let's also prevent the TREEX-FATAL messages on stderr
-            local $SIG{__WARN__} = sub {};
-            eval {
+            try {
                 my $rand_index = int(rand($#nodes+1));
                 $node->set_parent($nodes[$rand_index]);
-            }
+            } catch {
+                confess $_ if !/cycle/; # rethrow other errors than "cycle"
+            };
         }
     }
 }
 print "rehang\n";
 
-foreach my $bundle ($doc->get_bundles()){
-    foreach my $tree ($bundle->get_all_trees()){
-        foreach my $node ($tree->get_descendants({ordered=>1})){
-            $node->remove if rand() < 0.1 && ref $node ne 'Treex::Core::Node::Deleted';
+foreach my $bundle ($doc->bundles){
+    foreach my $tree ($bundle->trees){
+        foreach my $node ($tree->descendants){
+            $node->remove if rand() < 0.1 && ref $node ne 'UD::Node::Removed';
         }
     }
 }
 print "remove\n";
 
-foreach my $bundle ($doc->get_bundles()){
-    foreach my $tree ($bundle->get_all_trees()){
-        foreach my $node ($tree->get_descendants({ordered=>1})){
+__END__
+
+foreach my $bundle ($doc->bundles){
+    foreach my $tree ($bundle->trees){
+        foreach my $node ($tree->descendants){
             if (rand() < 0.1) {
                 $node->create_child({form=>'x', lemma=>'x'})->shift_after_subtree($node);
             }
