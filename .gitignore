@@ -2,3 +2,10 @@
 data/
 results.txt
 ud1.2.tgz
+.idea/
+newtreex.iml
+out/
+java/.gradle/
+java/build.gradle
+java/build/
+java/gradle/

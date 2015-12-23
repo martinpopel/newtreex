@@ -23,6 +23,9 @@ data:
 .cpp_raw-compile:
 	make -C cpp_raw
 
+.java-build:
+	gradle -b java/build.gradle wrapper && java/gradlew -b java/build.gradle build
+
 #.old-treex-install:
 #	cpanm Treex::Core
 

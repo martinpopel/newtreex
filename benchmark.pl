@@ -12,11 +12,12 @@ my $IN = $ARGV[0] || 'data/UD_Romanian/ro-ud-dev.conllu';
 # That would result in executing shell subprocess and the memory consumption
 # would be of that subprocess not of the main process we want to evaluate.
 my @experiments = (
-    #[dummy    => './dummy.pl'],
-    [old_Treex => "perl/bench_old-treex.pl $IN /tmp/out.conllu"],
-    [pytreex   => "python -u python/bench_pytreex.py $IN /tmp/out.conllu"],
+    #[dummy     => './dummy.pl'],
+    [old_Treex  => "perl/bench_old-treex.pl $IN /tmp/out.conllu"],
+    [pytreex    => "python -u python/bench_pytreex.py $IN /tmp/out.conllu"],
     [cpp_raw    => "cpp_raw/benchmark $IN /tmp/out.conllu"],
     [perl_plain => "perl/bench_plain.pl $IN /tmp/out.conllu"],
+    [java       => "java -jar java/build/libs/newtreex.jar data/UD_Romanian/ro-ud-train.conllu /tmp/out.conllu"]
 );
 
 sub run {
