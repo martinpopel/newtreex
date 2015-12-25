@@ -40,6 +40,7 @@ MAXMEM is maximum (virtual) memory (`ps -ovsz`) in MiB.
 Other columns are time in seconds. Run on x86_64.
 
 `data/UD_Czech/cs-ud-train-l.conllu` (68 MB):
+
 experiment|TOTAL   |MAXMEM   |init |load    |save   |iter  |iterF|read  |write |rehang|remove|add   |reorder|
 ----------|-------:|--------:|----:|-------:|------:|-----:|----:|-----:|-----:|-----:|-----:|-----:|------:|
 old_Treex |4646.216|18114.070|2.583|3881.600|334.891|12.311|4.471|14.577|18.026|89.175|86.787|76.207|57.576 |     
