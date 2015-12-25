@@ -38,19 +38,11 @@ The command/script running the task should do each task independently, not keepi
 ### Current results
 MAXMEM is maximum (virtual) memory (`ps -ovsz`) in MiB.
 Other columns are time in seconds. Run on x86_64.
-For start, I've selected Romanian (its dev set is one of the smallest files in UD 1.2), later we'll add experiments on bigger files (Czech is the biggest).
-
-`data/UD_Romanian/ro-ud-train.conllu` (632 kB):
-
-experiment|TOTAL |MAXMEM |init |load  |save |iter |iterF|read |write|rehang|remove|add  |reorder|
-----------|-----:|------:|----:|-----:|----:|----:|----:|----:|----:|-----:|-----:|----:|------:|
-old_Treex |67.788|390.973|1.825|55.963|3.860|0.129|0.045|0.145|0.198|1.320 |1.189 |1.356|0.934  |     
-pytreex   | 4.100| 94.637|0.101| 3.318|0.194|0.067|0.021|0.078|0.074|0.170 |0.014 |0.017|0.019  |
-cpp_raw   | 0.079|  0    |0.002| 0.011|0.011|0.011|0.010|0.011|0.011|0     |0     |0    |0      |
-
 
 `data/UD_Czech/cs-ud-train-l.conllu` (68 MB):
-
-experiment|TOTAL |MAXMEM |init |load  |save |iter |iterF|read |write|rehang|remove|add  |reorder|
-----------|-----:|------:|----:|-----:|----:|----:|----:|----:|----:|-----:|-----:|----:|------:|
-cpp_raw   | 1.614|368.723|0.002| 0.776|0.495|0.013|0.011|0.101|0.056|0     |0     |0    |0      |
+experiment|TOTAL   |MAXMEM   |init |load    |save   |iter  |iterF|read  |write |rehang|remove|add   |reorder|
+----------|-------:|--------:|----:|-------:|------:|-----:|----:|-----:|-----:|-----:|-----:|-----:|------:|
+old_Treex |4646.216|18114.070|2.583|3881.600|334.891|12.311|4.471|14.577|18.026|89.175|86.787|76.207|57.576 |     
+pytreex   | 279.608| 3755.129|0.159| 233.429| 14.711| 4.398|1.393| 5.062| 4.790|10.657| 0.191| 0.187| 0.192 | 
+perl_plain| 150.506| 1091.074|0.139|  25.293|  8.984| 2.672|1.747| 3.248| 3.106|66.853| 8.199| 9.255|18.879 | 
+cpp_raw   |   3.175|  368.676|0.004|   1.456|  0.965| 0.016|0.016| 0.224| 0.131|skip  |skip  |skip  |skip   | 
