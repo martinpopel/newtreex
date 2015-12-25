@@ -48,7 +48,7 @@ sub load_conllu {
         } else {
             my ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc, $rest ) = split /\t/, $line;
             warn "Extra columns in CONLL-U file '$conllu_file':\n$rest\n" if $rest;
-            if ($id !~ /\d+/){
+            if ($id !~ /^\d+$/){
                 # TODO multiword tokens
                 next LINE;
             }

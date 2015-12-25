@@ -11,13 +11,19 @@ data:
 .perl-install:
 	cpanm Text::Table && touch $@
 
+python-activate:
+	export PYTHONPATH=`pwd`/python/pytreex/
+	source python/venv/bin/activate
+
 .python-install:
-	sudo pip install virtualenv
+	virtualenv --version || sudo pip install virtualenv
+	export PYTHONPATH=`pwd`/python/pytreex/
 	cd python
 	virtualenv venv
 	source venv/bin/activate
 	pip install unidecode pyyaml
-	# git clone git@github.com:ufal/pytreex.git .
+	git clone git@github.com:ufal/pytreex.git
+	cd pytreex && git checkout ud
 	touch $@
 
 .cpp_raw-compile:

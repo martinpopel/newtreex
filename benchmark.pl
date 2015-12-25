@@ -15,15 +15,15 @@ my @experiments = (
     #[dummy     => './dummy.pl'],
     [old_Treex  => "perl/bench_old-treex.pl $IN /tmp/out.conllu"],
     [pytreex    => "python -u python/bench_pytreex.py $IN /tmp/out.conllu"],
-    [cpp_raw    => "cpp_raw/benchmark $IN /tmp/out.conllu"],
     [perl_plain => "perl/bench_plain.pl $IN /tmp/out.conllu"],
+    [cpp_raw    => "cpp_raw/benchmark $IN /tmp/out.conllu"],
     [java       => "java -jar java/build/libs/newtreex.jar $IN /tmp/out.conllu"]
 );
 
 sub run {
     my ($command) = @_;
     my %t;
-    @t{@header} = map {0} @header;
+    @t{@header} = map {'skip'} @header;
     my $maxmem = 0;
     my $start = time;
     my $last = $start;
