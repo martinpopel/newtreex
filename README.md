@@ -45,5 +45,9 @@ experiment|TOTAL   |MAXMEM   |init |load    |save   |iter  |iterF|read  |write |
 ----------|-------:|--------:|----:|-------:|------:|-----:|----:|-----:|-----:|-----:|-----:|-----:|------:|
 old_Treex |4646.216|18114.070|2.583|3881.600|334.891|12.311|4.471|14.577|18.026|89.175|86.787|76.207|57.576 |     
 pytreex   | 279.608| 3755.129|0.159| 233.429| 14.711| 4.398|1.393| 5.062| 4.790|10.657| 0.191| 0.187| 0.192 | 
-perl_plain| 150.506| 1091.074|0.139|  25.293|  8.984| 2.672|1.747| 3.248| 3.106|66.853| 8.199| 9.255|18.879 | 
+perl_plain|  91.244| 1091.145|0.143|  25.891|  9.170| 2.611|1.707| 3.226| 3.196|10.066| 9.258| 9.732|13.495 | 
 cpp_raw   |   3.175|  368.676|0.004|   1.456|  0.965| 0.016|0.016| 0.224| 0.131|skip  |skip  |skip  |skip   | 
+
+#### Comments:
+* `cpp_raw` does not implement rehang, remove, add, reorder yet.
+* `pytreex` probably fails if removing a node with children, but no error is printed. This task and the following ones have suspiciously fast times.

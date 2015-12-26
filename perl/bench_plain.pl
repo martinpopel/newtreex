@@ -60,13 +60,15 @@ foreach my $bundle ($doc->bundles){
     foreach my $tree ($bundle->trees){
         my @nodes = $tree->descendants;
         foreach my $node (@nodes){
-            # rehanging to a random parent may result in cycles, which should result in exception
-            try {
-                my $rand_index = int(rand($#nodes+1));
-                $node->set_parent($nodes[$rand_index]);
-            } catch {
-                confess $_ if !/cycle/; # rethrow other errors than "cycle"
-            };
+            my $rand_index = int(rand($#nodes+1));
+            # rehanging to a random parent may result in cycles, which should result in exception,
+            #try {
+            #    $node->set_parent($nodes[$rand_index]);
+            #} catch {
+            #    confess $_ if !/cycle/; # rethrow other errors than "cycle"
+            #};
+            # However, try{} catch{} is too slow in Perl, so let's use a special parameter
+            $node->set_parent($nodes[$rand_index], {cycles=>'skip'});
         }
     }
 }
@@ -98,11 +100,13 @@ foreach my $bundle ($doc->bundles){
         foreach my $node (@nodes){
             my $rand_index = int(rand($#nodes+1));
             if (rand() < 0.1) {
-                try {
-                    $node->shift_after_node($nodes[$rand_index]);
-                } catch {
-                    confess $_ if !/reference_node is a descendant/;
-                }
+                #try {
+                #    $node->shift_after_node($nodes[$rand_index]);
+                #} catch {
+                #    confess $_ if !/reference_node is a descendant/;
+                #}
+                # Again, try{} catch{} is too slow in Perl
+                $node->shift_after_node($nodes[$rand_index], {skip_if_descendant=>1});
             } elsif (rand() < 0.1) {
                 $node->shift_before_subtree($nodes[$rand_index], {without_children=>1});
             }

@@ -40,10 +40,12 @@ sub parent { $_[0]->{_parent}}
 my $CHECK_FOR_CYCLES = 1;
 
 sub set_parent {
-    my ($self, $parent) = @_;
+    my ($self, $parent, $args) = @_;
     confess('set_parent(undef) not allowed') if !defined $parent;
 
-    if ( $self == $parent || $CHECK_FOR_CYCLES && $parent->is_descendant_of($self) ) {
+    my $cycles_check = $args && $args->{cycles} eq 'no-check' ? 0 : 1;
+    if ( $cycles_check && ($self == $parent || $parent->is_descendant_of($self) )) {
+        return if $args && $args->{cycles} eq 'skip';
         my $b_id = $self->bundle->id;
         my $n_id = $self->ord; # TODO id instead of ord?
         my $p_id = $parent->ord;
@@ -206,24 +208,26 @@ sub _check_shifting_method_args {
     log_fatal( 'Reference node must be from the same tree. In ' . $stack )
         if $reference_node->root != $self->root;
 
-    log_fatal '$reference_node is a descendant of $self.'
-        . ' Maybe you have forgotten {without_children=>1}. ' . "\n" . $stack
-        if !$arg_ref->{without_children} && $reference_node->is_descendant_of($self);
+    if (!$arg_ref->{without_children} && $reference_node->is_descendant_of($self)){
+        return 1 if $arg_ref->{skip_if_descendant};
+        log_fatal '$reference_node is a descendant of $self.'
+                . ' Maybe you have forgotten {without_children=>1}. ' . "\n" . $stack
+    }
 
-    return if !defined $arg_ref;
+    return 0 if !defined $arg_ref;
 
     log_fatal(
         'Second argument for shifting methods can be only options hash reference. In ' . $stack
     ) if ref $arg_ref ne 'HASH';
-    my $unknown = first { $_ ne 'without_children' } keys %{$arg_ref};
+    my $unknown = first { $_ ne 'without_children' && $_ ne 'skip_if_descendant' } keys %{$arg_ref};
     log_warn("Unknown switch '$unknown' for $stack") if defined $unknown;
-    return;
+    return 0;
 }
 
 sub shift_after_node {
     my ( $self, $reference_node, $arg_ref ) = @_;
     return if $self == $reference_node;
-    _check_shifting_method_args(@_);
+    return if _check_shifting_method_args(@_);
     return $self->_shift_to_node( $reference_node, 1, $arg_ref->{without_children} ) if $arg_ref;
     return $self->_shift_to_node( $reference_node, 1, 0 );
 }
@@ -231,14 +235,14 @@ sub shift_after_node {
 sub shift_before_node {
     my ( $self, $reference_node, $arg_ref ) = @_;
     return if $self == $reference_node;
-    _check_shifting_method_args(@_);
+    return if _check_shifting_method_args(@_);
     return $self->_shift_to_node( $reference_node, 0, $arg_ref->{without_children} ) if $arg_ref;
     return $self->_shift_to_node( $reference_node, 0, 0 );
 }
 
 sub shift_after_subtree {
     my ( $self, $reference_node, $arg_ref ) = @_;
-    _check_shifting_method_args(@_);
+    return if _check_shifting_method_args(@_);
 
     my $last_node;
     if ( $arg_ref->{without_children} ) {
@@ -254,7 +258,7 @@ sub shift_after_subtree {
 
 sub shift_before_subtree {
     my ( $self, $reference_node, $arg_ref ) = @_;
-    _check_shifting_method_args(@_);
+    return if _check_shifting_method_args(@_);
 
     my $first_node;
     if ( $arg_ref->{without_children} ) {
