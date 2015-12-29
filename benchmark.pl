@@ -86,7 +86,9 @@ foreach my $exp (@experiments){
 }
 
 if (!$is_other){
-    pop @$res foreach my $res (@results);
+    foreach my $res (@results){
+        pop @$res;
+    }
 } else {
     push @header, 'other';
 }
