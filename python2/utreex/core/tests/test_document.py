@@ -15,9 +15,11 @@ class TestDocument(unittest.TestCase):
         for bundle in doc:
             print bundle
 
-    def test_load(self):
+    def test_load_and_store(self):
         doc = Document()
         doc.load("UD_Czech_sample.conllu")
+        doc.store("temp_copy.connlu")
+        
 
 
 

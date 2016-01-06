@@ -43,6 +43,16 @@ class Node(object):
     def parent(self):
         return self._parent
 
+    def set_parent(self,parent):  # TODO: updatovat seznamy deti, testovat vznik cyklu
+        self._parent = parent
+
+
+    def descendants(self):
+        if self._aux['descendants']:
+            return self._aux['descendants']
+        else:
+            return []   # TODO: posbirat rekurzi + setridit
+
 
 #    def __iter__(self):
 #        yield self

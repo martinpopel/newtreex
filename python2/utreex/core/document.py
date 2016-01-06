@@ -5,7 +5,9 @@ import re
 
 from node import Node
 
-class Document:
+class Document(object):
+
+    attrnames = ["ord", "form", "lemma", "upostag", "xpostag", "feats", "head", "deprel", "deps"]  # TODO: pridat misc a poresit tolerovani jeho absence
 
     def __init__(self):
         self.trees = []
@@ -18,37 +20,62 @@ class Document:
         fh = open(filename, 'r')
         fh = codecs.getreader('utf8')(fh)
 
-        count = 0
         nodes = []
+        comment = ''
 
         for line in fh:
 
-            if not line.strip():
-                count += 1
-                nodes = []
+            if re.search('^#',line):
+                comment = comment + line
 
-            else:
+            elif line.strip():
+
+                if not nodes:
+                    root = Node()
+                    root._aux['comment'] = comment # TODO: ulozit nekam poradne
+                    nodes = [root]
+                    self.trees.append(root)
+
                 columns = line.strip().split('\t')
-#                columns.append(0)
-#                ord,form,lemma,tag,parent = columns
-
+#                attrnames = ["ord", "form", "lemma", "upostag", "xpostag", "feats", "head", "deprel", "deps", "misc"]
                 node = Node()
-                attrnames = ["ord", "form", "lemma", "upostag", "xpostag", "feats", "head", "deprel", "deps", "misc"]
+                nodes.append(node)
 
-                for index in xrange(0,len(columns)-1)):
-                    print "setting attribute " + attrnames[index] + " to value " + columns[index]
-                    setattr(node,attrnames[index],columns[index])
-
-                    
+                for index in xrange(0,len(columns)-1):
+                    setattr( node, Document.attrnames[index], columns[index] )
                 
-#                node = Node( { 'ord':ord,
-#                               'form':form,
-#                               'lemma':lemma,
-#                               'tag':tag } )
-#                nodes.append(node)
-#                print form
+            else: # an empty line is guaranteed even after the last sentence in a conll-u file
+
+                nodes[0]._aux['descendants'] = nodes[1:]
+   
+                for node in nodes[1:]:
+                    node._parent
+                
+                nodes = []
+                comment = ''
+
+
+    def store(self,filename):
+
+#        fh = open(filename, 'r')
+#        fh = codecs.getreader('utf8')(fh)
+
+        fh = codecs.open(filename,"w","utf-8")
+
+
+        for root in self:
+            fh.write(root._aux['comment'])
+
+            for node in root.descendants():
+                fh.write('\t'.join( [ getattr(node,attrname) for attrname in Document.attrnames ] ) )
+                fh.write('\n')
+
+
+            fh.write("\n")
 
 
 
 
-        print "QQQQQQempty lines: "+str(count)
+        fh.close()
+
+
