@@ -25,19 +25,27 @@ class Document:
 
             if not line.strip():
                 count += 1
-#                bundle = Bundle()
                 nodes = []
 
             else:
                 columns = line.strip().split('\t')
-                columns.append(0)
-                ord,form,lemma,tag,parent = columns
+#                columns.append(0)
+#                ord,form,lemma,tag,parent = columns
 
-                node = Node( { 'ord':ord,
-                               'form':form,
-                               'lemma':lemma,
-                               'tag':tag } )
-                nodes.append(node)
+                node = Node()
+                attrnames = ["ord", "form", "lemma", "upostag", "xpostag", "feats", "head", "deprel", "deps", "misc"]
+
+                for index in xrange(0,len(columns)-1)):
+                    print "setting attribute " + attrnames[index] + " to value " + columns[index]
+                    setattr(node,attrnames[index],columns[index])
+
+                    
+                
+#                node = Node( { 'ord':ord,
+#                               'form':form,
+#                               'lemma':lemma,
+#                               'tag':tag } )
+#                nodes.append(node)
 #                print form
 
 

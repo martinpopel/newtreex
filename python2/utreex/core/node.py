@@ -19,7 +19,7 @@ class Node(object):
 
                   "_parent",  # parent node
                   "_children",# ord-ordered list of child nodes  
-                  "_wild"     # other attributes (other than misc)    
+                  "_aux"     # other technical attributes
 
     ]
    
@@ -28,7 +28,7 @@ class Node(object):
 
         self._parent = None
         self._children = []
-        self._wild = {}
+        self._aux = {}
 
         for name in data:
 #            print "setting "+str(name)+" to "+str(data[name])

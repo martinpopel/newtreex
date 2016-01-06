@@ -17,7 +17,7 @@ class TestDocument(unittest.TestCase):
 
     def test_load(self):
         doc = Document()
-        doc.load("in.conll")
+        doc.load("UD_Czech_sample.conllu")
 
 
 
