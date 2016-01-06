@@ -19,7 +19,7 @@ class Node(object):
 
                   "_parent",  # parent node
                   "_children",# ord-ordered list of child nodes  
-                  "_auxattr"     # other attributes (other than misc)    
+                  "_wild"     # other attributes (other than misc)    
 
     ]
    

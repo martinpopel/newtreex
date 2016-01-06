@@ -10,9 +10,11 @@ class TestDocument(unittest.TestCase):
         node = Node()
 
     def test_parent(self):
-        p = Node()
-        c = Node({"parent":p,"lemma":"prasopes"})
+        parent = Node()
+        child = Node({"lemma":"prasopes"})
     
+        self.assertEqual(child.lemma,"prasopes")
+
 
 #    def test_iterator(self):
 #        doc = Document();
