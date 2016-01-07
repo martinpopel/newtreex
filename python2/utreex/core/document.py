@@ -6,8 +6,6 @@ import re
 from node import Node
 from bundle import Bundle
 
-from operator import attrgetter
-
 class Document(object):
 
     attrnames = ["ord", "form", "lemma", "upostag", "xpostag", "feats", "head", "deprel", "deps"]  # TODO: pridat misc a poresit tolerovani jeho absence
@@ -64,10 +62,7 @@ class Document(object):
                 nodes[0]._aux['descendants'] = nodes[1:]
    
                 for node in nodes[1:]:
-#                    print "parent "+node.head
-                    parent = nodes[node.head]
-                    node._parent = parent
-                    parent._children = sorted( parent._children + [node], key=attrgetter('ord') )
+                    node.set_parent( nodes[node.head] )
                 
                 nodes = []
                 comment = ''

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from operator import attrgetter
+
 class Node(object):
 
     __slots__ = [ 
@@ -44,7 +46,13 @@ class Node(object):
         return self._parent
 
     def set_parent(self,parent):  # TODO: updatovat seznamy deti, testovat vznik cyklu
+
+        if self._parent:
+            old_parent = self.parent
+            old_parent._children = [node for node in old_parent._children if node != self ]
+            
         self._parent = parent
+        parent._children = sorted( parent._children + [self], key=attrgetter('ord') )
 
 
     def descendants(self):
