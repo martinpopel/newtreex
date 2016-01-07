@@ -65,8 +65,9 @@ class Document(object):
    
                 for node in nodes[1:]:
 #                    print "parent "+node.head
-                    node._parent = nodes[int(node.head)]
-#                    nodes[int(node.head)].children = sorted( nodes[int(node.head)].children + [node], attrgetter('ord') )
+                    parent = nodes[node.head]
+                    node._parent = parent
+                    parent._children = sorted( parent._children + [node], key=attrgetter('ord') )
                 
                 nodes = []
                 comment = ''
