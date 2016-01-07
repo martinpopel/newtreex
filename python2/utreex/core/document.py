@@ -6,6 +6,8 @@ import re
 from node import Node
 from bundle import Bundle
 
+from operator import attrgetter
+
 class Document(object):
 
     attrnames = ["ord", "form", "lemma", "upostag", "xpostag", "feats", "head", "deprel", "deps"]  # TODO: pridat misc a poresit tolerovani jeho absence
@@ -46,13 +48,25 @@ class Document(object):
 
                 for index in xrange(0,len(columns)-1):
                     setattr( node, Document.attrnames[index], columns[index] )
-                
+
+                try:  # TODO: kde se v tomhle sloupecku berou podtrzitka
+                    node.head = int(node.head)
+                except ValueError:
+                    node.head = 0
+
+                try:   # TODO: poresit multitokeny
+                    node.ord = int(node.ord)
+                except ValueError:
+                    node.ord = 0
+
             else: # an empty line is guaranteed even after the last sentence in a conll-u file
 
                 nodes[0]._aux['descendants'] = nodes[1:]
    
                 for node in nodes[1:]:
-                    node._parent
+#                    print "parent "+node.head
+                    node._parent = nodes[int(node.head)]
+#                    nodes[int(node.head)].children = sorted( nodes[int(node.head)].children + [node], attrgetter('ord') )
                 
                 nodes = []
                 comment = ''
@@ -71,7 +85,10 @@ class Document(object):
                 fh.write(root._aux['comment'])
 
                 for node in root.descendants():
-                    fh.write('\t'.join( [ getattr(node,attrname) for attrname in Document.attrnames ] ) )
+                    values = [ getattr(node,attrname) for attrname in Document.attrnames ]
+                    values[0] = str(values[0]) # ord
+                    values[6] = str(values[6]) # head
+                    fh.write('\t'.join(values) )
                     fh.write('\n')
 
                 fh.write("\n")
