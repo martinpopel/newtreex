@@ -4,16 +4,17 @@ import codecs
 import re
 
 from node import Node
+from bundle import Bundle
 
 class Document(object):
 
     attrnames = ["ord", "form", "lemma", "upostag", "xpostag", "feats", "head", "deprel", "deps"]  # TODO: pridat misc a poresit tolerovani jeho absence
 
     def __init__(self):
-        self.trees = []
+        self.bundles = []
 
     def __iter__(self):
-        return iter(self.trees)
+        return iter(self.bundles)
 
     def load(self,filename):
 
@@ -31,10 +32,12 @@ class Document(object):
             elif line.strip():
 
                 if not nodes:
+                    bundle = Bundle()
+                    self.bundles.append(bundle)
                     root = Node()
                     root._aux['comment'] = comment # TODO: ulozit nekam poradne
                     nodes = [root]
-                    self.trees.append(root)
+                    bundle.trees.append(root)
 
                 columns = line.strip().split('\t')
 #                attrnames = ["ord", "form", "lemma", "upostag", "xpostag", "feats", "head", "deprel", "deps", "misc"]
@@ -63,19 +66,14 @@ class Document(object):
         fh = codecs.open(filename,"w","utf-8")
 
 
-        for root in self:
-            fh.write(root._aux['comment'])
+        for bundle in self:
+            for root in bundle:
+                fh.write(root._aux['comment'])
 
-            for node in root.descendants():
-                fh.write('\t'.join( [ getattr(node,attrname) for attrname in Document.attrnames ] ) )
-                fh.write('\n')
+                for node in root.descendants():
+                    fh.write('\t'.join( [ getattr(node,attrname) for attrname in Document.attrnames ] ) )
+                    fh.write('\n')
 
-
-            fh.write("\n")
-
-
-
+                fh.write("\n")
 
         fh.close()
-
-
