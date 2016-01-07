@@ -45,12 +45,19 @@ class Node(object):
     def parent(self):
         return self._parent
 
-    def set_parent(self,parent):  # TODO: updatovat seznamy deti, testovat vznik cyklu
+    def set_parent(self,parent):
 
         if self._parent:
             old_parent = self.parent
+
+            climbing_node = old_parent
+            while climbing_node:
+                if climbing_node == self:
+                    raise SystemExit('setting the parent would lead to a loop: '+self)
+                climbing_node = climbing_node.parent
+
             old_parent._children = [node for node in old_parent._children if node != self ]
-            
+
         self._parent = parent
         parent._children = sorted( parent._children + [self], key=attrgetter('ord') )
 
