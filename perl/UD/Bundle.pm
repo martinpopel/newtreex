@@ -12,7 +12,7 @@ use UD::Node;
 sub new {
     my ($class, $attrs) = @_;
     $attrs ||= {};
-    $attrs{_trees} = {};
+    $attrs->{_trees} = {};
     return bless $attrs, $class;
 }
 

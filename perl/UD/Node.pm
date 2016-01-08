@@ -37,14 +37,11 @@ sub parent { $_[0]->{_parent}}
 # use Moo;
 # has _parent => (weak_ref => 1,);
 
-my $CHECK_FOR_CYCLES = 1;
-
 sub set_parent {
     my ($self, $parent, $args) = @_;
     confess('set_parent(undef) not allowed') if !defined $parent;
 
-    my $cycles_check = $args && $args->{cycles} eq 'no-check' ? 0 : 1;
-    if ( $cycles_check && ($self == $parent || $parent->is_descendant_of($self) )) {
+    if ( ($self == $parent || $parent->is_descendant_of($self) )) {
         return if $args && $args->{cycles} eq 'skip';
         my $b_id = $self->bundle->id;
         my $n_id = $self->ord; # TODO id instead of ord?
@@ -62,6 +59,21 @@ sub set_parent {
     push @{$parent->{_children}}, $self;  
     return;
 }
+
+sub _set_parent_nocheck {
+    my ($self, $parent) = @_;
+
+    my $orig_parent = $self->{_parent};
+    if ($orig_parent){
+        $orig_parent->{_children} = [grep {$_ != $self} @{$orig_parent->{_children}}];
+    }
+    weaken( $self->{_parent} = $parent );
+    weaken( $self->{_root} = $parent->{_root} ) if !$self->{_root};
+    $parent->{_children} ||= [];
+    push @{$parent->{_children}}, $self;
+    return;
+}
+
 
 sub remove {
     my ($self, $arg_ref) = @_;
