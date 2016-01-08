@@ -61,16 +61,35 @@ class Node(object):
         self._parent = parent
         parent._children = sorted( parent._children + [self], key=attrgetter('ord') )
 
-
     def descendants(self):
         if self._aux['descendants']:
             return self._aux['descendants']
         else:
-            return []   # TODO: posbirat rekurzi + setridit
+            return self._descendants_using_children()
 
+    def _unordered_descendants_using_children(self):
+        descendants = [self]
+        for child in self.children:
+            descendants.extend(child._unordered_descendants_using_children())
+        
+    def root(self):
+        node = self
+        while (node.parent):
+            node = node.parent
+        return node
 
-#    def __iter__(self):
-#        yield self
-#        for child in self.children:
-#            for node in child:
-#                yield nod
+    def _update_ordering(self):
+         """ update the ord attribute in all nodes and update the list or descendants stored in the tree root (after node removal or addition) """
+         root = self.root
+         descendants = sorted( [node for node in root._unordered_descendants_using_children() if node != root] , key=attrgetter('ord') )
+
+         for ord in range(1,len(root._aux['descendants'])):
+             descendants[ord].ord = ord
+
+         root._aux['descendants'] = descendants
+             
+
+    def remove(self):
+        self.parent._children = [ child for child in self.parent._children if child != self ]
+        self.parent._update_ordering
+

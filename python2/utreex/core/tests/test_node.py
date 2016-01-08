@@ -15,6 +15,9 @@ class TestDocument(unittest.TestCase):
     
         self.assertEqual(child.lemma,"prasopes")
 
+    def test_remove(self):
+        pass
+
 
 #    def test_iterator(self):
 #        doc = Document();
