@@ -1,4 +1,6 @@
 package UD::Document;
+use strict;
+use warnings;
 use autodie;
 use Scalar::Util qw(weaken);
 use UD::Bundle;

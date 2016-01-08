@@ -1,4 +1,6 @@
 package UD::NodeA;
+use strict;
+use warnings;
 use Class::XSAccessor::Array {
     constructor => 'new',
     lvalue_accessors => {

@@ -1,4 +1,6 @@
 package UD::Bundle;
+use strict;
+use warnings;
 use autodie;
 use Carp;
 use Scalar::Util qw(weaken);
