@@ -13,8 +13,98 @@ my ($in_conllu, $out_conllu) = @ARGV;
 print "init\n";
 
 my $doc = UD::Document->new();
+
+=for comment
+$doc->_chomp($in_conllu);
+print "_chomp\n";
+
+$doc->_comments($in_conllu);
+print "_comments\n";
+
+$doc->_splitPole($in_conllu);
+print "_splitPole\n";
+
+$doc->_splitF($in_conllu);
+print "_splitF\n";
+
+$doc->_split($in_conllu);
+print "_split\n";
+
+my @nodes;
+my $line = "1\tTatra\tTatra\tPROPN\tNNFS1-----A----\tCase=Nom|Gender=Fem|NameType=Com|Negative=Pos|Number=Sing\t0\troot\t_\tSpaceAfter=No|LId=Tatra-1";
+my ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc, $rest ) = split /\t/, $line;
+for (1..803750){
+    my $new_node = UD::Node->new(ord=>$id, form=>$form, lemma=>$lemma, upos=>$upos, xpos=>$xpos, feats=>$feats, deprel=>$deprel, deps=>$deps, misc=>$misc);
+    push @nodes, $new_node;
+}
+print "p_nodes\n";
+undef @nodes;
+print "_d\n";
+
+for (1..803750){
+    my ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc, $rest ) = split /\t/, $line;
+    my $new_node = UD::Node->new(ord=>$id, form=>$form, lemma=>$lemma, upos=>$upos, xpos=>$xpos, feats=>$feats, deprel=>$deprel, deps=>$deps, misc=>$misc);
+    push @nodes, $new_node;
+}
+print "p_nodes_split\n";
+undef @nodes;
+print "_d\n";
+
+open my $fh, '<:utf8', $in_conllu;
+while (my $line = <$fh>) {
+    chomp $line;
+    next if $line eq '' or $line =~ /^#/;
+    my ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc, $rest ) = split /\t/, $line;
+    my $new_node = UD::Node->new(ord=>$id, form=>$form, lemma=>$lemma, upos=>$upos, xpos=>$xpos, feats=>$feats, deprel=>$deprel, deps=>$deps, misc=>$misc);
+    push @nodes, $new_node;
+}
+close $fh;
+print "p_nodes_split_read\n";
+undef @nodes;
+print "_d\n";
+
+$doc->_nonodes($in_conllu);
+print "_nonodes\n";
+$doc->{_bundles} = [];
+print "_d\n";
+
+$doc->_norehang($in_conllu);
+print "_norehang\n";
+$doc->{_bundles} = [];
+print "_d\n";
+
+$doc->_nodesonly($in_conllu);
+print "_nodesonly\n";
+$doc->{_bundles} = [];
+print "_d\n";
+
+=cut
+
+$doc->load_conlluF($in_conllu);
+print "loadF\n";
+$doc->{_bundles} = [];
+print "_d\n";
+
+$doc->load_conlluFnosetparent($in_conllu);
+print "loadFnosetparent\n";
+$doc->{_bundles} = [];
+print "_d\n";
+
+$doc->load_conllu_nocheck($in_conllu);
+print "load_nocheck\n";
+$doc->{_bundles} = [];
+print "_d\n";
+
+$doc->load_conllu_nocheck2($in_conllu);
+print "load_nocheck2\n";
+$doc->{_bundles} = [];
+print "_d\n";
+
+
 $doc->load_conllu($in_conllu);
 print "load\n";
+
+__END__
 
 $doc->save_conllu($out_conllu);
 print "save\n";

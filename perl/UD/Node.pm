@@ -63,6 +63,26 @@ sub set_parent {
     return;
 }
 
+sub set_parent_nocheck {
+    my ($self, $parent) = @_;
+    confess('set_parent(undef) not allowed') if !defined $parent;
+    
+    my $orig_parent = $self->{_parent};
+    if ($orig_parent){
+        $orig_parent->{_children} = [grep {$_ != $self} @{$orig_parent->{_children}}];
+    }
+    weaken( $self->{_parent} = $parent );
+    weaken( $self->{_root} = $parent->{_root} ) if !$self->{_root};
+    my $orig_children = $parent->{_children};
+    if ($orig_children){
+        push @$orig_children, $self;
+    } else {
+        $parent->{_children} = [$self];
+    }
+    return;
+}
+
+
 sub remove {
     my ($self, $arg_ref) = @_;
     if ( $self->is_root ) {
