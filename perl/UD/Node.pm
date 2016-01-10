@@ -7,7 +7,6 @@ use List::Util qw(first);
 
 # TODO: 
 use Class::XSAccessor {
-#my $spec = {
     constructor => 'new',
     setters => { map {("set_$_" => $_)} qw(form lemma upos xpos deprel feats deps misc ord)},
     getters => {
@@ -37,7 +36,7 @@ sub parent { $_[0]->{_parent}}
 # use Moo;
 # has _parent => (weak_ref => 1,);
 
-sub set_parent {
+sub set_parentO {
     my ($self, $parent, $args) = @_;
     confess('set_parent(undef) not allowed') if !defined $parent;
 
@@ -60,18 +59,47 @@ sub set_parent {
     return;
 }
 
-sub _set_parent_nocheck {
-    my ($self, $parent) = @_;
+sub set_parent {
+    my ($self, $parent, $args) = @_;
+    confess('set_parent(undef) not allowed') if !defined $parent;
 
-    my $orig_parent = $self->{_parent};
-    if ($orig_parent){
-        $orig_parent->{_children} = [grep {$_ != $self} @{$orig_parent->{_children}}];
+    if ( ($self == $parent || $parent->is_descendant_of($self) )) {
+        return if $args && $args->{cycles} eq 'skip';
+        my $b_id = $self->bundle->id;
+        my $n_id = $self->ord; # TODO id instead of ord?
+        my $p_id = $parent->ord;
+        confess "Bundle $b_id: Attempt to set parent of $n_id to the node $p_id, which would lead to a cycle.";
     }
+
+    $self->cut() if $self->{_parent};
+
     weaken( $self->{_parent} = $parent );
     weaken( $self->{_root} = $parent->{_root} ) if !$self->{_root};
-    $parent->{_children} ||= [];
-    push @{$parent->{_children}}, $self;
+    
+    my $prev = $parent->{_lastchild};
+    $parent->{_lastchild} = $self;
+    if ($prev){
+        $prev->{_nextsibling} = $self;
+        weaken( $self->{_prevsibling} = $prev );
+    } else {
+        $parent->{_firstchild} = $self;
+    }
     return;
+}
+
+sub cut {
+    my ($self) = @_;
+    my $parent = $self->{_parent};
+    if ($parent && $self == $parent->{_firstchild}) {
+        $parent->{_firstchild} = $self->{_nextsibling};
+    }
+    if ($parent && $self == $parent->{_lastchild}) {
+        $parent->{_lastchild} = $self->{_prevsibling};
+    }
+    $self->{_prevsibling}{_nextsibling} = $self->{_nextsibling} if $self->{_prevsibling};
+    $self->{_nextsibling}{_prevsibling} = $self->{_prevsibling} if $self->{_nextsibling};
+    $self->{_parent} = $self->{_prevsibling} = $self->{_nextsibling} = undef;
+    return $self;
 }
 
 
@@ -110,7 +138,8 @@ sub remove {
 
     # Disconnect the node from its parent (& siblings) and delete all attributes
     # It actually does: $self->cut(); undef %$_ for ($self->descendants(), $self);
-    $parent->{_children} = [grep {$_ != $self} @{$parent->{_children}}];
+    #$parent->{_children} = [grep {$_ != $self} @{$parent->{_children}}];
+    $self->cut();
 
     # TODO: order normalizing can be done in a more efficient way
     # (update just the following ords)
@@ -125,14 +154,20 @@ sub remove {
 
 }
 
-sub _normalize_node_ordering {
-    my $self = shift;
-    confess 'Ordering normalization can be applied only on root nodes!' if $self->parent;
-    my $new_ord = 1;
-    foreach my $node ( $self->descendants ) {
-        $node->{ord} = $new_ord++;
+sub childrenO {
+    my ($self) = @_;
+    my $ch = $self->{_children};
+    return $ch ? @$ch : ();
+}
+sub children {
+    my ($self) = @_;
+    my @children=();
+    my $child=$self->{_firstchild};
+    while ($child) {
+        push @children, $child;
+        $child = $child->{_nextsibling};
     }
-    return;
+    return @children;
 }
 
 sub create_child {
@@ -140,12 +175,6 @@ sub create_child {
     my $child = UD::Node->new(@_); #ref($self)->new(@_);
     $child->set_parent($self);
     return $child;
-}
-
-sub children {
-    my ($self) = @_;
-    my $ch = $self->{_children};
-    return $ch ? @$ch : ();
 }
 
 sub _descendantsF {
@@ -210,6 +239,16 @@ sub is_root { !$_[0]->{_parent}; }
 
 sub log_fatal { confess @_; }
 sub log_warn { cluck @_; }
+
+sub _normalize_node_ordering {
+    my $self = shift;
+    confess 'Ordering normalization can be applied only on root nodes!' if $self->parent;
+    my $new_ord = 1;
+    foreach my $node ( $self->descendants ) {
+        $node->{ord} = $new_ord++;
+    }
+    return;
+}
 
 sub _check_shifting_method_args {
     my ( $self, $reference_node, $arg_ref ) = @_;
