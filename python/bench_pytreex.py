@@ -14,6 +14,7 @@ __date__ = "2015"
 import sys
 import random
 from pytreex.core.document import Document
+from pytreex.core.exception import RuntimeException
 from pytreex.block.read.conllu import ReadCoNLLU
 from pytreex.block.write.conllu import WriteCoNLLU
 conllu_reader = ReadCoNLLU(None, dict())
@@ -55,16 +56,21 @@ for bundle in doc.bundles:
         nodes = zone.atree.get_descendants(ordered=1)
         for node in nodes:
             rand_index = random.randint(0,len(nodes)-1)
-            # TODO pytreex does not check for cycles
-            node.parent = nodes[rand_index]
+            try:
+                node.parent = nodes[rand_index]
+            except RuntimeException:
+                pass
 print("rehang")
 
 for bundle in doc.bundles:
     for zone in bundle.get_all_zones():
         for node in zone.atree.get_descendants(ordered=1):
             if random.random() < 0.1:
-                # TODO check if pytreex removes all descendants automatically
-                node.remove()
+                try:
+                    node.remove()
+                # if the node was already deleted, Pytreex raises a bit unintuitive exception
+                except KeyError:
+                    pass
 print("remove")
 
 for bundle in doc.bundles:
