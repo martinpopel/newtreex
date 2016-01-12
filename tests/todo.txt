@@ -1,0 +1,38 @@
+to be tested:
+
+file format:
+- roundtrip (stored file identical with input)
+- survive crlf ?
+- special unicode symbols
+- catch fatal errors in input data (loops, invalid encoding, empty
+fields)
+- strict validation during reading possible (but not by default)
+
+node manipulation:
+- delete node (incl. nonproj descendants)
+- add node
+- reorder (shift before,after)
+- catch set_parent leading to a loop
+- split a node into two node
+- inserting/deleting a bundle in the middle
+- inserting/deleting trees in a bundle
+
+size
+- very long lemmas (>64k)
+- very wide trees (>1k nodes)
+- very many comment lines
+
+universal features
+- layered features
+- unknown features
+- multiple values (separated by comma)
+- alphabetically ordered (ignore case) features and values
+ (valid in the output, warning if invalid in the input)
+
+- api for coordinations
+
+- api for multiword tokens
+
+- memory leaks
+
+- tests of command-line execution (treex/bin/t/treexrun.t)
