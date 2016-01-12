@@ -2,11 +2,12 @@ SHELL=bash
 DATA=data/UD_Romanian/ro-ud-train.conllu
 DATASHORT=$(notdir $(DATA))
 EXPS=old_Treex pytreex perl_plain java cpp_raw
+REPEATS=10
 
 help:
 	# See README.md (https://github.com/martinpopel/newtreex)
 	# Usage:
-	# make benchmark EXPS='old_Treex pytreex perl_plain java cpp_raw' DATA=data/UD_Romanian/ro-ud-train.conllu
+	# make benchmark EXPS='old_Treex pytreex perl_plain java cpp_raw' DATA=data/UD_Czech/cs-ud-train-l.conllu REPEATS=5
 
 data:
 	wget -O ud1.2.tgz 'https://lindat.mff.cuni.cz/repository/xmlui/bitstream/handle/11234/1-1548/ud-treebanks-v1.2.tgz?sequence=1&isAllowed=y'
@@ -45,4 +46,4 @@ data:
 benchmark: data .perl-install .cpp_raw-compile
 	export PYTHONPATH=`pwd`/python/pytreex/ &&\
 	source python/venv/bin/activate &&\
-	./benchmark.pl $(DATA) $(EXPS) | tee results_$(DATASHORT).txt
+	./benchmark.pl --input=$(DATA) --repeats=$(REPEATS) $(EXPS) | tee results_$(DATASHORT).txt

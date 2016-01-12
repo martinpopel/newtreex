@@ -3,13 +3,17 @@ use strict;
 use warnings;
 use Text::Table;
 use Time::HiRes qw (time);
+use Getopt::Long;
 
-my $help = 0;
-if (($ARGV[0]||'') =~ /^-h/){
-    shift;
-    $help = 1;
-}
-my $IN = shift || 'data/UD_Romanian/ro-ud-dev.conllu';
+my $HELP = 0;
+my $REPEATS = 10;
+my $IN = 'data/UD_Romanian/ro-ud-dev.conllu';
+
+GetOptions(
+    'help|h'      => \$HELP,
+    'repeats|r=i' => \$REPEATS,
+    'input|i=s'   => \$IN,
+);
 
 # Don't use any shell metacharacters (e.g. redirections) in the commands below.
 # That would result in executing shell subprocess and the memory consumption
@@ -28,12 +32,11 @@ for my $i (0 .. $#COMMANDS/2){
     push @COMMANDS_NAMES, $COMMANDS[$i*2];
 }
 
-if ($help){
-    print "Usage $0 input_data.conllu [exp1 exp2 ...]\n";
+if ($HELP){
+    print "Usage $0 --input=data.conllu --repeats=5 [exp1 exp2 ...]\n";
     print "Possible experiments are: " . join(', ', @COMMANDS_NAMES). "\n";
     exit;
 }
-
 
 my @header = qw(TOTAL MAXMEM init load save iter iterF read write rehang remove add reorder);
 my %in_header = map {$_ => 1} @header;
@@ -68,6 +71,32 @@ sub run {
     return \%t;
 }
 
+sub compute_average {
+    my (@r_stats) = @_;
+    my ($first_stat) = @r_stats;
+    my (%minstat, %maxstat);
+    foreach my $key (keys %$first_stat){
+        my ($min, $max, $sum, $n) = (999999999999,0,0,0);
+        foreach my $stat (@r_stats){
+            my $time = $stat->{$key};
+            if (!defined $time or $time eq 'skip'){
+            } else {
+                $n++;
+                $sum += $time;
+                $max = $time if $time > $max;
+                $min = $time if $time < $min;
+            }
+        }
+        if ($sum == 0 && (!defined $first_stat->{$key} or $first_stat->{$key} eq 'skip')){
+        } else {
+            $first_stat->{$key} = sprintf '%.3f', $sum/$n;
+            $minstat{$key} = $min;
+            $maxstat{$key} = $max;
+        }
+    }
+    return ($first_stat, \%minstat, \%maxstat);
+}
+
 warn "IN=$IN\n";
 my @results;
 my $is_other = 0;
@@ -78,11 +107,17 @@ foreach my $exp (@experiments){
         warn "No command for '$exp' defined. Skipping.\n";
         next EXP;
     }
-    warn "Testing '$exp' ($command)...\n";
-    my $stats = run($command);
+    my @r_stats;
+    foreach my $repeat (1..$REPEATS){
+        warn "Testing '$exp' ($command)\nrepeat#$repeat ...\n";
+        push @r_stats, run($command);
+    }
+    my ($stats, $min, $max) = compute_average(@r_stats);
     my $other = join ', ', map {$in_header{$_} ? () : "$_=".$stats->{$_} } keys %$stats;
     $is_other = 1 if $other;
     push @results, [$exp, @$stats{@header}, $other];
+    push @results, ["$exp-min", @$min{@header}, ''];
+    push @results, ["$exp-max", @$max{@header}, ''];
 }
 
 if (!$is_other){
