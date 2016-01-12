@@ -1,0 +1,10 @@
+# task: remove the third node in the tree
+# what's tested:
+#  - the whole subtree of the deleted node disappears
+#  - the remaining nodes are reordered (there's a malicious non-projectivity)
+1	aaa	x	x	x	x	3	x	x
+2	bbb	x	x	x	x	0	x	x
+3	ccc	x	x	x	x	2	x	x
+4	ddd	x	x	x	x	3	x	x
+5	eee	x	x	x	x	2	x	x
+

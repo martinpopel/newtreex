@@ -16,9 +16,16 @@ class Document(object):
     def __iter__(self):
         return iter(self.bundles)
 
-    def load(self,filename):
+    def load(self,args):
+        
+        fh = None
 
-        fh = open(filename, 'r')
+        try:
+            fh = args['filehandle']
+        except:
+            filename = args['filename']
+            fh = open(filename, 'r')
+
         fh = codecs.getreader('utf8')(fh)
 
         nodes = []
@@ -40,11 +47,14 @@ class Document(object):
                     bundle.trees.append(root)
 
                 columns = line.strip().split('\t')
+
+#                print "Number of columns:"+str(len(columns))
+
 #                attrnames = ["ord", "form", "lemma", "upostag", "xpostag", "feats", "head", "deprel", "deps", "misc"]
                 node = Node()
                 nodes.append(node)
 
-                for index in xrange(0,len(columns)-1):
+                for index in xrange(0,len(Document.attrnames)):
                     setattr( node, Document.attrnames[index], columns[index] )
 
                 try:  # TODO: kde se v tomhle sloupecku berou podtrzitka
@@ -57,6 +67,7 @@ class Document(object):
                 except ValueError:
                     node.ord = 0
 
+
             else: # an empty line is guaranteed even after the last sentence in a conll-u file
 
                 nodes[0]._aux['descendants'] = nodes[1:]
@@ -68,22 +79,28 @@ class Document(object):
                 comment = ''
 
 
-    def store(self,filename):
+    def store(self,args):
 
-#        fh = open(filename, 'r')
-#        fh = codecs.getreader('utf8')(fh)
-
-        fh = codecs.open(filename,"w","utf-8")
-
+        try:
+            fh = args['filehandle']
+        except:
+            filename = args['filename']
+            fh = codecs.open(filename,'w','utf-8')
 
         for bundle in self:
             for root in bundle:
                 fh.write(root._aux['comment'])
 
                 for node in root.descendants():
+
                     values = [ getattr(node,attrname) for attrname in Document.attrnames ]
                     values[0] = str(values[0]) # ord
-                    values[6] = str(values[6]) # head
+
+                    try:
+                        values[6] = str(node.parent.ord)
+                    except:
+                        values[6] = '0'
+
                     fh.write('\t'.join(values) )
                     fh.write('\n')
 

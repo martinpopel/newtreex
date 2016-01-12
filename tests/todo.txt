@@ -36,3 +36,8 @@ universal features
 - memory leaks
 
 - tests of command-line execution (treex/bin/t/treexrun.t)
+
+unicode:
+- check that strings (form, lemma) are properly encoded after loading
+a document from a file, and vice versa, values filled by a source code
+are properly encoded after storing into a file

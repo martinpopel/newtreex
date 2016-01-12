@@ -33,7 +33,6 @@ class Node(object):
         self._aux = {}
 
         for name in data:
-#            print "setting "+str(name)+" to "+str(data[name])
             setattr(self,name,data[name])
 
     @property
@@ -71,6 +70,7 @@ class Node(object):
         descendants = [self]
         for child in self.children:
             descendants.extend(child._unordered_descendants_using_children())
+        return descendants
         
     def root(self):
         node = self
@@ -78,18 +78,28 @@ class Node(object):
             node = node.parent
         return node
 
+    def is_root(self):
+        return not self.parent
+
     def _update_ordering(self):
          """ update the ord attribute in all nodes and update the list or descendants stored in the tree root (after node removal or addition) """
-         root = self.root
-         descendants = sorted( [node for node in root._unordered_descendants_using_children() if node != root] , key=attrgetter('ord') )
+         root = self.root()
 
-         for ord in range(1,len(root._aux['descendants'])):
-             descendants[ord].ord = ord
+         descendants = sorted( [node for node in root._unordered_descendants_using_children() if node != root] ,
+                               key=attrgetter('ord') )
 
          root._aux['descendants'] = descendants
-             
+
+         for ord in range(0,len(root._aux['descendants'])):
+             descendants[ord].ord = ord+1
+
+            
 
     def remove(self):
-        self.parent._children = [ child for child in self.parent._children if child != self ]
-        self.parent._update_ordering
 
+        self.parent._children = [ child for child in self.parent._children if child != self ]
+        self.parent._update_ordering()
+
+    def reorder(self,new_ord):
+        self.ord = new_ord
+        
