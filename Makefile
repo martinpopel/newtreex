@@ -19,11 +19,11 @@ data:
 
 .python-install:
 	virtualenv --version || sudo pip install virtualenv
-	export PYTHONPATH=`pwd`/python/pytreex/
-	cd python
-	virtualenv venv
-	source venv/bin/activate
-	pip install unidecode pyyaml
+	export PYTHONPATH=`pwd`/python/pytreex/ &&\
+	cd python &&\
+	virtualenv venv &&\
+	source venv/bin/activate &&\
+	pip install unidecode pyyaml &&\
 	git clone git@github.com:ufal/pytreex.git
 	touch $@
 
