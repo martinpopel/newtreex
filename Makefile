@@ -25,7 +25,6 @@ data:
 	source venv/bin/activate
 	pip install unidecode pyyaml
 	git clone git@github.com:ufal/pytreex.git
-	cd pytreex && git checkout ud
 	touch $@
 
 .cpp_raw-compile:
