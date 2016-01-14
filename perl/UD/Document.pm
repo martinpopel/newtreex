@@ -10,8 +10,8 @@ use UD::Node;
 #has _bundles => (is=>'ro', builder => sub {[]});
 
 sub new {
-    my ($class) = @_;
-    my $self = {_bundles=>[]};
+    my ($class, $implementation) = @_;
+    my $self = {_bundles=>[], implementation => $implementation || ''};
     return bless $self, $class;
 }
 

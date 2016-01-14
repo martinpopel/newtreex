@@ -9,14 +9,21 @@ from __future__ import unicode_literals
 __author__ = "Martin Popel"
 __date__ = "2015"
 
-
-
 import sys
-import random
 from pytreex.core.document import Document
 from pytreex.core.exception import RuntimeException
 from pytreex.block.read.conllu import ReadCoNLLU
 from pytreex.block.write.conllu import WriteCoNLLU
+
+
+seed = 42;
+maxseed = 2**32;
+def myrand(modulo):
+    global seed
+    seed = (1103515245 * seed + 12345) % maxseed;
+    return seed % modulo;
+
+
 conllu_reader = ReadCoNLLU(None, dict())
 conllu_writer = WriteCoNLLU(None, {'to':sys.argv[2], 'language':'unk'})
 print("init")
@@ -55,7 +62,7 @@ for bundle in doc.bundles:
     for zone in bundle.get_all_zones():
         nodes = zone.atree.get_descendants(ordered=1)
         for node in nodes:
-            rand_index = random.randint(0,len(nodes)-1)
+            rand_index = myrand(len(nodes))
             try:
                 node.parent = nodes[rand_index]
             except RuntimeException:
@@ -65,7 +72,7 @@ print("rehang")
 for bundle in doc.bundles:
     for zone in bundle.get_all_zones():
         for node in zone.atree.get_descendants(ordered=1):
-            if random.random() < 0.1:
+            if myrand(10) == 0:
                 try:
                     node.remove()
                 # if the node was already deleted, Pytreex raises a bit unintuitive exception
@@ -76,7 +83,7 @@ print("remove")
 for bundle in doc.bundles:
     for zone in bundle.get_all_zones():
         for node in zone.atree.get_descendants(ordered=1):
-            if random.random() < 0.1:
+            if myrand(10) == 0:
                 node.create_child(data={'form': 'x', 'lemma': 'x'}).shift_after_subtree(node)
 print("add")
 
@@ -84,10 +91,10 @@ for bundle in doc.bundles:
     for zone in bundle.get_all_zones():
         nodes = zone.atree.get_descendants(ordered=1)
         for node in nodes:
-            rand_index = random.randint(0,len(nodes)-1)
-            if random.random() < 0.1:
+            rand_index = myrand(len(nodes))
+            if myrand(10) == 0:
                 # Catch an exception if nodes[rand_index] is a descendant of $node
                 node.shift_after_node(nodes[rand_index])
-            elif random.random() < 0.1:
+            elif myrand(10) == 0:
                 node.shift_before_subtree(nodes[rand_index], without_children=1)
 print("reorder")
