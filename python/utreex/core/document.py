@@ -45,6 +45,7 @@ class Document(object):
                     bundle = Bundle()
                     self.bundles.append(bundle)
                     root = Node()
+                    root.ord = 0
                     root._aux['comment'] = comment # TODO: ulozit nekam poradne
                     nodes = [root]
                     bundle.trees.append(root)

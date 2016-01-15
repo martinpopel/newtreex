@@ -12,7 +12,7 @@ import random # bude nahrazeno pseudonahodnosti
 import os
 
 sys.path.append( os.path.dirname(os.path.abspath(__file__)) + '/utreex/')
-from utreex.core.document import Document
+from utreex.core.document import Document, Node
 from utreex.core.node import RuntimeException
 
 
@@ -76,11 +76,17 @@ for bundle in doc:
 
 print("remove")
 
-#for bundle in doc.bundles:
-#    for zone in bundle.get_all_zones():
-#        for node in zone.atree.get_descendants(ordered=1):
-#            if random.random() < 0.1:
-#                node.create_child(data={'form': 'x', 'lemma': 'x'}).shift_after_subtree(node)
+for bundle in doc:
+    for root in bundle:
+        for node in root.descendants():
+            pass
+            if random.random() < 0.1:
+                child = Node()
+                child.ord = 100000 # TODO: silly
+                child.set_parent(node)
+                child.shift_after(node)
+                child.lemma="x"
+                child.form="x"
 
 print("add")
 

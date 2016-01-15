@@ -91,7 +91,7 @@ class Node(object):
 
 
     def descendants(self):
-        if self._aux['descendants']:
+        if self.is_root:
             return self._aux['descendants']
         else:
             return self._descendants_using_children()
@@ -130,6 +130,6 @@ class Node(object):
         self.parent._children = [ child for child in self.parent._children if child != self ]
         self.parent._update_ordering()
 
-    def reorder(self,new_ord):
-        self.ord = new_ord
+    def shift_after(self, reference_node):
+        pass
         
