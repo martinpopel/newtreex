@@ -75,27 +75,30 @@ sub run {
 sub compute_average {
     my (@r_stats) = @_;
     my ($first_stat) = @r_stats;
-    my (%minstat, %maxstat);
+    my (%minstat, %maxstat, %medstat, %devstat, %rsdstat);
     foreach my $key (keys %$first_stat){
-        my ($min, $max, $sum, $n) = (999999999999,0,0,0);
-        foreach my $stat (@r_stats){
-            my $time = $stat->{$key};
-            if (!defined $time or $time eq 'skip'){
-            } else {
-                $n++;
-                $sum += $time;
-                $max = $time if $time > $max;
-                $min = $time if $time < $min;
-            }
+        my @values = sort {$a <=> $b} grep {defined $_ && $_ ne 'skip'} map {$_->{$key}} @r_stats;
+        my $mid = int @values/2;
+        my ($min, $median, $max) = @values[0,$mid, -1];
+        my ($sum, $sqsum) = (0, 0);
+        for (@values){
+            $sum += $_;
+            $sqsum += $_**2;
         }
+        my $mean = $sum / @values;
+        my $stdev = sqrt( ($sqsum/@values) - ($mean**2));
+        my $relstdev = $stdev / $mean;
         if ($sum == 0 && (!defined $first_stat->{$key} or $first_stat->{$key} eq 'skip')){
         } else {
-            $first_stat->{$key} = sprintf '%.3f', $sum/$n;
+            $first_stat->{$key} = sprintf '%.3f', $mean;
             $minstat{$key} = $min;
             $maxstat{$key} = $max;
+            $medstat{$key} = $median;
+            $devstat{$key} = sprintf '%.3f', $stdev;
+            $rsdstat{$key} = sprintf '%.3f', $relstdev;
         }
     }
-    return ($first_stat, \%minstat, \%maxstat);
+    return ($first_stat, \%minstat, \%maxstat, \%medstat, \%devstat, \%rsdstat);
 }
 
 warn "IN=$IN\n";
@@ -113,12 +116,15 @@ foreach my $exp (@experiments){
         warn "Testing '$exp' ($command)\nrepeat#$repeat ...\n";
         push @r_stats, run($command);
     }
-    my ($stats, $min, $max) = compute_average(@r_stats);
+    my ($stats, $min, $max, $med, $dev, $rsd) = compute_average(@r_stats);
     my $other = join ', ', map {$in_header{$_} ? () : "$_=".$stats->{$_} } keys %$stats;
     $is_other = 1 if $other;
-    push @results, [$exp, @$stats{@header}, $other];
+    push @results, ["$exp-avg", @$stats{@header}, $other];
     push @results, ["$exp-min", @$min{@header}, ''];
+    push @results, ["$exp-med", @$med{@header}, ''];
     push @results, ["$exp-max", @$max{@header}, ''];
+    #push @results, ["$exp-dev", @$dev{@header}, ''];
+    push @results, ["$exp-rsd", @$dev{@header}, ''];
 }
 
 if (!$is_other){
