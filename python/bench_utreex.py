@@ -70,14 +70,9 @@ print("rehang")
 
 for bundle in doc:
     for root in bundle:
-        pass
-#        for node in zone.atree.get_descendants(ordered=1):
-#            if random.random() < 0.1:
-#                try:
-#                    node.remove()
-#                # if the node was already deleted, Pytreex raises a bit unintuitive exception
-#                except KeyError:
-#                    pass
+        for node in root.descendants():
+            if random.random() < 0.1:
+                node.remove()
 
 print("remove")
 
