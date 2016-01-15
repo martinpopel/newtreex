@@ -46,3 +46,6 @@ benchmark: data .perl-install .cpp_raw-compile
 	export PYTHONPATH=`pwd`/python/pytreex/ &&\
 	source python/venv/bin/activate &&\
 	./benchmark.pl --input=$(DATA) --repeats=$(REPEATS) $(EXPS) | tee results_$(DATASHORT).txt
+
+bu: # a quick test of utreex benchmarked
+	./benchmark.pl --input=$(DATA) --repeats=1 utreex | tee results_$(DATASHORT).txt

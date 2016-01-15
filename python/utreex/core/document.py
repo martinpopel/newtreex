@@ -36,6 +36,9 @@ class Document(object):
             if re.search('^#',line):
                 comment = comment + line
 
+            elif re.search('^\d+\-',line):  # HACK: multiword tokens temporarily avoided
+                pass
+
             elif line.strip():
 
                 if not nodes:
@@ -48,9 +51,6 @@ class Document(object):
 
                 columns = line.strip().split('\t')
 
-#                print "Number of columns:"+str(len(columns))
-
-#                attrnames = ["ord", "form", "lemma", "upostag", "xpostag", "feats", "head", "deprel", "deps", "misc"]
                 node = Node()
                 nodes.append(node)
 
@@ -73,6 +73,7 @@ class Document(object):
                 nodes[0]._aux['descendants'] = nodes[1:]
    
                 for node in nodes[1:]:
+
                     node.set_parent( nodes[node.head] )
                 
                 nodes = []

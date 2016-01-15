@@ -2,6 +2,27 @@
 
 from operator import attrgetter
 
+# ----- nasledujici jen kvuli tomu, abych mohl poustet benchmark (pri prevesovani nastavaji cykly a ocekava se RuntimeException) ---
+
+class TreexException(Exception):
+    "Common ancestor for Treex exception"
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return 'TREEX-FATAL: ' + self.__class__.__name__ + ': ' + self.message
+
+class RuntimeException(TreexException):
+    "Block runtime exception"
+
+    def __init__(self, text):
+        TreexException.__init__(self, text)
+
+# ---------------------------------------------------------------------------------------------
+
+
+
+
 class Node(object):
 
     __slots__ = [ 
@@ -44,21 +65,30 @@ class Node(object):
     def parent(self):
         return self._parent
 
-    def set_parent(self,parent):
+    def set_parent( self, new_parent ):
+
+        if self.parent == new_parent:
+            return
+        
+        elif self == new_parent:
+            raise RuntimeException('setting the parent would lead to a loop: '+str(self))
 
         if self._parent:
             old_parent = self.parent
 
-            climbing_node = old_parent
+            climbing_node = new_parent
+
             while climbing_node:
                 if climbing_node == self:
-                    raise SystemExit('setting the parent would lead to a loop: '+self)
+                    raise RuntimeException('setting the parent would lead to a loop: '+str(self))
                 climbing_node = climbing_node.parent
 
             old_parent._children = [node for node in old_parent._children if node != self ]
 
-        self._parent = parent
-        parent._children = sorted( parent._children + [self], key=attrgetter('ord') )
+        self._parent =new_parent
+        new_parent._children = sorted( new_parent._children + [self], key=attrgetter('ord') )
+
+
 
     def descendants(self):
         if self._aux['descendants']:

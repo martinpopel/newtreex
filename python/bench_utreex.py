@@ -13,6 +13,8 @@ import os
 
 sys.path.append( os.path.dirname(os.path.abspath(__file__)) + '/utreex/')
 from utreex.core.document import Document
+from utreex.core.node import RuntimeException
+
 
 print("init")
 
@@ -26,17 +28,12 @@ doc.store({'filename':sys.argv[2]})
 
 print("save")
 
-count=0
-
 for bundle in doc:
     for root in bundle:
         for node in root.descendants():
-            count=count+1
             pass
 
 print("iter")
-
-sys.stderr.write("POCET UZLU="+str(count))
 
 for bundle in doc:
     for root in bundle:
@@ -59,15 +56,15 @@ for bundle in doc:
 
 print("write")
 
-#for bundle in doc.bundles:
-#    for zone in bundle.get_all_zones():
-#        nodes = zone.atree.get_descendants(ordered=1)
-#        for node in nodes:
-#            rand_index = random.randint(0,len(nodes)-1)
-#            try:
-#                node.parent = nodes[rand_index]
-#            except RuntimeException:
-#                pass
+for bundle in doc:
+    for root in bundle:
+        nodes = root.descendants()
+        for node in nodes:
+            rand_index = random.randint(0,len(nodes)-1)
+            try:
+                node.set_parent(nodes[rand_index])
+            except RuntimeException:
+                pass
 
 print("rehang")
 
