@@ -79,6 +79,7 @@ sub compute_average {
     my (%minstat, %maxstat, %medstat, %devstat, %rsdstat);
     foreach my $key (keys %$first_stat){
         my @values = sort {$a <=> $b} grep {defined $_ && $_ ne 'skip'} map {$_->{$key}} @r_stats;
+        next if !@values;
         my $mid = int @values/2;
         my ($min, $median, $max) = @values[0,$mid, -1];
         my ($sum, $sqsum) = (0, 0);
@@ -89,15 +90,12 @@ sub compute_average {
         my $mean = $sum / @values;
         my $stdev = sqrt( ($sqsum/@values) - ($mean**2));
         my $relstdev = $stdev / $mean;
-        if ($sum == 0 && (!defined $first_stat->{$key} or $first_stat->{$key} eq 'skip')){
-        } else {
-            $first_stat->{$key} = sprintf '%.3f', $mean;
-            $minstat{$key} = $min;
-            $maxstat{$key} = $max;
-            $medstat{$key} = $median;
-            $devstat{$key} = sprintf '%.3f', $stdev;
-            $rsdstat{$key} = sprintf '%.3f', $relstdev;
-        }
+        $first_stat->{$key} = sprintf '%.3f', $mean;
+        $minstat{$key} = $min;
+        $maxstat{$key} = $max;
+        $medstat{$key} = $median;
+        $devstat{$key} = sprintf '%.3f', $stdev;
+        $rsdstat{$key} = sprintf '%.3f', $relstdev;
     }
     return ($first_stat, \%minstat, \%maxstat, \%medstat, \%devstat, \%rsdstat);
 }
@@ -120,12 +118,17 @@ foreach my $exp (@experiments){
     my ($stats, $min, $max, $med, $dev, $rsd) = compute_average(@r_stats);
     my $other = join ', ', map {$in_header{$_} ? () : "$_=".$stats->{$_} } keys %$stats;
     $is_other = 1 if $other;
-    push @results, ["$exp-avg", @$stats{@header}, $other];
-    push @results, ["$exp-min", @$min{@header}, ''];
-    push @results, ["$exp-med", @$med{@header}, ''];
-    push @results, ["$exp-max", @$max{@header}, ''];
-    #push @results, ["$exp-dev", @$dev{@header}, ''];
-    push @results, ["$exp-rsd", @$dev{@header}, ''];
+
+    if ($REPEATS > 1) {
+        push @results, ["$exp-avg", @$stats{@header}, $other];
+        push @results, ["$exp-min", @$min{@header}, ''];
+        push @results, ["$exp-med", @$med{@header}, ''] if $REPEATS > 2;
+        push @results, ["$exp-max", @$max{@header}, ''];
+        #push @results, ["$exp-dev", @$dev{@header}, ''];
+        push @results, ["$exp-rsd", @$dev{@header}, ''];
+    } else {
+        push @results, [$exp, @$stats{@header}, $other];
+    }
 }
 
 if (!$is_other){

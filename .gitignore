@@ -1,6 +1,8 @@
 *.pyc
+*.class
 .python-install
 .perl-install
+results_*
 python/venv/
 python/pytreex/
 data
