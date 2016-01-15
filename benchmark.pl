@@ -23,7 +23,8 @@ my @COMMANDS = (
     old_Treex  => "perl/bench_old-treex.pl $IN /tmp/out.conllu",
     pytreex    => "python -u python/bench_pytreex.py $IN /tmp/out.conllu",
     utreex     => "python -u python/bench_utreex.py $IN /tmp/out.conlluzz",
-    perl_plain => "perl/bench_plain.pl $IN /tmp/out.conllu",
+    perlCa     => "perl/bench.pl $IN /tmp/out.conllu Ca",
+    perlCl     => "perl/bench.pl $IN /tmp/out.conllu Cl",
     java       => "java -jar java/build/libs/newtreex.jar $IN /tmp/out.conllu",
     cpp_raw    => "cpp_raw/benchmark $IN /tmp/out.conllu",
 );

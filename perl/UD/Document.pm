@@ -4,7 +4,8 @@ use warnings;
 use autodie;
 use Scalar::Util qw(weaken);
 use UD::Bundle;
-use UD::Node;
+use UD::NodeCa;
+use UD::NodeCl;
 
 #use Moo;
 #has _bundles => (is=>'ro', builder => sub {[]});
@@ -34,6 +35,7 @@ sub load_conllu {
     my $root = $bundle->create_tree(); # {selector=>''}
     my @nodes = ($root);
     my @parents = (0);
+    my $class = 'UD::Node' . $self->{implementation};
     my ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc, $rest );
     LINE:
     while (my $line = <$fh>) {
@@ -56,7 +58,7 @@ sub load_conllu {
                 # TODO multiword tokens
                 next LINE;
             }
-            my $new_node = UD::Node->new( _root=>$root,
+            my $new_node = $class->new( _root=>$root,
                 ord=>scalar(@nodes), form=>$form, lemma=>$lemma, upos=>$upos, xpos=>$xpos, feats=>$feats, deprel=>$deprel, deps=>$deps, misc=>$misc);
             push @nodes, $new_node;
             push @parents, $head;

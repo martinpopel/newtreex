@@ -4,7 +4,8 @@ use warnings;
 use autodie;
 use Carp;
 use Scalar::Util qw(weaken);
-use UD::Node;
+use UD::NodeCa;
+use UD::NodeCl;
 
 #use Moo;
 #has trees => (is=>'ro', builder => sub {[]});
@@ -31,7 +32,8 @@ sub create_tree {
     confess "Tree with selector '$selector' already exists" if $self->{_trees}{$selector};
     # TODO $args->{language} ||= 'unk' or even delete $args->{language}
     # TODO reuse the hash $args
-    my $root = UD::Node->new(%$args);
+    my $class = 'UD::Node' . $self->{_doc}{implementation};
+    my $root = $class->new(%$args);
     weaken( $root->{_root} = $root );
     weaken( $root->{_bundle} = $self );
     $root->{ord} = 0;

@@ -1,13 +1,11 @@
-package UD::Node;
+package UD::NodeCl;
 use strict;
 use warnings;
 use Carp qw(confess cluck);
 use Scalar::Util qw(weaken);
 use List::Util qw(first);
 
-# TODO: 
 use Class::XSAccessor {
-#my $spec = {
     constructor => 'new',
     setters => { map {("set_$_" => $_)} qw(form lemma upos xpos deprel feats deps misc ord)},
     getters => {
@@ -15,27 +13,6 @@ use Class::XSAccessor {
          (map {($_ => "_$_")} qw(parent root)),
      },
 };
-
-=pod comment
-sub new {
-    my $class = shift;
-    return bless {@_}, $class;
-}
-
-my @ATTRS = qw(form lemma upos xpos deprel feats deps misc);
-foreach my $attr (@ATTRS, 'ord'){
-    eval "sub $attr {\$_[0]->{$attr}}";
-}
-foreach my $attr (@ATTRS){
-    eval "sub set_$attr {\$_[0]->{$attr} = \$_[1];}";
-}
-
-sub parent { $_[0]->{_parent}}
-
-=cut
-
-# use Moo;
-# has _parent => (weak_ref => 1,);
 
 sub set_parent {
     my ($self, $parent, $args) = @_;
@@ -49,31 +26,36 @@ sub set_parent {
         confess "Bundle $b_id: Attempt to set parent of $n_id to the node $p_id, which would lead to a cycle.";
     }
 
-    my $orig_parent = $self->{_parent};
-    if ($orig_parent){
-        $orig_parent->{_children} = [grep {$_ != $self} @{$orig_parent->{_children}}];
-    }
+    $self->cut() if $self->{_parent};
+
     weaken( $self->{_parent} = $parent );
     weaken( $self->{_root} = $parent->{_root} ) if !$self->{_root};
-    $parent->{_children} ||= [];
-    push @{$parent->{_children}}, $self;  
+    
+    my $prev = $parent->{_lastchild};
+    $parent->{_lastchild} = $self;
+    if ($prev){
+        $prev->{_nextsibling} = $self;
+        weaken( $self->{_prevsibling} = $prev );
+    } else {
+        $parent->{_firstchild} = $self;
+    }
     return;
 }
 
-sub _set_parent_nocheck {
-    my ($self, $parent) = @_;
-
-    my $orig_parent = $self->{_parent};
-    if ($orig_parent){
-        $orig_parent->{_children} = [grep {$_ != $self} @{$orig_parent->{_children}}];
+sub cut {
+    my ($self) = @_;
+    my $parent = $self->{_parent};
+    if ($parent && $self == $parent->{_firstchild}) {
+        $parent->{_firstchild} = $self->{_nextsibling};
     }
-    weaken( $self->{_parent} = $parent );
-    weaken( $self->{_root} = $parent->{_root} ) if !$self->{_root};
-    $parent->{_children} ||= [];
-    push @{$parent->{_children}}, $self;
-    return;
+    if ($parent && $self == $parent->{_lastchild}) {
+        $parent->{_lastchild} = $self->{_prevsibling};
+    }
+    $self->{_prevsibling}{_nextsibling} = $self->{_nextsibling} if $self->{_prevsibling};
+    $self->{_nextsibling}{_prevsibling} = $self->{_prevsibling} if $self->{_nextsibling};
+    $self->{_parent} = $self->{_prevsibling} = $self->{_nextsibling} = undef;
+    return $self;
 }
-
 
 sub remove {
     my ($self, $arg_ref) = @_;
@@ -110,7 +92,8 @@ sub remove {
 
     # Disconnect the node from its parent (& siblings) and delete all attributes
     # It actually does: $self->cut(); undef %$_ for ($self->descendants(), $self);
-    $parent->{_children} = [grep {$_ != $self} @{$parent->{_children}}];
+    #$parent->{_children} = [grep {$_ != $self} @{$parent->{_children}}];
+    $self->cut();
 
     # TODO: order normalizing can be done in a more efficient way
     # (update just the following ords)
@@ -125,30 +108,49 @@ sub remove {
 
 }
 
-sub _normalize_node_ordering {
-    my $self = shift;
-    confess 'Ordering normalization can be applied only on root nodes!' if $self->parent;
-    my $new_ord = 1;
-    foreach my $node ( $self->descendants ) {
-        $node->{ord} = $new_ord++;
+sub children {
+    my ($self) = @_;
+    my @children=();
+    my $child=$self->{_firstchild};
+    while ($child) {
+        push @children, $child;
+        $child = $child->{_nextsibling};
     }
-    return;
+    return @children;
 }
 
 sub create_child {
     my $self = shift;
-    my $child = UD::Node->new(@_); #ref($self)->new(@_);
+    my $child = UD::NodeCl->new(@_); #ref($self)->new(@_);
     $child->set_parent($self);
     return $child;
 }
 
-sub children {
+sub _descendantsF {
     my ($self) = @_;
-    my $ch = $self->{_children};
-    return $ch ? @$ch : ();
+    my @descs = ();
+    my @stack = $self->{_firstchild} || ();
+    while (@stack) {
+        my $node = pop @stack;
+        push @descs, $node;
+        push @stack, $node->{_nextsibling} || ();
+        push @stack, $node->{_firstchild} || ();
+    }
+    return @descs;
 }
 
-sub _descendantsF {
+sub descendantsPML {
+  my $self = $_[0];
+  my @kin=();
+  my $desc=$self->following($self);
+  while ($desc) {
+    push @kin, $desc;
+    $desc=$desc->following($self);
+  }
+  return @kin;
+}
+
+sub _descendantsFOld {
     my ($self) = @_;
     my @descs = ();
     my @stack = $self->children;
@@ -165,12 +167,13 @@ sub descendants {
     my $except = $args ? ($args->{except}||0) : 0;
     return () if $self == $except;
     my @descs = ();
-    my @stack = $self->children;
+    my @stack = $self->{_firstchild} || ();
     while (@stack) {
         my $node = pop @stack;
+        push @stack, $node->{_nextsibling} || ();
         next if $node == $except;
         push @descs, $node;
-        push @stack, $node->children;
+        push @stack, $node->{_firstchild} || ();
     }
 
     # TODO nicer code
@@ -181,7 +184,7 @@ sub descendants {
             return $first;
         }
         if ($args->{last_only}){
-            my ($last) = reverse sort {$a->{ord} <=> $b->{ord}} @descs;
+            my ($last) = sort {$b->{ord} <=> $a->{ord}} @descs;
             return $last;
         }
     }
@@ -210,6 +213,16 @@ sub is_root { !$_[0]->{_parent}; }
 
 sub log_fatal { confess @_; }
 sub log_warn { cluck @_; }
+
+sub _normalize_node_ordering {
+    my $self = shift;
+    confess 'Ordering normalization can be applied only on root nodes!' if $self->parent;
+    my $new_ord = 1;
+    foreach my $node ( $self->descendants ) {
+        $node->{ord} = $new_ord++;
+    }
+    return;
+}
 
 sub _check_shifting_method_args {
     my ( $self, $reference_node, $arg_ref ) = @_;
@@ -355,20 +368,6 @@ sub _shift_to_node {
         }
     }
     return;
-}
-
-
-
-# TODO: How to do this in an elegant way?
-# Unless we find a better way, we must disable two perlcritics
-package UD::Node::Removed;    ## no critic (ProhibitMultiplePackages)
-use Carp;
-
-sub AUTOLOAD {                         ## no critic (ProhibitAutoloading)
-    our $AUTOLOAD;
-    if ( $AUTOLOAD !~ /DESTROY$/ ) {
-        confess "You cannot call any methods on removed nodes, but have called $AUTOLOAD";
-    }
 }
 
 1;
