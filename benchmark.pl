@@ -22,6 +22,7 @@ my @COMMANDS = (
     #dummy     => './dummy.pl',
     old_Treex  => "perl/bench_old-treex.pl $IN /tmp/out.conllu",
     pytreex    => "python -u python/bench_pytreex.py $IN /tmp/out.conllu",
+    utreex     => "python -u python/bench_utreex.py $IN /tmp/out.conlluzz",
     perl_plain => "perl/bench_plain.pl $IN /tmp/out.conllu",
     java       => "java -jar java/build/libs/newtreex.jar $IN /tmp/out.conllu",
     cpp_raw    => "cpp_raw/benchmark $IN /tmp/out.conllu",
