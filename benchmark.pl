@@ -124,8 +124,8 @@ foreach my $exp (@experiments){
         push @results, ["$exp-min", @$min{@header}, ''];
         push @results, ["$exp-med", @$med{@header}, ''] if $REPEATS > 2;
         push @results, ["$exp-max", @$max{@header}, ''];
-        #push @results, ["$exp-dev", @$dev{@header}, ''];
-        push @results, ["$exp-rsd", @$dev{@header}, ''];
+        push @results, ["$exp-dev", @$dev{@header}, ''];
+        push @results, ["$exp-rsd", @$rsd{@header}, ''];
     } else {
         push @results, [$exp, @$stats{@header}, $other];
     }
