@@ -92,7 +92,10 @@ class Node(object):
 
     def descendants(self):
         if self.is_root:
-            return self._aux['descendants']
+            try:
+                return self._aux['descendants']
+            except:
+                return []  # TODO: why the hell descendants disappeared from some roots
         else:
             return self._descendants_using_children()
 
@@ -123,13 +126,21 @@ class Node(object):
          for ord in range(0,len(root._aux['descendants'])):
              descendants[ord].ord = ord+1
 
-            
-
     def remove(self):
 
         self.parent._children = [ child for child in self.parent._children if child != self ]
         self.parent._update_ordering()
 
-    def shift_after(self, reference_node):
-        pass
-        
+    def shift_subtree_after(self, reference_node):
+        nodes_to_move = [self] + self.descendants()
+
+        for node_to_move in nodes_to_move:
+            node_to_move.ord = reference_node.ord + 0.5 + (node_to_move.ord-self.ord)/10000
+        self._update_ordering
+
+    def shift_after(self, reference_node):  # TODO, silly, unify with the one above
+        nodes_to_move = [self]
+
+        for node_to_move in nodes_to_move:
+            node_to_move.ord = reference_node.ord + 0.5 + (node_to_move.ord-self.ord)/10000
+            self._update_ordering

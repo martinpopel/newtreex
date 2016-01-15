@@ -90,15 +90,15 @@ for bundle in doc:
 
 print("add")
 
-#for bundle in doc.bundles:
-#    for zone in bundle.get_all_zones():
-#        nodes = zone.atree.get_descendants(ordered=1)
-#        for node in nodes:
-#            rand_index = random.randint(0,len(nodes)-1)
-#            if random.random() < 0.1:
+for bundle in doc:
+    for root in bundle:
+        nodes = root.descendants()
+        for node in nodes:
+            rand_index = random.randint(0,len(nodes)-1)
+            if random.random() < 0.1:
 #                # Catch an exception if nodes[rand_index] is a descendant of $node
-#                node.shift_after_node(nodes[rand_index])
-#            elif random.random() < 0.1:
-#                node.shift_before_subtree(nodes[rand_index], without_children=1)
+                node.shift_subtree_after(nodes[rand_index])
+            elif random.random() < 0.1:
+                node.shift_after(nodes[rand_index])  # TODO: dodelat, tady se chce neco trochu jineho
 
 print("reorder")
