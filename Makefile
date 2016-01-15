@@ -7,6 +7,7 @@ REPEATS=10
 help:
 	# See README.md (https://github.com/martinpopel/newtreex)
 	# Usage:
+	# make install
 	# make benchmark EXPS='old_Treex pytreex perlCa perlCl java cpp_raw' DATA=data/UD_Czech/cs-ud-train-l.conllu REPEATS=5
 
 data:
@@ -42,7 +43,9 @@ data:
 #.old-treex-install:
 #	cpanm Treex::Core
 
-benchmark: data .perl-install .cpp_raw-compile
+install:  data .perl-install .python-install .cpp_raw-compile
+
+benchmark:
 	export PYTHONPATH=`pwd`/python/pytreex/ &&\
 	source python/venv/bin/activate &&\
 	./benchmark.pl --input=$(DATA) --repeats=$(REPEATS) $(EXPS) | tee results_$(DATASHORT).txt
