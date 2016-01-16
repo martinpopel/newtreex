@@ -7,9 +7,6 @@ use Scalar::Util qw(weaken);
 use UD::NodeCa;
 use UD::NodeCl;
 
-#use Moo;
-#has trees => (is=>'ro', builder => sub {[]});
-
 sub new {
     my ($class, $attrs) = @_;
     $attrs ||= {};
