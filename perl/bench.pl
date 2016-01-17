@@ -7,6 +7,8 @@ use lib "$FindBin::Bin/";
 use Carp;
 use Try::Tiny;
 
+$SIG{INT} = sub {warn "\nbench.pl is ignoring Ctrl+C (SIGINT). Use Ctrl+\\ (SIGQUIT) to exit\n";};
+
 my $seed = 42;
 my $maxseed = 2**32;
 sub myrand {

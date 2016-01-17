@@ -4,11 +4,6 @@ use warnings;
 use autodie;
 use Scalar::Util qw(weaken);
 use UD::Bundle;
-use UD::NodeCa;
-use UD::NodeCl;
-
-#use Moo;
-#has _bundles => (is=>'ro', builder => sub {[]});
 
 sub new {
     my ($class, $implementation) = @_;

@@ -91,8 +91,6 @@ sub remove {
 #     }
 
     # Disconnect the node from its parent (& siblings) and delete all attributes
-    # It actually does: $self->cut(); undef %$_ for ($self->descendants(), $self);
-    #$parent->{_children} = [grep {$_ != $self} @{$parent->{_children}}];
     $self->cut();
 
     # TODO: order normalizing can be done in a more efficient way
@@ -105,7 +103,6 @@ sub remove {
         bless $node, 'UD::Node::Removed';
     }
     return;
-
 }
 
 sub children {
@@ -139,37 +136,15 @@ sub _descendantsF {
     return @descs;
 }
 
-sub descendantsPML {
-  my $self = $_[0];
-  my @kin=();
-  my $desc=$self->following($self);
-  while ($desc) {
-    push @kin, $desc;
-    $desc=$desc->following($self);
-  }
-  return @kin;
-}
-
-sub _descendantsFOld {
-    my ($self) = @_;
-    my @descs = ();
-    my @stack = $self->children;
-    while (@stack) {
-        my $node = pop @stack;
-        push @descs, $node;
-        push @stack, $node->children;
-    }
-    return @descs;
-}
-
 sub descendants {
     my ($self, $args) = @_;
     my $except = $args ? ($args->{except}||0) : 0;
     return () if $self == $except;
     my @descs = ();
     my @stack = $self->{_firstchild} || ();
+    my $node;
     while (@stack) {
-        my $node = pop @stack;
+        $node = pop @stack;
         push @stack, $node->{_nextsibling} || ();
         next if $node == $except;
         push @descs, $node;
@@ -189,16 +164,17 @@ sub descendants {
         }
     }
 
-    # TODO forbid undef ord?
+    # TODO ord is undef when $n->create_child()->shift_after_subtree($n);
     return sort {($a->{ord}||0) <=> ($b->{ord}||0)} @descs;
 }
 
 sub is_descendant_of {
     my ($self, $another_node) = @_;
-    my $parent = $self->parent;
+    return 0 if !$another_node->{_firstchild};
+    my $parent = $self->{_parent};
     while ($parent) {
         return 1 if $parent == $another_node;
-        $parent = $parent->parent;
+        $parent = $parent->{_parent};
     }
     return 0;
 }

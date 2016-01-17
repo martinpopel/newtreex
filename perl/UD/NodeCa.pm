@@ -5,9 +5,7 @@ use Carp qw(confess cluck);
 use Scalar::Util qw(weaken);
 use List::Util qw(first);
 
-# TODO: 
 use Class::XSAccessor {
-#my $spec = {
     constructor => 'new',
     setters => { map {("set_$_" => $_)} qw(form lemma upos xpos deprel feats deps misc ord)},
     getters => {
@@ -15,27 +13,6 @@ use Class::XSAccessor {
          (map {($_ => "_$_")} qw(parent root)),
      },
 };
-
-=pod comment
-sub new {
-    my $class = shift;
-    return bless {@_}, $class;
-}
-
-my @ATTRS = qw(form lemma upos xpos deprel feats deps misc);
-foreach my $attr (@ATTRS, 'ord'){
-    eval "sub $attr {\$_[0]->{$attr}}";
-}
-foreach my $attr (@ATTRS){
-    eval "sub set_$attr {\$_[0]->{$attr} = \$_[1];}";
-}
-
-sub parent { $_[0]->{_parent}}
-
-=cut
-
-# use Moo;
-# has _parent => (weak_ref => 1,);
 
 sub set_parent {
     my ($self, $parent, $args) = @_;
@@ -74,7 +51,6 @@ sub _set_parent_nocheck {
     return;
 }
 
-
 sub remove {
     my ($self, $arg_ref) = @_;
     if ( $self->is_root ) {
@@ -109,7 +85,6 @@ sub remove {
 #     }
 
     # Disconnect the node from its parent (& siblings) and delete all attributes
-    # It actually does: $self->cut(); undef %$_ for ($self->descendants(), $self);
     $parent->{_children} = [grep {$_ != $self} @{$parent->{_children}}];
 
     # TODO: order normalizing can be done in a more efficient way
@@ -122,17 +97,12 @@ sub remove {
         bless $node, 'UD::Node::Removed';
     }
     return;
-
 }
 
-sub _normalize_node_ordering {
-    my $self = shift;
-    confess 'Ordering normalization can be applied only on root nodes!' if $self->parent;
-    my $new_ord = 1;
-    foreach my $node ( $self->descendants ) {
-        $node->{ord} = $new_ord++;
-    }
-    return;
+sub children {
+    my ($self) = @_;
+    my $ch = $self->{_children};
+    return $ch ? @$ch : ();
 }
 
 sub create_child {
@@ -140,12 +110,6 @@ sub create_child {
     my $child = UD::NodeCa->new(@_); #ref($self)->new(@_);
     $child->set_parent($self);
     return $child;
-}
-
-sub children {
-    my ($self) = @_;
-    my $ch = $self->{_children};
-    return $ch ? @$ch : ();
 }
 
 sub _descendantsF {
@@ -183,24 +147,26 @@ sub descendants {
             return $first;
         }
         if ($args->{last_only}){
-            my ($last) = reverse sort {$a->{ord} <=> $b->{ord}} @descs;
+            my ($last) = sort {$b->{ord} <=> $a->{ord}} @descs;
             return $last;
         }
     }
 
-    # TODO forbid undef ord?
+    # TODO ord is undef when $n->create_child()->shift_after_subtree($n);
     return sort {($a->{ord}||0) <=> ($b->{ord}||0)} @descs;
 }
 
 sub is_descendant_of {
     my ($self, $another_node) = @_;
-    my $parent = $self->parent;
+    return 0 if !$another_node->{_children};
+    my $parent = $self->{_parent};
     while ($parent) {
         return 1 if $parent == $another_node;
-        $parent = $parent->parent;
+        $parent = $parent->{_parent};
     }
     return 0;
 }
+
 
 sub bundle { $_[0]->{_root}{_bundle}; }
 
@@ -212,6 +178,16 @@ sub is_root { !$_[0]->{_parent}; }
 
 sub log_fatal { confess @_; }
 sub log_warn { cluck @_; }
+
+sub _normalize_node_ordering {
+    my $self = shift;
+    confess 'Ordering normalization can be applied only on root nodes!' if $self->parent;
+    my $new_ord = 1;
+    foreach my $node ( $self->descendants ) {
+        $node->{ord} = $new_ord++;
+    }
+    return;
+}
 
 sub _check_shifting_method_args {
     my ( $self, $reference_node, $arg_ref ) = @_;

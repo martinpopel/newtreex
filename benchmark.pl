@@ -25,6 +25,7 @@ my @COMMANDS = (
     utreex     => "python -u python/bench_utreex.py $IN /tmp/out.conlluzz",
     perlCa     => "perl/bench.pl $IN /tmp/out.conllu Ca",
     perlCl     => "perl/bench.pl $IN /tmp/out.conllu Cl",
+    #perlClAa   => "perl/bench.pl $IN /tmp/out.conllu ClAa",
     java       => "java -jar java/build/libs/newtreex.jar $IN /tmp/out.conllu",
     cpp_raw    => "cpp_raw/benchmark $IN /tmp/out.conllu",
 );
@@ -40,22 +41,22 @@ if ($HELP){
     exit;
 }
 
-my @header = qw(TOTAL MAXMEM init load save iter iterF read write rehang remove add reorder);
-my %in_header = map {$_ => 1} @header;
+my @HEADER = qw(TOTAL MAXMEM init load save iter iterF read write rehang remove add reorder);
+my %IN_HEADER = map {$_ => 1} @HEADER;
 my @experiments = @ARGV;
-if (!@experiments) {
-    @experiments = @COMMANDS_NAMES;
-}
+@experiments = @COMMANDS_NAMES if !@experiments;
+@experiments = grep {$COMMANDS_HASH{$_} ? 1 : warn("WARN: No command for '$_' defined. Skipping.\n") && 0;} @experiments;
 
 sub run {
     my ($command) = @_;
     my %t;
-    @t{@header} = map {'skip'} @header;
+    @t{@HEADER} = map {'skip'} @HEADER;
     my $maxmem = 0;
     my $start = time;
     my $last = $start;
+    # TODO Ideally we would like 'trap "" SIGINT' for the CHILDPROC,
+    # but we need to know $pid of the process, we want to test with `ps -orss $pid`.
     my $pid = open(CHILDPROC, "$command |");
-    #warn "ps -ovsz,rss,size $pid\n";
     while(<CHILDPROC>){
         my $now = time;
         my $mem = `ps -orss $pid`;
@@ -68,81 +69,102 @@ sub run {
         printf STDERR "%20s %9ss %10sMiB\n", $_, $time, $mem;
         $last = $now;
     }
-    $t{TOTAL} = sprintf '%.3f', time - $start;
+    my $total = sprintf '%.3f', time - $start;
+    printf STDERR "%20s %9ss %10sMiB\n", 'TOTAL', $total, $maxmem;
+    $t{TOTAL} = $total;
     $t{MAXMEM} = $maxmem;
     return \%t;
 }
 
-sub compute_average {
-    my (@r_stats) = @_;
-    my ($first_stat) = @r_stats;
-    my (%minstat, %maxstat, %medstat, %devstat, %rsdstat);
-    foreach my $key (keys %$first_stat){
-        my @values = sort {$a <=> $b} grep {defined $_ && $_ ne 'skip'} map {$_->{$key}} @r_stats;
-        next if !@values;
-        my $mid = int @values/2;
-        my ($min, $median, $max) = @values[0,$mid, -1];
-        my ($sum, $sqsum) = (0, 0);
-        for (@values){
-            $sum += $_;
-            $sqsum += $_**2;
-        }
-        my $mean = $sum / @values;
-        my $stdev = sqrt( ($sqsum/@values) - ($mean**2));
-        my $relstdev = $stdev / $mean;
-        $first_stat->{$key} = sprintf '%.3f', $mean;
-        $minstat{$key} = $min;
-        $maxstat{$key} = $max;
-        $medstat{$key} = $median;
-        $devstat{$key} = sprintf '%.3f', $stdev;
-        $rsdstat{$key} = sprintf '%.3f', $relstdev;
-    }
-    return ($first_stat, \%minstat, \%maxstat, \%medstat, \%devstat, \%rsdstat);
-}
-
-warn "IN=$IN\n";
-my @results;
-my $is_other = 0;
-EXP:
-foreach my $exp (@experiments){
-    my $command = $COMMANDS_HASH{$exp};
-    if (!defined $command){
-        warn "No command for '$exp' defined. Skipping.\n";
-        next EXP;
-    }
-    my @r_stats;
+my %results;
+sub run_all {
+    warn "IN=$IN\n";
     foreach my $repeat (1..$REPEATS){
-        warn "Testing '$exp' ($command)\nrepeat#$repeat ...\n";
-        push @r_stats, run($command);
+        foreach my $exp (@experiments){
+            my $command = $COMMANDS_HASH{$exp};
+            warn "Testing '$exp' ($command)\nrepeat#$repeat ...\n";
+            $results{$exp}[$repeat] = run($command);
+        }
     }
-    my ($stats, $min, $max, $med, $dev, $rsd) = compute_average(@r_stats);
-    my $other = join ', ', map {$in_header{$_} ? () : "$_=".$stats->{$_} } keys %$stats;
-    $is_other = 1 if $other;
-
-    if ($REPEATS > 1) {
-        push @results, ["$exp-avg", @$stats{@header}, $other];
-        push @results, ["$exp-min", @$min{@header}, ''];
-        push @results, ["$exp-med", @$med{@header}, ''] if $REPEATS > 2;
-        push @results, ["$exp-max", @$max{@header}, ''];
-        push @results, ["$exp-dev", @$dev{@header}, ''];
-        push @results, ["$exp-rsd", @$rsd{@header}, ''];
-    } else {
-        push @results, [$exp, @$stats{@header}, $other];
-    }
+    return;
 }
 
-if (!$is_other){
-    foreach my $res (@results){
-        pop @$res;
+sub compute_statistics {
+    my (@values) = @_;
+    my $n = @values;
+    return if !$n;
+    my $mid = int $n/2;
+    my ($min, $median, $max) = @values[0,$mid, -1];
+    my ($sum, $variance) = (0, 0);
+    $sum += $_ for @values;
+    my $mean = $sum / $n;
+    if ($n > 1) {
+        $variance += ($_-$mean)**2 for @values;
+        # Bessel's correction for sample variance
+        $variance /= ($n - 1);
     }
-} else {
-    push @header, 'other';
+    my $stdev = sqrt $variance;
+    my $relstdev = $stdev / $mean;
+    return {avg=>sprintf('%.3f', $mean), min=>$min, max=>$max, med=>$median, dev=>sprintf('%.3f', $stdev), rsd=>sprintf('%.3f', $relstdev)};
 }
 
-my $table = Text::Table->new('experiment', map {(\'|',$_)} @header);
-$table->load(@results);
-my $rule = $table->rule(
-    sub {my ($i, $len) = @_; $i ? ('-' x ($len-1)).':' : '-' x $len;},
-    sub {my ($i, $len) = @_; '|';},
-);
-print $table->title, $rule, $table->body, "\n";
+my $hostname = `hostname`;
+sub print_table {
+    my ($header, $data) = @_;
+    my $table = Text::Table->new('experiment', map {(\'|',$_)} @$header);
+    $table->load(@$data);
+    my $rule = $table->rule(
+        sub {my ($i, $len) = @_; $i ? ('-' x ($len-1)).':' : '-' x $len;},
+        sub {my ($i, $len) = @_; '|';},
+    );
+    print "REPEATS=$REPEATS hostname=$hostname";
+    print $table->title, $rule, $table->body, "\n";
+    return;
+}
+
+sub print_results {
+    my (@details, @summary);
+    my $is_other = 0;
+    foreach my $exp (@experiments){
+        my $res = $results{$exp};
+        next if !$res; # when Ctrl+C forced early print
+        my $repeats = @$res - 1;
+        my $first_rep = $res->[1];
+        my @extra_tasks = grep {!$IN_HEADER{$_}} keys %$first_rep;
+        $is_other = 1 if @extra_tasks;
+
+        my %tmp;
+        foreach my $key (keys %$first_rep){
+            my @values = sort {$a <=> $b} grep {defined $_ && $_ ne 'skip'} map {$_->{$key}} @{$res}[1..$repeats];
+            $tmp{$key} = compute_statistics(@values);
+        }
+        my $other = join ', ', map {"$_=" . $tmp{$_}{avg} } @extra_tasks;
+        my @avg_times = map {$tmp{$_}{avg}} @HEADER;
+        my $total_rsd = $tmp{TOTAL}{rsd};
+        push @summary, [$exp, @avg_times, ($REPEATS>1 ? $total_rsd : ()), $other];
+
+        push @details, [$exp];
+        for my $stat_type (qw(avg min med max rsd)){
+            my @times = map {$tmp{$_}{$stat_type}} @HEADER;
+            my $other = join ', ', map {"$_=" . $tmp{$_}{$stat_type} } @extra_tasks;
+            push @details, ["$exp-$stat_type", @times, $other];
+        }
+    }
+    my @oth = $is_other ? ('other') : ();
+    if ($REPEATS>1){
+        print "\nDETAILS\n";
+        print_table([@HEADER, @oth], \@details);
+        print "SUMMARY\n";
+    }
+    unshift @oth, 'RSD' if $REPEATS>1;
+    print_table([@HEADER, @oth], \@summary);
+    return;
+}
+
+$SIG{INT} = sub {warn "\nCtrl+C (SIGINT) detected, printing statistics. Use Ctrl+\\ (SIGQUIT) to exit\n"; print_results;};
+$SIG{QUIT} = sub {warn "\nEarly terminating because of SIGQUIT\n"; print_results; exit;};
+#warn "Use Ctrl+C (SIGINT) for printing results and Ctrl+\\ (SIGQUIT) for early printing results and early termination.\n";
+
+run_all();
+
+print_results();
