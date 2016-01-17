@@ -158,13 +158,15 @@ sub descendants {
 
 sub is_descendant_of {
     my ($self, $another_node) = @_;
-    my $parent = $self->parent;
+    return 0 if !$another_node->{_children};
+    my $parent = $self->{_parent};
     while ($parent) {
         return 1 if $parent == $another_node;
-        $parent = $parent->parent;
+        $parent = $parent->{_parent};
     }
     return 0;
 }
+
 
 sub bundle { $_[0]->{_root}{_bundle}; }
 
