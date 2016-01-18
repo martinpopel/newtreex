@@ -24,10 +24,6 @@ my $reader = Treex::Block::Read::CoNLLU->new({from=>$in_conllu});
 my $doc = $reader->next_document();
 print "load\n";
 
-my $writer = Treex::Block::Write::CoNLLU->new({to=>$out_conllu});
-$writer->process_document($doc);
-print "save\n";
-
 foreach my $bundle ($doc->get_bundles()){
     # There is just one tree in each bundle, but let's make the code more general
     foreach my $tree ($bundle->get_all_trees()){
@@ -121,3 +117,7 @@ foreach my $bundle ($doc->get_bundles()){
     }
 }
 print "reorder\n";
+
+my $writer = Treex::Block::Write::CoNLLU->new({to=>$out_conllu});
+$writer->process_document($doc);
+print "save\n";

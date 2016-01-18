@@ -34,10 +34,6 @@ public class Main {
         Document document = coNLLUReader.readDocument();
         System.out.println("load");
 
-        DocumentWriter coNLLUWriter = new CoNLLUWriter(Paths.get(outCoNLL));
-        coNLLUWriter.writeDocument(document);
-        System.out.println("save");
-
         for (Bundle bundle : document.getBundles()) {
             for (Sentence sentence : bundle.getSentences()) {
                 for (Node node : sentence.getTree().getRoot().getOrderedDescendants()) {
@@ -129,5 +125,9 @@ public class Main {
             }
         }
         System.out.println("reorder");
+
+        DocumentWriter coNLLUWriter = new CoNLLUWriter(Paths.get(outCoNLL));
+        coNLLUWriter.writeDocument(document);
+        System.out.println("save");
     }
 }

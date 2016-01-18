@@ -26,9 +26,6 @@ my $doc = UD::Document->new($implementation);
 $doc->load_conllu($in_conllu);
 print "load\n";
 
-$doc->save_conllu($out_conllu);
-print "save\n";
-
 foreach my $bundle ($doc->bundles){
     # There is just one tree in each bundle, but let's make the code more general
     foreach my $tree ($bundle->trees){
@@ -124,3 +121,6 @@ foreach my $bundle ($doc->bundles){
     }
 }
 print "reorder\n";
+
+$doc->save_conllu($out_conllu);
+print "save\n";

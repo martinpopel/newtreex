@@ -15,16 +15,15 @@ The benchmark command should do several tasks and after finishing each task prin
 Nothing else should be printed on STDOUT. The tasks are:
 
 1. **init** Intialize whatever is needed.
-2. **load** Load the CoNLL-U file (specified as parameter) to memory.
-3. **save** Save the in-memory document to an output CoNLL-U file (specified as parameter). It should have exactly the same content as the input file (TODO `diff` check can be added later).
-4. **iter** Iterate over all nodes in all sentences by their word order.
-5. **iterF** Iterate over all nodes (fast). Nodes within one sentence may be iterated in any order.
-6. **read** Iterate over all nodes (by their word order, this holds for the rest of the tasks) and create a variable with concatenated *form* and *lemma*.
-7. **write** Set `deprel` attribute of each node to the value `dep`.
-8. **rehang** Rehang each node to a random* parent in the same sentence. Method `set_parent` should raise an exception if this would lead to a cycle. Catch such exceptions and leave such nodes under their original parents. Alternatively, there may be a parameter `cycles=skip`, which prevents the exception.
-9. **remove** Delete random 10% of nodes. That is `if (myrand(10)==0){ $node->remove()}`, so it does not need to be exactly 10%. Removing a node by default removes all its descendants. (Note that if you iterate over a list of original nodes, you may encounter already deleted nodes. You should check this case and don't try to delete already deleted nodes.)
-10. **add** Select random 10% of nodes (as above) and add a child under them (*lemma*=x, *form*=x). It should be the last child according to word order (and last=rightmost descendant).
-11. **reorder** Shift 10% of nodes (with their whole subtree) after random node (except when that random node is a descendant). From the rest of the nodes, shift 10% of nodes without their subtree before a random subtree. That is:
+2. **load** Load the CoNLL-U file (specified as the first parameter) to memory.
+3. **iter** Iterate over all nodes in all sentences by their word order.
+4. **iterF** Iterate over all nodes (fast). Nodes within one sentence may be iterated in any order.
+5. **read** Iterate over all nodes (by their word order, this holds for the rest of the tasks) and create a variable with concatenated *form* and *lemma*.
+6. **write** Set `deprel` attribute of each node to the value `dep`.
+7. **rehang** Rehang each node to a random* parent in the same sentence. Method `set_parent` should raise an exception if this would lead to a cycle. Catch such exceptions and leave such nodes under their original parents. Alternatively, there may be a parameter `cycles=skip`, which prevents the exception.
+8. **remove** Delete random 10% of nodes. That is `if (myrand(10)==0){ $node->remove()}`, so it does not need to be exactly 10%. Removing a node by default removes all its descendants. (Note that if you iterate over a list of original nodes, you may encounter already deleted nodes. You should check this case and don't try to delete already deleted nodes.)
+9. **add** Select random 10% of nodes (as above) and add a child under them (*lemma*=x, *form*=x). It should be the last child according to word order (and last=rightmost descendant).
+10. **reorder** Shift 10% of nodes (with their whole subtree) after random node (except when that random node is a descendant). From the rest of the nodes, shift 10% of nodes without their subtree before a random subtree. That is:
 ```
   my $rand_index = myrand($#nodes+1);
   if (myrand(10)==0){
@@ -34,6 +33,8 @@ Nothing else should be printed on STDOUT. The tasks are:
     $node->shift_before_subtree($nodes[$rand_index], {without_children=>1});
   }
 ```
+11. **save** Save the in-memory document to an output CoNLL-U file (specified as the second parameter).
+
 *) For selecting random node and random 10% in tasks 8-11, use an equivalent of the following function `myrand`, so it is deterministic and replicable accross different programming languages.
 ```
 my $seed = 42;

@@ -29,9 +29,6 @@ doc.load({'filename':sys.argv[1]})
 
 print("load")
 
-doc.store({'filename':sys.argv[2]})
-
-print("save")
 
 for bundle in doc:
     for root in bundle:
@@ -107,3 +104,7 @@ for bundle in doc:
                 node.shift_after(nodes[rand_index])  # TODO: dodelat, tady se chce neco trochu jineho
 
 print("reorder")
+
+
+doc.store({'filename':sys.argv[2]})
+print("save")

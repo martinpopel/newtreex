@@ -31,9 +31,6 @@ print("init")
 doc = conllu_reader.process_document(sys.argv[1])
 print("load")
 
-conllu_writer.process_document(doc)
-print("save")
-
 for bundle in doc.bundles:
     for zone in bundle.get_all_zones():
         for node in zone.atree.get_descendants(ordered=1):
@@ -98,3 +95,6 @@ for bundle in doc.bundles:
             elif myrand(10) == 0:
                 node.shift_before_subtree(nodes[rand_index], without_children=1)
 print("reorder")
+
+conllu_writer.process_document(doc)
+print("save")
