@@ -91,13 +91,10 @@ class Node(object):
 
 
     def descendants(self):
-        if self.is_root:
-            try:
-                return self._aux['descendants']
-            except:
-                return []  # TODO: why the hell descendants disappeared from some roots
+        if self.is_root():
+            return self._aux['descendants']
         else:
-            return self._descendants_using_children()
+            return sorted( self._unordered_descendants_using_children() )
 
     def _unordered_descendants_using_children(self):
         descendants = [self]
