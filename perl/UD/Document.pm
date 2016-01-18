@@ -84,15 +84,19 @@ sub load_conllu {
 sub save_conllu {
     my ($self, $conllu_file) = @_;
     open my $fh, '>:utf8', $conllu_file;
+    my @nodes;
     foreach my $bundle ($self->bundles){
         foreach my $tree ($bundle->trees){
+            @nodes = $tree->descendants;
+            # Empty sentences are not allowed in CoNLL-U.
+            next if !@nodes;
             my $comment = $tree->{comment};
             if (length $comment){
                 chomp $comment;
                 $comment =~ s/\n/\n#/g;
                 print {$fh} "#", $comment, "\n";
             }
-            foreach my $node ($tree->descendants){
+            foreach my $node (@nodes){
                 print {$fh} join("\t", map {(defined $_ and $_ ne '') ? $_ : '_'}
                     $node->ord, $node->form, $node->lemma, $node->upos, $node->xpos,
                     $node->feats, $node->parent->ord, $node->deprel, $node->deps, $node->misc,

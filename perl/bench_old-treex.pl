@@ -56,7 +56,7 @@ print "read\n";
 foreach my $bundle ($doc->get_bundles()){
     foreach my $tree ($bundle->get_all_trees()){
         foreach my $node ($tree->get_descendants({ordered=>1})){
-            $node->set_conll_deprel('dep');
+            $node->set_deprel('dep');
         }
     }
 }
@@ -103,7 +103,7 @@ foreach my $bundle ($doc->get_bundles()){
     foreach my $tree ($bundle->get_all_trees()){
         my @nodes = $tree->get_descendants({ordered=>1});
         foreach my $node (@nodes){
-            my $rand_index = int(rand($#nodes+1));
+            my $rand_index = myrand($#nodes+1);
             if (myrand(10)==0) {
                 # Catch an exception if $nodes[$rand_index] is a descendant of $node
                 local $SIG{__WARN__} = sub {};
