@@ -12,13 +12,19 @@ import cz.cuni.mff.ufal.treex.core.io.impl.CoNLLUWriter;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 
 /**
  * Created by mvojtek on 12/21/15.
  */
 public class Main {
+    private static long seed = 42;
+    private static long maxseed = 1 << 32;
+    private static int myrand(long modulo) {
+        seed = (1103515245 * seed + 12345) % maxseed;
+        return (int)(seed % modulo);
+    }
+
     public static void main(String[] args) {
         String inCoNLL = args[0];
         String outCoNLL = args[1];
@@ -68,24 +74,23 @@ public class Main {
         }
         System.out.println("write");
 
-        Random hangRand = new Random();
         for (Bundle bundle : document.getBundles()) {
             for (Sentence sentence : bundle.getSentences()) {
                 List<Node> descendants = sentence.getTree().getRoot().getDescendants();
                 for (Node node : descendants) {
-                    //rehang
-                    node.setParent(descendants.get(hangRand.nextInt(descendants.size())));
+                    // TODO: catch exception if a cycle would be created
+                    int rand_index = myrand(descendants.size());
+                    node.setParent(descendants.get(rand_index));
                 }
             }
         }
         System.out.println("rehang");
 
-        Random removedRand = new Random();
         Set<Node> alreadyRemoved = new HashSet<>();
         for (Bundle bundle : document.getBundles()) {
             for (Sentence sentence : bundle.getSentences()) {
                 for (Node node : sentence.getTree().getRoot().getOrderedDescendants()) {
-                    if (removedRand.nextInt(10) == 0) {
+                    if (myrand(10) == 0) {
                         if (!alreadyRemoved.contains(node)) {
                             node.remove();
                             alreadyRemoved.add(node);
@@ -96,11 +101,10 @@ public class Main {
         }
         System.out.println("remove");
 
-        Random addRand = new Random();
         for (Bundle bundle : document.getBundles()) {
             for (Sentence sentence : bundle.getSentences()) {
                 for (Node node : sentence.getTree().getRoot().getOrderedDescendants()) {
-                    if (addRand.nextInt(10) == 0) {
+                    if (myrand(10) == 0) {
                         Node nodeChild = node.createChild();
                         nodeChild.setLemma("x");
                         nodeChild.setForm("x");
@@ -111,15 +115,14 @@ public class Main {
         }
         System.out.println("add");
 
-        Random reorderRand = new Random();
         for (Bundle bundle : document.getBundles()) {
             for (Sentence sentence : bundle.getSentences()) {
                 List<Node> nodes = sentence.getTree().getRoot().getOrderedDescendants();
                 for (Node node : nodes) {
-                    int rand_index = reorderRand.nextInt(nodes.size());
-                    if (reorderRand.nextInt(10) == 0) {
+                    int rand_index = myrand(nodes.size());
+                    if (myrand(10) == 0) {
                         node.shiftAfterNode(nodes.get(rand_index), false);
-                    } else if (reorderRand.nextInt(10) == 0) {
+                    } else if (myrand(10) == 0) {
                         node.shiftBeforeSubtree(nodes.get(rand_index), true);
                     }
                 }

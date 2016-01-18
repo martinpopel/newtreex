@@ -8,13 +8,18 @@ __author__ = "Martin Popel, Zdenek Zabokrtsky"
 __date__ = "2016"
 
 import sys
-import random # bude nahrazeno pseudonahodnosti
 import os
 
 sys.path.append( os.path.dirname(os.path.abspath(__file__)) + '/utreex/')
 from utreex.core.document import Document, Node
 from utreex.core.node import RuntimeException
 
+seed = 42;
+maxseed = 2**32;
+def myrand(modulo):
+    global seed
+    seed = (1103515245 * seed + 12345) % maxseed;
+    return seed % modulo;
 
 print("init")
 
@@ -60,7 +65,7 @@ for bundle in doc:
     for root in bundle:
         nodes = root.descendants()
         for node in nodes:
-            rand_index = random.randint(0,len(nodes)-1)
+            rand_index = myrand(len(nodes))
             try:
                 node.set_parent(nodes[rand_index])
             except RuntimeException:
@@ -71,7 +76,7 @@ print("rehang")
 for bundle in doc:
     for root in bundle:
         for node in root.descendants():
-            if random.random() < 0.1:
+            if myrand(10) == 0:
                 node.remove()
 
 print("remove")
@@ -80,7 +85,7 @@ for bundle in doc:
     for root in bundle:
         for node in root.descendants():
             pass
-            if random.random() < 0.1:
+            if myrand(10) == 0:
                 child = Node()
                 child.ord = 100000 # TODO: silly
                 child.set_parent(node)
@@ -94,11 +99,11 @@ for bundle in doc:
     for root in bundle:
         nodes = root.descendants()
         for node in nodes:
-            rand_index = random.randint(0,len(nodes)-1)
-            if random.random() < 0.1:
-#                # Catch an exception if nodes[rand_index] is a descendant of $node
+            rand_index = myrand(len(nodes))
+            if myrand(10) == 0:
+                # Catch an exception if nodes[rand_index] is a descendant of $node
                 node.shift_subtree_after(nodes[rand_index])
-            elif random.random() < 0.1:
+            elif myrand(10) == 0:
                 node.shift_after(nodes[rand_index])  # TODO: dodelat, tady se chce neco trochu jineho
 
 print("reorder")
