@@ -32,6 +32,7 @@ sub load_conllu {
     my @parents = (0);
     my $class = 'UD::Node' . $self->{implementation};
     my ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc, $rest );
+    my $comment = '';
     LINE:
     while (my $line = <$fh>) {
         chomp $line;
@@ -40,12 +41,16 @@ sub load_conllu {
             foreach my $i (1..$#nodes){
                 $nodes[$i]->set_parent( $nodes[ $parents[$i] ] );
             }
+            if (length $comment){
+                $nodes[0]->{comment} = $comment;
+                $comment = '';
+            }
             my $bundle = $self->create_bundle();
             $root = $bundle->create_tree(); # {selector=>''}
             @nodes = ($root);
             @parents = (0);
-        } elsif ($line =~ /^#/ ){
-            # TODO comments
+        } elsif ($line =~ s/^#// ){
+            $comment = $comment . $line . "\n";
         } else {
             ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc, $rest ) = split /\t/, $line;
             warn "Extra columns in CONLL-U file '$conllu_file':\n$rest\n" if $rest;
@@ -53,8 +58,9 @@ sub load_conllu {
                 # TODO multiword tokens
                 next LINE;
             }
-            my $new_node = $class->new( _root=>$root,
+            my $new_node = $class->new( _root=>$root, # TODO: don't set _root here?
                 ord=>scalar(@nodes), form=>$form, lemma=>$lemma, upos=>$upos, xpos=>$xpos, feats=>$feats, deprel=>$deprel, deps=>$deps, misc=>$misc);
+            # TODO weaken($new_node->{_root}) # = $root
             push @nodes, $new_node;
             push @parents, $head;
             # TODO deps
@@ -80,14 +86,20 @@ sub save_conllu {
     open my $fh, '>:utf8', $conllu_file;
     foreach my $bundle ($self->bundles){
         foreach my $tree ($bundle->trees){
+            my $comment = $tree->{comment};
+            if (length $comment){
+                chomp $comment;
+                $comment =~ s/\n/\n#/g;
+                print {$fh} "#", $comment, "\n";
+            }
             foreach my $node ($tree->descendants){
                 print {$fh} join("\t", map {(defined $_ and $_ ne '') ? $_ : '_'}
                     $node->ord, $node->form, $node->lemma, $node->upos, $node->xpos,
                     $node->feats, $node->parent->ord, $node->deprel, $node->deps, $node->misc,
                 ), "\n";
             }
+            print {$fh} "\n";
         }
-        print {$fh} "\n";
     }
     close $fh;
     return;
