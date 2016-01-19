@@ -23,16 +23,7 @@ Nothing else should be printed on STDOUT. The tasks are:
 7. **rehang** Rehang each node to a random* parent in the same sentence. Method `set_parent` should raise an exception if this would lead to a cycle. Catch such exceptions and leave such nodes under their original parents. Alternatively, there may be a parameter `cycles=skip`, which prevents the exception.
 8. **remove** Delete random 10% of nodes. That is `if (myrand(10)==0){ $node->remove()}`, so it does not need to be exactly 10%. Removing a node by default removes all its descendants. (Note that if you iterate over a list of original nodes, you may encounter already deleted nodes. You should check this case and don't try to delete already deleted nodes.)
 9. **add** Select random 10% of nodes (as above) and add a child under them (*lemma*=x, *form*=x). It should be the last child according to word order (and last=rightmost descendant).
-10. **reorder** Shift 10% of nodes (with their whole subtree) after random node (except when that random node is a descendant). From the rest of the nodes, shift 10% of nodes without their subtree before a random subtree. That is:
-```
-  my $rand_index = myrand($#nodes+1);
-  if (myrand(10)==0){
-    try{$node->shift_after_node($nodes[$rand_index]);}
-    # catch '$reference_node is a descendant of $self'
-  } elsif (myrand(10)==0) {
-    $node->shift_before_subtree($nodes[$rand_index], {without_children=>1});
-  }
-```
+10. **reorder** Shift 10% of nodes (with their whole subtree) after a random node (except when that random node is a descendant). From the rest of the nodes, shift 10% of nodes without their subtree before a random subtree.** 
 11. **save** Save the in-memory document to an output CoNLL-U file (specified as the second parameter).
 
 *) For selecting random node and random 10% in tasks 8-11, use an equivalent of the following function `myrand`, so it is deterministic and replicable accross different programming languages.
@@ -46,7 +37,23 @@ sub myrand {
 }
 ```
 
+**) The code for task 10 (reorder) is:
+```
+  # for each $tree
+  my @nodes = $tree->descendants;
+  # The order of the following two lines is IMPORTANT for replicability.
+  my $rand_index = myrand($#nodes+1);
+  if (myrand(10)==0){
+    try{$node->shift_after_node($nodes[$rand_index]);}
+    # catch '$reference_node is a descendant of $self'
+  } elsif (myrand(10)==0) {
+    $node->shift_before_subtree($nodes[$rand_index], {without_children=>1});
+  }
+```
+
 The command/script running the task should do each task independently, not keeping any datastructure (e.g. array of all bundles, or even sorted nodes) except for the one document. This means that iteration over all nodes should be done again for each task (to simulate the real usage). Don't forget to switch off stdout buffering, so the task names are printed immediately (and timing is accurate).
+
+If the script is executed with `-d` (debug), it should save the document into conll files after all task which modify the document (load, write, rehang, remove, add, reorder). The filenames should contain implementation name and task name, e.g. `pytreex-load.conllu`, `pytreex-write.conllu`,... and they should be saved in the current directory.
 
 ### Results
 MAXMEM is maximum (resident set size) memory (`ps -orss`) in MiB.
