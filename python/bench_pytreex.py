@@ -23,13 +23,20 @@ def myrand(modulo):
     seed = (1103515245 * seed + 12345) % maxseed;
     return seed % modulo;
 
+debug = False
+if sys.argv[1] == "-d":
+    debug = True
+    sys.argv.pop(1)
+in_conllu = sys.argv[1]
+out_conllu = sys.argv[2]
 
 conllu_reader = ReadCoNLLU(None, dict())
-conllu_writer = WriteCoNLLU(None, {'to':sys.argv[2], 'language':'unk'})
+conllu_writer = WriteCoNLLU(None, {'to':out_conllu, 'language':'unk'})
 print("init")
 
-doc = conllu_reader.process_document(sys.argv[1])
+doc = conllu_reader.process_document(in_conllu)
 print("load")
+if debug: WriteCoNLLU(None, {'to':'pytreex-load.conllu', 'language':'unk'}).process_document(doc)
 
 for bundle in doc.bundles:
     for zone in bundle.get_all_zones():
@@ -54,6 +61,7 @@ for bundle in doc.bundles:
         for node in zone.atree.get_descendants(ordered=1):
             node.deprel = 'dep'
 print("write")
+if debug: WriteCoNLLU(None, {'to':'pytreex-write.conllu', 'language':'unk'}).process_document(doc)
 
 for bundle in doc.bundles:
     for zone in bundle.get_all_zones():
@@ -65,6 +73,7 @@ for bundle in doc.bundles:
             except RuntimeException:
                 pass
 print("rehang")
+if debug: WriteCoNLLU(None, {'to':'pytreex-rehang.conllu', 'language':'unk'}).process_document(doc)
 
 for bundle in doc.bundles:
     for zone in bundle.get_all_zones():
@@ -76,6 +85,7 @@ for bundle in doc.bundles:
                 except KeyError:
                     pass
 print("remove")
+if debug: WriteCoNLLU(None, {'to':'pytreex-remove.conllu', 'language':'unk'}).process_document(doc)
 
 for bundle in doc.bundles:
     for zone in bundle.get_all_zones():
@@ -83,6 +93,7 @@ for bundle in doc.bundles:
             if myrand(10) == 0:
                 node.create_child(data={'form': 'x', 'lemma': 'x'}).shift_after_subtree(node)
 print("add")
+if debug: WriteCoNLLU(None, {'to':'pytreex-add.conllu', 'language':'unk'}).process_document(doc)
 
 for bundle in doc.bundles:
     for zone in bundle.get_all_zones():
@@ -95,6 +106,7 @@ for bundle in doc.bundles:
             elif myrand(10) == 0:
                 node.shift_before_subtree(nodes[rand_index], without_children=1)
 print("reorder")
+if debug: WriteCoNLLU(None, {'to':'pytreex-reorder.conllu', 'language':'unk'}).process_document(doc)
 
 conllu_writer.process_document(doc)
 print("save")

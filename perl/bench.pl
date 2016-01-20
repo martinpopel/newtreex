@@ -5,7 +5,6 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/";
 use Carp;
-use Try::Tiny;
 
 $SIG{INT} = sub {warn "\nbench.pl is ignoring Ctrl+C (SIGINT). Use Ctrl+\\ (SIGQUIT) to exit\n";};
 
@@ -19,12 +18,19 @@ sub myrand {
 
 STDOUT->autoflush(1);
 use UD::Document;
+
+my $DEBUG = 0;
+if ($ARGV[0] eq '-d'){
+    shift @ARGV;
+    $DEBUG = 1;
+}
 my ($in_conllu, $out_conllu, $implementation) = @ARGV;
 print "init\n";
 
 my $doc = UD::Document->new($implementation);
 $doc->load_conllu($in_conllu);
 print "load\n";
+$doc->save_conllu("perl$implementation-load.conllu") if $DEBUG;
 
 foreach my $bundle ($doc->bundles){
     # There is just one tree in each bundle, but let's make the code more general
@@ -62,6 +68,7 @@ foreach my $bundle ($doc->bundles){
     }
 }
 print "write\n";
+$doc->save_conllu("perl$implementation-write.conllu") if $DEBUG;
 
 foreach my $bundle ($doc->bundles){
     foreach my $tree ($bundle->trees){
@@ -80,6 +87,7 @@ foreach my $bundle ($doc->bundles){
     }
 }
 print "rehang\n";
+$doc->save_conllu("perl$implementation-rehang.conllu") if $DEBUG;
 
 foreach my $bundle ($doc->bundles){
     foreach my $tree ($bundle->trees){
@@ -89,6 +97,7 @@ foreach my $bundle ($doc->bundles){
     }
 }
 print "remove\n";
+$doc->save_conllu("perl$implementation-remove.conllu") if $DEBUG;
 
 foreach my $bundle ($doc->bundles){
     foreach my $tree ($bundle->trees){
@@ -100,6 +109,7 @@ foreach my $bundle ($doc->bundles){
     }
 }
 print "add\n";
+$doc->save_conllu("perl$implementation-add.conllu") if $DEBUG;
 
 foreach my $bundle ($doc->bundles){
     foreach my $tree ($bundle->trees){
@@ -121,6 +131,7 @@ foreach my $bundle ($doc->bundles){
     }
 }
 print "reorder\n";
+$doc->save_conllu("perl$implementation-reorder.conllu") if $DEBUG;
 
 $doc->save_conllu($out_conllu);
 print "save\n";

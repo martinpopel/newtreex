@@ -17,12 +17,18 @@ sub myrand {
     return $seed % $modulo;
 }
 
+my $DEBUG = 0;
+if ($ARGV[0] eq '-d'){
+    shift @ARGV;
+    $DEBUG = 1;
+}
 my ($in_conllu, $out_conllu) = @ARGV;
 print "init\n";
 
 my $reader = Treex::Block::Read::CoNLLU->new({from=>$in_conllu});
 my $doc = $reader->next_document();
 print "load\n";
+Treex::Block::Write::CoNLLU->new({to=>'treex-load.conllu'})->process_document($doc) if $DEBUG;
 
 foreach my $bundle ($doc->get_bundles()){
     # There is just one tree in each bundle, but let's make the code more general
@@ -61,6 +67,7 @@ foreach my $bundle ($doc->get_bundles()){
     }
 }
 print "write\n";
+Treex::Block::Write::CoNLLU->new({to=>'treex-write.conllu'})->process_document($doc) if $DEBUG;
 
 foreach my $bundle ($doc->get_bundles()){
     foreach my $tree ($bundle->get_all_trees()){
@@ -78,6 +85,7 @@ foreach my $bundle ($doc->get_bundles()){
     }
 }
 print "rehang\n";
+Treex::Block::Write::CoNLLU->new({to=>'treex-rehang.conllu'})->process_document($doc) if $DEBUG;
 
 foreach my $bundle ($doc->get_bundles()){
     foreach my $tree ($bundle->get_all_trees()){
@@ -87,6 +95,7 @@ foreach my $bundle ($doc->get_bundles()){
     }
 }
 print "remove\n";
+Treex::Block::Write::CoNLLU->new({to=>'treex-remove.conllu'})->process_document($doc) if $DEBUG;
 
 foreach my $bundle ($doc->get_bundles()){
     foreach my $tree ($bundle->get_all_trees()){
@@ -98,6 +107,7 @@ foreach my $bundle ($doc->get_bundles()){
     }
 }
 print "add\n";
+Treex::Block::Write::CoNLLU->new({to=>'treex-add.conllu'})->process_document($doc) if $DEBUG;
 
 foreach my $bundle ($doc->get_bundles()){
     foreach my $tree ($bundle->get_all_trees()){
@@ -117,7 +127,7 @@ foreach my $bundle ($doc->get_bundles()){
     }
 }
 print "reorder\n";
+Treex::Block::Write::CoNLLU->new({to=>'treex-reorder.conllu'})->process_document($doc) if $DEBUG;
 
-my $writer = Treex::Block::Write::CoNLLU->new({to=>$out_conllu});
-$writer->process_document($doc);
+Treex::Block::Write::CoNLLU->new({to=>$out_conllu})->process_document($doc);
 print "save\n";
