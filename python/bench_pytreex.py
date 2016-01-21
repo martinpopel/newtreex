@@ -101,10 +101,12 @@ for bundle in doc.bundles:
         for node in nodes:
             rand_index = myrand(len(nodes))
             if myrand(10) == 0:
-                # Catch an exception if nodes[rand_index] is a descendant of $node
-                node.shift_after_node(nodes[rand_index])
+                try:
+                    node.shift_after_node(nodes[rand_index])
+                except RuntimeException: # nodes[rand_index] is descendant of node
+                    pass
             elif myrand(10) == 0:
-                node.shift_before_subtree(nodes[rand_index], without_children=1)
+                node.shift_before_subtree(nodes[rand_index], without_children=True)
 print("reorder")
 if debug: WriteCoNLLU(None, {'to':'pytreex-reorder.conllu', 'language':'unk'}).process_document(doc)
 
