@@ -37,6 +37,7 @@ BEGIN {
 {   package Node::ManualA;
     #sub new { my $class = shift; my $ind = 0; return bless [grep {$ind++ % 2} @_], $class; }
     sub fastnew { my $class = shift; return bless [@_], $class; }
+    sub fasternew { return bless $_[1], $_[0]; }
     sub new {
         my ($class, %h) = @_;
         my $array = [ map {$h{$_}} @ATTRS];
@@ -84,7 +85,7 @@ BEGIN {
     }
 }
 
-use UD::Node;
+#use UD::Node;
 
 use Benchmark qw(:all :hireswallclock);
 
@@ -95,10 +96,10 @@ my @INIT = map {$ATTRS[$_] => $VALUES[$_]} 0..$#ATTRS;
 print "Testing Perl $], Moose $Moose::VERSION, Moo $Moo::VERSION, Class::XSAccessor $Class::XSAccessor::VERSION, Class::XSAccessor::Array $Class::XSAccessor::Array::VERSION\n";
 
 cmpthese(
-    -3,
+    -10,
     {
-        UD       => sub { my $n = UD::Node->new(@INIT); },
-        MooseMut => sub { my $n = Node::MooseMutable->new(@INIT); },
+        #UD       => sub { my $n = UD::Node->new(@INIT); },
+        #MooseMut => sub { my $n = Node::MooseMutable->new(@INIT); },
         Moose    => sub { my $n = Node::Moose->new(@INIT); },
         #HMoose   => sub { my $n = Node::Moose->new({@INIT}); },
         Moo      => sub { my $n = Node::Moo->new(@INIT); },
@@ -109,12 +110,16 @@ cmpthese(
         ManualH  => sub { my $n = Node::ManualH->new(@INIT); },
         ManualA  => sub { my $n = Node::ManualA->new(@INIT); },
         ManualAf => sub { my $n = Node::ManualA->fastnew(@VALUES); },
+        ManualAf1=> sub { my $n = Node::ManualA->fasternew([@VALUES]); },
+        ManualAf2=> sub { my $n = Node::ManualA->fasternew(\@VALUES); },
+        ManualAf3=> sub { my $n = bless [@VALUES], 'Node::ManualA'; },
+        ManualAf4=> sub { my $n = bless \@VALUES, 'Node::ManualA'; },
         XSAccAs  => sub { my $n = Node::A->new(); $n->set_form($form); $n->set_lemma($lemma); $n->set_upos($upos); $n->set_xpos($xpos); $n->set_deprel($deprel); $n->set_feats($feats); $n->set_deps($deps); $n->set_misc($misc); $n->set_ord($ord);},
     }
 );
 
-
 __END__
+
 Testing Perl 5.014002, Moose 2.1204, Moo 2.000002, Class::XSAccessor 1.19, Class::XSAccessor::Array 1.19
              Rate MooseMut Moose  Moo ManualA ManualH XSAccHp XSAccAs   UD XSAccH XSAccAf ManualAf
 MooseMut   4509/s       --  -93% -94%    -95%    -98%    -98%    -98% -98%   -98%    -99%     -99%
@@ -131,14 +136,30 @@ ManualAf 333188/s    7289%  405% 326%    235%     74%     69%     49%  43%    41
 
 Kolik objektů (uzlů s 9 stringovými atributy) se vytvoří za 1 sekundu:
 
-MooseMut   4509 Moose bez __PACKAGE__->meta->make_immutable
-Moose     65941
-Moo       78156
-ManualA   99508 Manual array-based object, konstruktor vytvoří hash, aby zjistil, které atributy byly zadány
-ManualH  191911 Manual hash-based object
-XSAccHp  197371 Class::XSAccessor ale sub new {my $c=shift; bless {@_}, $c;}
-XSAccAs  224108 Class::XSAccessor::Array, new bez parametrů, třeba volat settery
-XSAccH   235633 Class::XSAccessor { constructor => 'new'}
+MooseMut   4 509 Moose bez __PACKAGE__->meta->make_immutable
+Moose     65 941
+Moo       78 156
+ManualA   99 508 Manual array-based object, konstruktor vytvoří hash, aby zjistil, které atributy byly zadány
+ManualH  191 911 Manual hash-based object
+XSAccHp  197 371 Class::XSAccessor ale sub new {my $c=shift; bless {@_}, $c;}
+XSAccAs  224 108 Class::XSAccessor::Array, new bez parametrů, třeba volat settery
+XSAccH   235 633 Class::XSAccessor { constructor => 'new'}
 --- následující implementace mají konstruktory, které berou jen hodnoty atributů, nikoli jména, tedy musejí být zadané ve správném pořadí
-XSAccAf  324620 Class::XSAccessor::Array, sub fastnew {my $c=shift; bless [@_], $c;}
-ManualAf 333188 Manual array-based object, sub fastnew {my $c=shift; bless [@_], $c;}
+XSAccAf  324 620 Class::XSAccessor::Array, sub fastnew {my $c=shift; bless [@_], $c;}
+ManualAf 333 188 Manual array-based object, sub fastnew {my $c=shift; bless [@_], $c;}
+
+cosmos perl5.22.1
+MooseMut      7 424/s
+Moose       127 292/s
+Moo         165 481/s
+ManualA     199 225/s
+XSAccAs     400 653/s
+XSAccH      407 158/s
+ManualH     418 374/s
+XSAccHp     421 559/s
+ManualAf    806 400/s
+XSAccAf     808 965/s
+ManualAf1   885 097/s
+ManualAf3 1 245 985/s
+ManualAf2 2 318 974/s
+ManualAf4 4 937 170/s
