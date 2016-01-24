@@ -31,7 +31,11 @@ sub load_conllu {
     my @nodes = ($root);
     my @parents = (0);
     my $class = 'UD::Node' . $self->{implementation};
-    my ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc, $rest );
+    my $store_all_descendants = $class =~ /^UD::NodeClA/;
+    my $store_root_ar = $class eq 'UD::NodeA';
+    my $array_based = $class eq 'UD::NodeA';
+    my $store_root = $class ne 'UD::NodeClAl' && $class ne 'UD::NodeA';
+    my ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc );
     my $comment = '';
     LINE:
     while (my $line = <$fh>) {
@@ -41,8 +45,13 @@ sub load_conllu {
             foreach my $i (1..$#nodes){
                 $nodes[$i]->set_parent( $nodes[ $parents[$i] ] );
             }
+            if ($store_all_descendants){
+                $root->{_descendants} = [@nodes[1..$#nodes]];
+            } elsif ($array_based){
+                $root->[0] = [@nodes[1..$#nodes]];
+            }
             if (length $comment){
-                $nodes[0]->{comment} = $comment;
+                $nodes[0]->set_misc($comment);
                 $comment = '';
             }
             my $bundle = $self->create_bundle();
@@ -52,15 +61,21 @@ sub load_conllu {
         } elsif ($line =~ s/^#// ){
             $comment = $comment . $line . "\n";
         } else {
-            ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc, $rest ) = split /\t/, $line;
-            warn "Extra columns in CONLL-U file '$conllu_file':\n$rest\n" if $rest;
+            ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc ) = split /\t/, $line;
             if ($id !~ /^\d+$/){
                 # TODO multiword tokens
                 next LINE;
             }
-            my $new_node = $class->new( _root=>$root, # TODO: don't set _root here?
+            my $new_node;
+            if ($array_based){
+                $new_node = bless [undef, undef, undef, undef, undef, $root, scalar(@nodes),
+                                   $form, $lemma, $upos, $xpos, $feats, $deprel, $deps, $misc], 'UD::NodeA';
+            } else {
+                $new_node = $class->new(
                 ord=>scalar(@nodes), form=>$form, lemma=>$lemma, upos=>$upos, xpos=>$xpos, feats=>$feats, deprel=>$deprel, deps=>$deps, misc=>$misc);
-            # TODO weaken($new_node->{_root}) # = $root
+            }
+            weaken($new_node->{_root} = $root) if $store_root;
+            weaken($new_node->[5]) if $store_root_ar;
             push @nodes, $new_node;
             push @parents, $head;
             # TODO deps
@@ -90,7 +105,7 @@ sub save_conllu {
             @nodes = $tree->descendants;
             # Empty sentences are not allowed in CoNLL-U.
             next if !@nodes;
-            my $comment = $tree->{comment};
+            my $comment = $tree->misc;
             if (length $comment){
                 chomp $comment;
                 $comment =~ s/\n/\n#/g;

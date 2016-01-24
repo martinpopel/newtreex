@@ -1,4 +1,4 @@
-package UD::NodeCl;
+package UD::NodeClAl;
 use strict;
 use warnings;
 use Carp qw(confess cluck);
@@ -10,7 +10,7 @@ use Class::XSAccessor {
     setters => { map {("set_$_" => $_)} qw(form lemma upos xpos deprel feats deps misc ord)},
     getters => {
          (map {($_ => $_)} qw(form lemma upos xpos deprel feats deps misc ord)),
-         (map {($_ => "_$_")} qw(parent root)),
+         (map {($_ => "_$_")} qw(parent)),
      },
 };
 
@@ -27,10 +27,8 @@ sub set_parent {
     }
 
     $self->cut() if $self->{_parent};
-
     weaken( $self->{_parent} = $parent );
-    weaken( $self->{_root} = $parent->{_root} ) if !$self->{_root};
-    
+
     my $prev = $parent->{_lastchild};
     $parent->{_lastchild} = $self;
     if ($prev){
@@ -59,7 +57,8 @@ sub cut {
 
 sub remove {
     my ($self, $arg_ref) = @_;
-    if ( $self->is_root ) {
+    my $root = $self->root;
+    if ( $root == $self ) {
         confess 'Tree root cannot be removed using $root->remove().'
               . ' Use $bundle->remove_tree($selector) instead';
     }
@@ -81,21 +80,36 @@ sub remove {
         }
     }
 
-    # Remove the subtree from the document's indexing table
-    my @to_remove = ( $self, $self->_descendantsF );
-#   foreach my $node ( @to_remove) {
-#         if ( defined $node->id ) {
-#             $document->_remove_references_to_node( $node );
-#             $document->index_node_by_id( $node->id, undef );
-#         }
-#     }
+    my @to_remove = sort {$a->{ord} <=> $b->{ord}} ($self, $self->_descendantsF);
+    my ($first_ord, $last_ord) = ($to_remove[0]->ord, $to_remove[-1]->ord);
+    my $all_nodes = $root->{_descendants};
+    
+    # Remove the nodes from $root->{_descendants}.
+    # projective subtrees can be deleted faster
+    if ($last_ord - $first_ord + 1 == @to_remove){
+        splice @{$root->{_descendants}}, $first_ord - 1, $last_ord - $first_ord + 1;
+    }
+    # non-projective subtrees must iterated
+    else {
+        my $remove_i = 1;
+        my @new_all_nodes = @$all_nodes[0..$first_ord-2];
+        for my $all_i ($first_ord .. $#{$all_nodes}){
+            if (($to_remove[$remove_i]||0) == $all_nodes->[$all_i]){
+                $remove_i++;
+            } else {
+                push @new_all_nodes, $all_nodes->[$all_i];
+            }
+        }
+        $root->{_descendants} = $all_nodes = \@new_all_nodes
+    }
+    
+    # Update ord of the following nodes in the tree
+    for my $i ($first_ord-1..$#{$all_nodes}){
+        $all_nodes->[$i]->{ord} = $i+1;
+    }
 
     # Disconnect the node from its parent (& siblings) and delete all attributes
     $self->cut();
-
-    # TODO: order normalizing can be done in a more efficient way
-    # (update just the following ords)
-    $self->{_root}->_normalize_node_ordering();
 
     # By reblessing we make sure that
     # all methods called on removed nodes will result in fatal errors.
@@ -103,6 +117,14 @@ sub remove {
         bless $node, 'UD::Node::Removed';
     }
     return;
+}
+
+sub root {
+    my ($node) = @_;
+    while (my $parent = $node->{_parent}) {
+        $node = $parent;
+    }
+    return $node;
 }
 
 sub children {
@@ -118,13 +140,15 @@ sub children {
 
 sub create_child {
     my $self = shift;
-    my $child = UD::NodeCl->new(@_); #ref($self)->new(@_);
+    my $child = UD::NodeClAl->new(@_); #ref($self)->new(@_);
     $child->set_parent($self);
+    push @{$self->root->{_descendants}}, $child;
     return $child;
 }
 
 sub _descendantsF {
     my ($self) = @_;
+    return @{$self->{_descendants}} if $self->{_descendants};
     my @descs = ();
     my @stack = $self->{_firstchild} || ();
     while (@stack) {
@@ -139,6 +163,7 @@ sub _descendantsF {
 sub descendants {
     my ($self, $args) = @_;
     my $except = $args ? ($args->{except}||0) : 0;
+    return @{$self->{_descendants}} if !$except && $self->{_descendants};
     return () if $self == $except;
     my @descs = ();
     my @stack = $self->{_firstchild} || ();
@@ -179,9 +204,9 @@ sub is_descendant_of {
     return 0;
 }
 
-sub bundle { $_[0]->{_root}{_bundle}; }
+sub bundle { $_[0]->root->{_bundle}; }
 
-sub document { $_[0]->{_root}{_bundle}{_doc}}
+sub document { $_[0]->root->{_bundle}{_doc}; }
 
 sub address { $_[0]->bundle->id . '-' . $_[0]->ord; } #???
 
@@ -189,16 +214,6 @@ sub is_root { !$_[0]->{_parent}; }
 
 sub log_fatal { confess @_; }
 sub log_warn { cluck @_; }
-
-sub _normalize_node_ordering {
-    my $self = shift;
-    confess 'Ordering normalization can be applied only on root nodes!' if $self->parent;
-    my $new_ord = 1;
-    foreach my $node ( $self->descendants ) {
-        $node->{ord} = $new_ord++;
-    }
-    return;
-}
 
 sub _check_shifting_method_args {
     my ( $self, $reference_node, $arg_ref ) = @_;
@@ -277,14 +292,15 @@ sub shift_before_subtree {
 # However, due to unfriendly name and arguments it's not public.
 sub _shift_to_node {
     my ( $self, $reference_node, $after, $without_children ) = @_;
-    my @all_nodes = $self->root->descendants();
+    my $root = $self->root;
+    my @all_nodes = @{$root->{_descendants}};
 
     # Make sure that ord of all nodes is defined
     #my $maximal_ord = @all_nodes; -this does not work, since there may be gaps in ordering
     my $maximal_ord = 10000;
     foreach my $d (@all_nodes) {
         if ( !defined $d->ord ) {
-            $d->set_ord( $maximal_ord++ );
+            $d->{ord} = $maximal_ord++;
         }
     }
 
@@ -343,6 +359,8 @@ sub _shift_to_node {
             $moving_node->set_ord( $counter++ );
         }
     }
+    @all_nodes = sort { $a->ord <=> $b->ord } @all_nodes;
+    $root->{_descendants} = \@all_nodes;
     return;
 }
 

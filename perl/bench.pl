@@ -135,3 +135,6 @@ $doc->save_conllu("perl$implementation-reorder.conllu") if $DEBUG;
 
 $doc->save_conllu($out_conllu);
 print "save\n";
+
+undef $doc;
+print "end\n";

@@ -6,6 +6,9 @@ use Carp;
 use Scalar::Util qw(weaken);
 use UD::NodeCa;
 use UD::NodeCl;
+use UD::NodeClAa;
+use UD::NodeClAl;
+use UD::NodeA;
 
 sub new {
     my ($class, $attrs) = @_;
@@ -31,10 +34,20 @@ sub create_tree {
     # TODO reuse the hash $args
     my $class = 'UD::Node' . $self->{_doc}{implementation};
     my $root = $class->new(%$args);
-    weaken( $root->{_root} = $root );
-    weaken( $root->{_bundle} = $self );
-    $root->{ord} = 0;
+    if ($class eq 'UD::NodeA'){
+        $root->[0] = [];
+        weaken( $root->[1] = $self );
+        weaken( $root->[5] = $root );
+        $root->[6] = 0;
+    } else {
+        weaken( $root->{_root} = $root );
+        weaken( $root->{_bundle} = $self );
+        $root->{ord} = 0;
+    }
+
     $self->{_trees}{$selector} = $root;
+    $root->{_descendants} = [] if $class eq 'UD::NodeClAa';
+
     return $root;
 }
 

@@ -1,4 +1,4 @@
-package UD::NodeCl;
+package UD::NodeClAa;
 use strict;
 use warnings;
 use Carp qw(confess cluck);
@@ -29,7 +29,11 @@ sub set_parent {
     $self->cut() if $self->{_parent};
 
     weaken( $self->{_parent} = $parent );
-    weaken( $self->{_root} = $parent->{_root} ) if !$self->{_root};
+    if (!$self->{_root}){
+        my $root = $parent->{_root};
+        weaken( $self->{_root} = $root );
+        push @{$root->{_descendants}}, $self;
+    }
     
     my $prev = $parent->{_lastchild};
     $parent->{_lastchild} = $self;
@@ -59,7 +63,8 @@ sub cut {
 
 sub remove {
     my ($self, $arg_ref) = @_;
-    if ( $self->is_root ) {
+    my $root = $self->{_root};
+    if ( $root == $self ) {
         confess 'Tree root cannot be removed using $root->remove().'
               . ' Use $bundle->remove_tree($selector) instead';
     }
@@ -81,27 +86,48 @@ sub remove {
         }
     }
 
-    # Remove the subtree from the document's indexing table
-    my @to_remove = ( $self, $self->_descendantsF );
-#   foreach my $node ( @to_remove) {
-#         if ( defined $node->id ) {
-#             $document->_remove_references_to_node( $node );
-#             $document->index_node_by_id( $node->id, undef );
-#         }
-#     }
+    my @to_remove = sort {$a->{ord} <=> $b->{ord}} ($self, $self->_descendantsF);
+    my ($first_ord, $last_ord) = ($to_remove[0]->ord, $to_remove[-1]->ord);
+    my $all_nodes = $root->{_descendants};
+#print "all= " . join(" ", map {$_->ord . $_->lemma} @$all_nodes) . "\n";
+#print "to_remove= " . join(" ", map {$_->ord . $_->lemma} @to_remove) . "\n";
+    
+    # Remove the nodes from $root->{_descendants}.
+    # projective subtrees can be deleted faster
+    if ($last_ord - $first_ord + 1 == @to_remove){
+#print "projective $first_ord $last_ord\n";
+        splice @{$root->{_descendants}}, $first_ord - 1, $last_ord - $first_ord + 1;
+    }
+    # non-projective subtrees must iterated
+    else {
+        my $remove_i = 1;
+        my @new_all_nodes = @$all_nodes[0..$first_ord-2];
+#print "new= " . join(" ", map {$_->ord . $_->lemma} @new_all_nodes) . "\n";
+        for my $all_i ($first_ord .. $#{$all_nodes}){
+            if (($to_remove[$remove_i]||0) == $all_nodes->[$all_i]){
+                $remove_i++;
+            } else {
+                push @new_all_nodes, $all_nodes->[$all_i];
+            }
+        }
+#print "New= " . join(" ", map {$_->ord . $_->lemma} @new_all_nodes) . "\n";
+        $root->{_descendants} = $all_nodes = \@new_all_nodes
+    }
+    
+    # Update ord of the following nodes in the tree
+    for my $i ($first_ord-1..$#{$all_nodes}){
+        $all_nodes->[$i]->{ord} = $i+1;
+    }
 
     # Disconnect the node from its parent (& siblings) and delete all attributes
     $self->cut();
-
-    # TODO: order normalizing can be done in a more efficient way
-    # (update just the following ords)
-    $self->{_root}->_normalize_node_ordering();
 
     # By reblessing we make sure that
     # all methods called on removed nodes will result in fatal errors.
     foreach my $node (@to_remove){
         bless $node, 'UD::Node::Removed';
     }
+#print "doneall= " . join(" ", map {$_->ord . $_->lemma} @{$root->{_descendants}}) . "\n";    
     return;
 }
 
@@ -118,13 +144,14 @@ sub children {
 
 sub create_child {
     my $self = shift;
-    my $child = UD::NodeCl->new(@_); #ref($self)->new(@_);
+    my $child = UD::NodeClAa->new(@_); #ref($self)->new(@_);
     $child->set_parent($self);
     return $child;
 }
 
 sub _descendantsF {
     my ($self) = @_;
+    return @{$self->{_descendants}} if $self->{_descendants};
     my @descs = ();
     my @stack = $self->{_firstchild} || ();
     while (@stack) {
@@ -139,6 +166,7 @@ sub _descendantsF {
 sub descendants {
     my ($self, $args) = @_;
     my $except = $args ? ($args->{except}||0) : 0;
+    return @{$self->{_descendants}} if !$except && $self->{_descendants};
     return () if $self == $except;
     my @descs = ();
     my @stack = $self->{_firstchild} || ();
@@ -277,14 +305,15 @@ sub shift_before_subtree {
 # However, due to unfriendly name and arguments it's not public.
 sub _shift_to_node {
     my ( $self, $reference_node, $after, $without_children ) = @_;
-    my @all_nodes = $self->root->descendants();
+    my $root = $self->{_root};
+    my @all_nodes = @{$root->{_descendants}};
 
     # Make sure that ord of all nodes is defined
     #my $maximal_ord = @all_nodes; -this does not work, since there may be gaps in ordering
     my $maximal_ord = 10000;
     foreach my $d (@all_nodes) {
         if ( !defined $d->ord ) {
-            $d->set_ord( $maximal_ord++ );
+            $d->{ord} = $maximal_ord++;
         }
     }
 
@@ -343,6 +372,8 @@ sub _shift_to_node {
             $moving_node->set_ord( $counter++ );
         }
     }
+    @all_nodes = sort { $a->ord <=> $b->ord } @all_nodes;
+    $root->{_descendants} = \@all_nodes;
     return;
 }
 
