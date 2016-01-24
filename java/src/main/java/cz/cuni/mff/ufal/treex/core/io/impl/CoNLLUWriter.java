@@ -34,22 +34,28 @@ public class CoNLLUWriter implements DocumentWriter{
             for (Bundle bundle : document.getBundles()) {
                 for (Sentence sentence : bundle.getSentences()) {
 
-                    List<String> comments = sentence.getComments();
-
-                    for (String comment : comments) {
-                        writer.write(comment, 0, comment.length());
-                        writer.newLine();
-                    }
-
-                    //TODO: multiword
-
                     List<Node> descendants = sentence.getTree().getRoot().getOrderedDescendants();
-                    for (Node descendant : descendants) {
-                        String line = buildLine(descendant);
-                        writer.write(line, 0, line.length());
+
+                    //do not write empty sentences
+                    if (descendants.size() > 0) {
+
+                        List<String> comments = sentence.getComments();
+
+                        for (String comment : comments) {
+                            writer.write(comment, 0, comment.length());
+                            writer.newLine();
+                        }
+
+                        //TODO: multiword
+
+
+                        for (Node descendant : descendants) {
+                            String line = buildLine(descendant);
+                            writer.write(line, 0, line.length());
+                            writer.newLine();
+                        }
                         writer.newLine();
                     }
-                    writer.newLine();
                 }
             }
         } catch (IOException e) {

@@ -7,4 +7,6 @@ public interface NLPTree {
     Node getRoot();
     Document getDocument();
     Bundle getBundle();
+
+    void normalizeOrder();
 }

@@ -32,7 +32,7 @@ public interface Node {
      */
     Optional<Node> getParent();
 
-    void setParent(Node node);
+    void setParent(Node node, boolean ...skipCycles);
 
     Node getRoot();
 

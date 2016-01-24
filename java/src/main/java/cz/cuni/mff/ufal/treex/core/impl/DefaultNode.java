@@ -13,7 +13,7 @@ public class DefaultNode implements Node {
     private final NLPTree tree;
 
     private final int id;
-    private int ord;
+    private int ord = -1;
 
     private String form;
     private String lemma;
@@ -48,6 +48,7 @@ public class DefaultNode implements Node {
     @Override
     public void remove() {
         getParent().ifPresent(node -> node.getChildren().remove(this));
+        getTree().normalizeOrder();
     }
 
     @Override
@@ -59,7 +60,6 @@ public class DefaultNode implements Node {
     @Override
     public Node createChild() {
         Node newChild = createNode();
-        getChildren().add(newChild);
         newChild.setParent(this);
         return newChild;
     }
@@ -83,9 +83,23 @@ public class DefaultNode implements Node {
     }
 
     @Override
-    public void setParent(Node node) {
-        //TODO: check for cycle
+    public void setParent(Node node, boolean ...skipCyles) {
+
+        //check cycle
+        if (skipCyles.length == 1 && skipCyles[0] == true &&
+                (this.equals(node) || node.isDescendantOf(this))) {
+            //skip cycle
+            return;
+        }
+
+        //fix children of my parent
+        if (parent.isPresent()) {
+            parent.get().getChildren().remove(this);
+        }
+
+        //add self as the last child of my new parent
         this.parent = Optional.of(node);
+        node.getChildren().add(this);
     }
 
     @Override
@@ -164,7 +178,7 @@ public class DefaultNode implements Node {
             if (pathParent.get().equals(node)) {
                 return true;
             } else {
-                pathParent = parent.get().getParent();
+                pathParent = pathParent.get().getParent();
             }
         }
         return false;
@@ -172,19 +186,26 @@ public class DefaultNode implements Node {
 
     public void shiftAfterNode(Node node, boolean withoutChildren) {
         if (this.equals(node)) return;
+        if (node.isDescendantOf(this)) return;
 
         shiftToNode(node, true, withoutChildren);
     }
 
     public void shiftBeforeNode(Node node, boolean withoutChildren) {
         if (this.equals(node)) return;
+        if (node.isDescendantOf(this)) return;
 
         shiftToNode(node, false, withoutChildren);
     }
 
     public void shiftAfterSubtree(Node node, boolean withoutChildren) {
         //get last descendants according to ord
-        List<Node> descendants = node.getOrderedDescendants();
+        List<Node> descendants = node.getDescendants();
+        descendants.add(node);
+        descendants.remove(this);
+        descendants.sort((o1, o2) -> o1.getOrd() - o2.getOrd());
+
+
         if (0 == descendants.size()) {
             //nothing to do
             return;
@@ -196,30 +217,42 @@ public class DefaultNode implements Node {
 
     public void shiftBeforeSubtree(Node node, boolean withoutChildren) {
         //get last descendants according to ord
-        List<Node> descendants = node.getOrderedDescendants();
+        List<Node> descendants = node.getDescendants();
+        descendants.add(node);
+        descendants.remove(this);
+        descendants.sort((o1, o2) -> o1.getOrd() - o2.getOrd());
+
         if (0 == descendants.size()) {
             //nothing to do
             return;
         } else {
             Node firstDescendant = descendants.get(0);
-            shiftToNode(firstDescendant, true, withoutChildren);
+            shiftToNode(firstDescendant, false, withoutChildren);
         }
     }
 
     private void shiftToNode(Node node, boolean after, boolean withoutChildren) {
-        List<Node> allNodes = node.getRoot().getOrderedDescendants();
+        List<Node> allNodes = getRoot().getDescendants();
+
+        int maxOrd = 10000;
+        for (Node descendant : allNodes) {
+            if (descendant.getOrd() == -1) {
+                descendant.setOrd(maxOrd++);
+            }
+        }
 
         List<Node> nodesToMove;
 
         if (withoutChildren) {
             nodesToMove = new ArrayList<>(1);
-            nodesToMove.add(node);
+            nodesToMove.add(this);
         } else {
-            nodesToMove = node.getDescendants();
-            nodesToMove.add(node);
+            nodesToMove = this.getDescendants();
+            nodesToMove.add(this);
+            nodesToMove.sort((o1, o2) -> o1.getOrd() - o2.getOrd());
         }
         //order them
-        nodesToMove.sort((o1, o2) -> o1.getOrd() - o2.getOrd());
+        allNodes.sort((o1, o2) -> o1.getOrd() - o2.getOrd());
 
         Set<Node> isMoving = new HashSet<>(nodesToMove);
 

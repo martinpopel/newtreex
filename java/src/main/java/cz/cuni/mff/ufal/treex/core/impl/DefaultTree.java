@@ -17,6 +17,7 @@ public class DefaultTree implements NLPTree {
     public DefaultTree(Document document, Bundle bundle) {
         this.document = document;
         this.rootNode = createNode();
+        this.rootNode.setOrd(0);
         this.bundle = bundle;
     }
 
@@ -37,5 +38,13 @@ public class DefaultTree implements NLPTree {
     @Override
     public Bundle getBundle() {
         return bundle;
+    }
+
+    @Override
+    public void normalizeOrder() {
+        int newOrder = 1;
+        for (Node descendant : rootNode.getOrderedDescendants()) {
+            descendant.setOrd(newOrder++);
+        }
     }
 }

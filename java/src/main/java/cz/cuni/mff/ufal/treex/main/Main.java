@@ -19,20 +19,33 @@ import java.util.Set;
  */
 public class Main {
     private static long seed = 42;
-    private static long maxseed = 1 << 32;
+    private static long maxseed = (long)Math.pow(2, 32);
     private static int myrand(long modulo) {
-        seed = (1103515245 * seed + 12345) % maxseed;
+        seed = (1103515245L * seed + 12345L) % maxseed;
         return (int)(seed % modulo);
     }
 
     public static void main(String[] args) {
-        String inCoNLL = args[0];
-        String outCoNLL = args[1];
+        boolean debug = false;
+
+        String inCoNLL;
+        String outCoNLL;
+        if ("-d".equals(args[0])) {
+            inCoNLL = args[1];
+            outCoNLL = args[2];
+            debug = true;
+        } else {
+            inCoNLL = args[0];
+            outCoNLL = args[1];
+        }
         System.out.println("init");
 
         DocumentReader coNLLUReader = new CoNLLUReader(Paths.get(inCoNLL));
         Document document = coNLLUReader.readDocument();
         System.out.println("load");
+        if (debug) {
+            writeDoc("java-load.conllu", document);
+        }
 
         for (Bundle bundle : document.getBundles()) {
             for (Sentence sentence : bundle.getSentences()) {
@@ -69,18 +82,23 @@ public class Main {
             }
         }
         System.out.println("write");
+        if (debug) {
+            writeDoc("java-write.conllu", document);
+        }
 
         for (Bundle bundle : document.getBundles()) {
             for (Sentence sentence : bundle.getSentences()) {
-                List<Node> descendants = sentence.getTree().getRoot().getDescendants();
+                List<Node> descendants = sentence.getTree().getRoot().getOrderedDescendants();
                 for (Node node : descendants) {
-                    // TODO: catch exception if a cycle would be created
                     int rand_index = myrand(descendants.size());
-                    node.setParent(descendants.get(rand_index));
+                    node.setParent(descendants.get(rand_index), true);
                 }
             }
         }
         System.out.println("rehang");
+        if (debug) {
+            writeDoc("java-rehang.conllu", document);
+        }
 
         Set<Node> alreadyRemoved = new HashSet<>();
         for (Bundle bundle : document.getBundles()) {
@@ -96,6 +114,9 @@ public class Main {
             }
         }
         System.out.println("remove");
+        if (debug) {
+            writeDoc("java-remove.conllu", document);
+        }
 
         for (Bundle bundle : document.getBundles()) {
             for (Sentence sentence : bundle.getSentences()) {
@@ -110,6 +131,9 @@ public class Main {
             }
         }
         System.out.println("add");
+        if (debug) {
+            writeDoc("java-add.conllu", document);
+        }
 
         for (Bundle bundle : document.getBundles()) {
             for (Sentence sentence : bundle.getSentences()) {
@@ -125,9 +149,17 @@ public class Main {
             }
         }
         System.out.println("reorder");
+        if (debug) {
+            writeDoc("java-reorder.conllu", document);
+        }
 
         DocumentWriter coNLLUWriter = new CoNLLUWriter(Paths.get(outCoNLL));
         coNLLUWriter.writeDocument(document);
         System.out.println("save");
+    }
+
+    private static void writeDoc(String fileName, Document document) {
+        DocumentWriter coNLLUWriter = new CoNLLUWriter(Paths.get(fileName));
+        coNLLUWriter.writeDocument(document);
     }
 }
