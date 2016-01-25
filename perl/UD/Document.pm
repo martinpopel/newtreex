@@ -16,8 +16,9 @@ sub bundles {@{$_[0]->{_bundles}};}
 sub create_bundle {
     my ($self, $args) = @_;
     # TODO args->{before} args->{after}
-    my $bundle = UD::Bundle->new({id=>1 + @{$self->{_bundles}}});
-    weaken( $bundle->{_doc} = $self );
+    my $bundle = UD::Bundle->new();
+    $bundle->set_id(1 + @{$self->{_bundles}});
+    $bundle->set_document($self);
     push @{$self->{_bundles}}, $bundle;
     return $bundle;
 }

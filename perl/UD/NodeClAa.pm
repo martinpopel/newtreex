@@ -14,6 +14,16 @@ use Class::XSAccessor {
      },
 };
 
+sub _create_root {
+    my ($class, $bundle) = @_;
+    my $root = bless {}, $class;
+    $root->{_descendants} = [];
+    $root->{ord} = 0;
+    weaken( $root->{_bundle} = $bundle);
+    weaken( $root->{_root} = $root );
+    return $root;
+}
+
 sub set_parent {
     my ($self, $parent, $args) = @_;
     confess('set_parent(undef) not allowed') if !defined $parent;

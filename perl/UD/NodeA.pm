@@ -30,6 +30,16 @@ sub new {
     return bless $array, $class;
 }
 
+sub _create_root {
+    my ($class, $bundle) = @_;
+    my $root = bless [], $class;
+    $root->[$DESCENDANTS] = [];
+    $root->[$ORD] = 0;
+    weaken( $root->[$BUNDLE] = $bundle);
+    weaken( $root->[$ROOT] = $root );
+    return $root;
+}
+
 sub set_parent {
     my ($self, $parent, $args) = @_;
     confess('set_parent(undef) not allowed') if !defined $parent;
