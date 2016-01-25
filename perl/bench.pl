@@ -11,9 +11,8 @@ $SIG{INT} = sub {warn "\nbench.pl is ignoring Ctrl+C (SIGINT). Use Ctrl+\\ (SIGQ
 my $seed = 42;
 my $maxseed = 2**32;
 sub myrand {
-    my ($modulo) = @_;
     $seed = (1103515245 * $seed + 12345) % $maxseed;
-    return $seed % $modulo;
+    return $seed % $_[0];
 }
 
 STDOUT->autoflush(1);

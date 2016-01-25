@@ -34,7 +34,7 @@ sub set_parent {
     my ($self, $parent, $args) = @_;
     confess('set_parent(undef) not allowed') if !defined $parent;
 
-    if ( ($self == $parent || $parent->is_descendant_of($self) )) {
+    if ( ($self == $parent || UD::NodeA::is_descendant_of($parent, $self) )) {
         return if $args && $args->{cycles} eq 'skip';
         my $b_id = $self->bundle->id;
         my $n_id = $self->ord; # TODO id instead of ord?
@@ -42,7 +42,19 @@ sub set_parent {
         confess "Bundle $b_id: Attempt to set parent of $n_id to the node $p_id, which would lead to a cycle.";
     }
 
-    $self->cut() if $self->[$PARENT];
+    #$self->cut() if $self->[$PARENT];
+    my $origparent = $self->[$PARENT];
+    if ($origparent){
+        my $node = $origparent->[$FIRSTCHILD];
+        if ($self == $node) {
+            $origparent->[$FIRSTCHILD] = $self->[$NEXTSIBLING];
+        } else {
+            while ($node && $self != $node->[$NEXTSIBLING]){
+                $node = $node->[$NEXTSIBLING];
+            }
+            $node->[$NEXTSIBLING] = $self->[$NEXTSIBLING] if $node;
+        }
+    }
 
     weaken( $self->[$PARENT] = $parent );
     if (!$self->[$ROOT]){
@@ -80,7 +92,7 @@ sub remove {
               . ' Use $bundle->remove_tree($selector) instead';
     }
 
-    my @children = $self->children;
+    my @children = UD::NodeA::children($self);
     my $parent = $self->[$PARENT];
     if (@children){
         my $what_to_do = 'remove';
@@ -89,7 +101,7 @@ sub remove {
         }
         if ($what_to_do =~ /^rehang/){
             foreach my $child (@children){
-                $child->set_parent($parent);
+                UD::NodeA::set_parent($child, $parent);
             }
         }
         if ($what_to_do =~ /warn$/){
@@ -97,7 +109,7 @@ sub remove {
         }
     }
 
-    my @to_remove = sort {$a->[$ORD] <=> $b->[$ORD]} ($self, $self->_descendantsF);
+    my @to_remove = sort {$a->[$ORD] <=> $b->[$ORD]} ($self, UD::NodeA::_descendantsF($self));
     my ($first_ord, $last_ord) = ($to_remove[0]->[$ORD], $to_remove[-1]->[$ORD]);
     my $all_nodes = $root->[$DESCENDANTS];
 
@@ -126,11 +138,21 @@ sub remove {
     }
 
     # Disconnect the node from its parent (& siblings) and delete all attributes
-    $self->cut();
+    #$self->cut();
+    my $node = $parent->[$FIRSTCHILD];
+    if ($self == $node) {
+        $parent->[$FIRSTCHILD] = $self->[$NEXTSIBLING];
+    } else {
+        while ($node && $self != $node->[$NEXTSIBLING]){
+            $node = $node->[$NEXTSIBLING];
+        }
+        $node->[$NEXTSIBLING] = $self->[$NEXTSIBLING] if $node;
+    }
+    $self->[$PARENT] = $self->[$NEXTSIBLING] = undef;
 
     # By reblessing we make sure that
     # all methods called on removed nodes will result in fatal errors.
-    foreach my $node (@to_remove){
+    foreach $node (@to_remove){
         bless $node, 'UD::Node::Removed';
     }
     return;
@@ -150,7 +172,7 @@ sub children {
 sub create_child {
     my $self = shift;
     my $child = UD::NodeA->new(@_); #ref($self)->new(@_);
-    $child->set_parent($self);
+    UD::NodeA::set_parent($child, $self);
     return $child;
 }
 
@@ -243,7 +265,7 @@ sub _check_shifting_method_args {
     log_fatal( 'Reference node must be from the same tree. In ' . $stack )
         if $reference_node->root != $self->root;
 
-    if (!$arg_ref->{without_children} && $reference_node->is_descendant_of($self)){
+    if (!$arg_ref->{without_children} && UD::NodeA::is_descendant_of($reference_node, $self)){
         return 1 if $arg_ref->{skip_if_descendant};
         log_fatal '$reference_node is a descendant of $self.'
                 . ' Maybe you have forgotten {without_children=>1}. ' . "\n" . $stack
@@ -263,16 +285,16 @@ sub shift_after_node {
     my ( $self, $reference_node, $arg_ref ) = @_;
     return if $self == $reference_node;
     return if _check_shifting_method_args(@_);
-    return $self->_shift_to_node( $reference_node, 1, $arg_ref->{without_children} ) if $arg_ref;
-    return $self->_shift_to_node( $reference_node, 1, 0 );
+    return UD::NodeA::_shift_to_node($self, $reference_node, 1, $arg_ref->{without_children} ) if $arg_ref;
+    return UD::NodeA::_shift_to_node($self, $reference_node, 1, 0 );
 }
 
 sub shift_before_node {
     my ( $self, $reference_node, $arg_ref ) = @_;
     return if $self == $reference_node;
     return if _check_shifting_method_args(@_);
-    return $self->_shift_to_node( $reference_node, 0, $arg_ref->{without_children} ) if $arg_ref;
-    return $self->_shift_to_node( $reference_node, 0, 0 );
+    return UD::NodeA::_shift_to_node($self, $reference_node, 0, $arg_ref->{without_children} ) if $arg_ref;
+    return UD::NodeA::_shift_to_node($self, $reference_node, 0, 0 );
 }
 
 sub shift_after_subtree {
@@ -281,10 +303,10 @@ sub shift_after_subtree {
 
     my $last_node;
     if ( $arg_ref->{without_children} ) {
-        ($last_node) = reverse grep { $_ != $self } $reference_node->descendants( { add_self => 1 } );
+        ($last_node) = reverse grep { $_ != $self } UD::NodeA::descendants($reference_node, { add_self => 1 } );
     }
     else {
-        $last_node = $reference_node->descendants( { except => $self, last_only => 1, add_self => 1 } );
+        $last_node = UD::NodeA::descendants($reference_node, { except => $self, last_only => 1, add_self => 1 } );
     }
     return if !defined $last_node;
     return $self->_shift_to_node( $last_node, 1, $arg_ref->{without_children} ) if $arg_ref;
@@ -297,10 +319,10 @@ sub shift_before_subtree {
 
     my $first_node;
     if ( $arg_ref->{without_children} ) {
-        ($first_node) = grep { $_ != $self } $reference_node->descendants( {  add_self => 1 } );
+        ($first_node) = grep { $_ != $self } UD::NodeA::descendants($reference_node, { add_self => 1 } );
     }
     else {
-        $first_node = $reference_node->descendants( { except => $self, first_only => 1, add_self => 1 } );
+        $first_node = UD::NodeA::descendants($reference_node, { except => $self, first_only => 1, add_self => 1 } );
     }
     return if !defined $first_node;
     return $self->_shift_to_node( $first_node, 0, $arg_ref->{without_children} ) if $arg_ref;
@@ -318,7 +340,7 @@ sub _shift_to_node {
     #my $maximal_ord = @all_nodes; -this does not work, since there may be gaps in ordering
     my $maximal_ord = 10000;
     foreach my $d (@all_nodes) {
-        if ( !defined $d->ord ) {
+        if ( !defined $d->[$ORD] ) {
             $d->[$ORD] = $maximal_ord++;
         }
     }
@@ -331,7 +353,7 @@ sub _shift_to_node {
         @nodes_to_move = ($self);
     }
     else {
-        @nodes_to_move = $self->descendants( { add_self => 1 } );
+        @nodes_to_move = UD::NodeA::descendants($self, { add_self => 1 } );
     }
 
     # Let's make a hash, so we can easily recognize which nodes are to be moved.
