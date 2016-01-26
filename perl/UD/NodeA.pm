@@ -211,15 +211,20 @@ sub descendants {
         push @stack, $node->[$FIRSTCHILD] || ();
     }
 
-    # TODO nicer code
     if ($args){
         push @descs, $self if $args->{add_self};
         if ($args->{first_only}){
-            my ($first) = sort {$a->[$ORD] <=> $b->[$ORD]} @descs;
+            my $first = pop @descs;
+            foreach my $node (@descs) {
+                $first = $node if $node->[$ORD] < $first->[$ORD];
+            }
             return $first;
         }
         if ($args->{last_only}){
-            my ($last) = sort {$b->[$ORD] <=> $a->[$ORD]} @descs;
+            my $last = pop @descs;
+            foreach my $node (@descs) {
+                $last = $node if $node->[$ORD] > $last->[$ORD];
+            }
             return $last;
         }
     }
@@ -294,7 +299,10 @@ sub shift_after_subtree {
 
     my $last_node;
     if ( $arg_ref->{without_children} ) {
-        ($last_node) = reverse grep { $_ != $self } UD::NodeA::descendants($reference_node, { add_self => 1 } );
+        foreach my $node ($reference_node, UD::NodeB::_descendantsF($reference_node)){
+            next if $node == $self;
+            $last_node = $node if !$last_node || ($node->[$ORD] > $last_node->[$ORD]);
+        }
     }
     else {
         $last_node = UD::NodeA::descendants($reference_node, { except => $self, last_only => 1, add_self => 1 } );
@@ -310,7 +318,10 @@ sub shift_before_subtree {
 
     my $first_node;
     if ( $arg_ref->{without_children} ) {
-        ($first_node) = grep { $_ != $self } UD::NodeA::descendants($reference_node, { add_self => 1 } );
+        foreach my $node ($reference_node, UD::NodeB::_descendantsF($reference_node)){
+            next if $node == $self;
+            $first_node = $node if !$first_node || ($node->[$ORD] < $first_node->[$ORD]);
+        }
     }
     else {
         $first_node = UD::NodeA::descendants($reference_node, { except => $self, first_only => 1, add_self => 1 } );
@@ -345,7 +356,6 @@ sub _shift_to_node {
     # The technical root has ord=0 and the first node will have ord=1.
     my $counter     = 1;
     my $nodes_moved = 0;
-    @all_nodes = sort { $a->[$ORD] <=> $b->[$ORD] } @all_nodes;
     foreach my $node (@all_nodes) {
 
         # We skip nodes that are being moved.
