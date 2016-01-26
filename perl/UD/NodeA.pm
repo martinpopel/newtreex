@@ -70,28 +70,12 @@ sub set_parent {
     if (!$self->[$ROOT]){
         my $root = $parent->[$ROOT];
         weaken( $self->[$ROOT] = $root );
-        push @{$root->[$DESCENDANTS]}, $self;
+        $self->[$ORD] = -1 + push @{$root->[$DESCENDANTS]}, $self;
     }
 
     $self->[$NEXTSIBLING] = $parent->[$FIRSTCHILD];
     $parent->[$FIRSTCHILD] = $self;
     return;
-}
-
-sub cut {
-    my ($self) = @_;
-    my $parent = $self->[$PARENT];
-    my $node = $parent->[$FIRSTCHILD];
-    if ($self == $node) {
-        $parent->[$FIRSTCHILD] = $self->[$NEXTSIBLING];
-    } else {
-        while ($node && $self != $node->[$NEXTSIBLING]){
-            $node = $node->[$NEXTSIBLING];
-        }
-        $node->[$NEXTSIBLING] = $self->[$NEXTSIBLING] if $node;
-    }
-    $self->[$PARENT] = $self->[$NEXTSIBLING] = undef;
-    return $self;
 }
 
 sub remove {
@@ -240,8 +224,7 @@ sub descendants {
         }
     }
 
-    # TODO ord is undef when $n->create_child()->shift_after_subtree($n);
-    return sort {($a->[$ORD]||0) <=> ($b->[$ORD]||0)} @descs;
+    return sort {$a->[$ORD] <=> $b->[$ORD]} @descs;
 }
 
 sub is_descendant_of {
@@ -343,15 +326,6 @@ sub _shift_to_node {
     my ( $self, $reference_node, $after, $without_children ) = @_;
     my $root = $self->[$ROOT];
     my @all_nodes = @{$root->[$DESCENDANTS]};
-
-    # Make sure that ord of all nodes is defined
-    #my $maximal_ord = @all_nodes; -this does not work, since there may be gaps in ordering
-    my $maximal_ord = 10000;
-    foreach my $d (@all_nodes) {
-        if ( !defined $d->[$ORD] ) {
-            $d->[$ORD] = $maximal_ord++;
-        }
-    }
 
     # Which nodes are to be moved?
     # $self only (the {without_children=>1} switch)

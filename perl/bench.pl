@@ -69,6 +69,7 @@ foreach my $bundle ($doc->bundles){
 print "write\n";
 $doc->save_conllu("perl$implementation-write.conllu") if $DEBUG;
 
+my $cycles_skip = {cycles=>'skip'};
 foreach my $bundle ($doc->bundles){
     foreach my $tree ($bundle->trees){
         my @nodes = $tree->descendants;
@@ -81,7 +82,7 @@ foreach my $bundle ($doc->bundles){
             #    confess $_ if !/cycle/; # rethrow other errors than "cycle"
             #};
             # However, try{} catch{} is too slow in Perl, so let's use a special parameter
-            $node->set_parent($nodes[$rand_index], {cycles=>'skip'});
+            $node->set_parent($nodes[$rand_index], $cycles_skip);
         }
     }
 }
@@ -110,6 +111,7 @@ foreach my $bundle ($doc->bundles){
 print "add\n";
 $doc->save_conllu("perl$implementation-add.conllu") if $DEBUG;
 
+my ($skip_if_descendant, $without_children) = ({skip_if_descendant=>1}, {without_children=>1});
 foreach my $bundle ($doc->bundles){
     foreach my $tree ($bundle->trees){
         my @nodes = $tree->descendants;
@@ -122,9 +124,9 @@ foreach my $bundle ($doc->bundles){
                 #    confess $_ if !/reference_node is a descendant/;
                 #}
                 # Again, try{} catch{} is too slow in Perl
-                $node->shift_after_node($nodes[$rand_index], {skip_if_descendant=>1});
+                $node->shift_after_node($nodes[$rand_index], $skip_if_descendant);
             } elsif (myrand(10)==0) {
-                $node->shift_before_subtree($nodes[$rand_index], {without_children=>1});
+                $node->shift_before_subtree($nodes[$rand_index], $without_children);
             }
         }
     }
