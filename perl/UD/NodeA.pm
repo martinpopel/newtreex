@@ -255,9 +255,9 @@ sub is_descendant_of {
     return 0;
 }
 
-sub bundle { $_[0]->[$ROOT]{_bundle}; }
+sub bundle { $_[0]->[$ROOT][$BUNDLE]; }
 
-sub document { $_[0]->[$ROOT]{_bundle}{_doc}}
+sub document { $_[0]->[$ROOT][$BUNDLE]->document; }
 
 sub address { $_[0]->bundle->id . '-' . $_[0]->[$ORD]; } #???
 
@@ -266,28 +266,26 @@ sub is_root { !$_[0]->[$PARENT]; }
 sub log_fatal { confess @_; }
 sub log_warn { cluck @_; }
 
+sub prev_node {
+    my ($self) = @_;
+    my $ord = $self->[$ORD] - 1;
+    return undef if $ord <= 0;
+    return $self->[$ROOT][$DESCENDANTS][$ord];
+}
+
+sub next_node {
+    my ($self) = @_;
+    return $self->[$ROOT][$DESCENDANTS][$self->[$ORD] + 1];
+}
+
 sub _check_shifting_method_args {
     my ( $self, $reference_node, $arg_ref ) = @_;
-    my @c     = caller 1;
-    my $stack = "$c[3] called from $c[1], line $c[2]";
-    log_fatal( 'Incorrect number of arguments for ' . $stack ) if @_ < 2 || @_ > 3;
-    log_fatal( 'Undefined reference node for ' . $stack ) if !$reference_node;
-    log_fatal( 'Reference node must be from the same tree. In ' . $stack )
-        if $reference_node->root != $self->root;
 
     if (!$arg_ref->{without_children} && UD::NodeA::is_descendant_of($reference_node, $self)){
         return 1 if $arg_ref->{skip_if_descendant};
         log_fatal '$reference_node is a descendant of $self.'
-                . ' Maybe you have forgotten {without_children=>1}. ' . "\n" . $stack
+                . ' Maybe you have forgotten {without_children=>1}. ' . "\n";
     }
-
-    return 0 if !defined $arg_ref;
-
-    log_fatal(
-        'Second argument for shifting methods can be only options hash reference. In ' . $stack
-    ) if ref $arg_ref ne 'HASH';
-    my $unknown = first { $_ ne 'without_children' && $_ ne 'skip_if_descendant' } keys %{$arg_ref};
-    log_warn("Unknown switch '$unknown' for $stack") if defined $unknown;
     return 0;
 }
 
