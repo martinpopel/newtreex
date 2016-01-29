@@ -9,6 +9,7 @@ __date__ = "2016"
 
 import sys
 import os
+import gc
 
 sys.path.append( os.path.dirname(os.path.abspath(__file__)) + '/utreex/')
 from utreex.core.document import Document, Node
@@ -43,6 +44,14 @@ for bundle in doc:
             pass
 
 print("iterF")
+
+for bundle in doc:
+    for root in bundle:
+        for child in root.children:
+            for node in child.descendants():
+                pass
+
+print("iterS")
 
 for bundle in doc:
     for root in bundle:
@@ -108,3 +117,7 @@ print("reorder")
 
 doc.store({'filename':sys.argv[2]})
 print("save")
+
+del doc
+#gc.collect()
+print("free")
