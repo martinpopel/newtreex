@@ -7,29 +7,32 @@ use Getopt::Long;
 
 my $HELP = 0;
 my $REPEATS = 10;
+my $ITERS = 1;
 my $IN = 'data/UD_Romanian/ro-ud-dev.conllu';
 
 GetOptions(
     'help|h'      => \$HELP,
-    'repeats|r=i' => \$REPEATS,
+    'repeats|r=i' => \$REPEATS, # repetitions of the whole benchmark
+    'n=i'         => \$ITERS, # how many files to process within one benchmark (so far, the same file again)
     'input|i=s'   => \$IN,
 );
+
+my $iter = '';
+if ($ITERS > 1){
+    $iter = "-n $ITERS";
+}
 
 # Don't use any shell metacharacters (e.g. redirections) in the commands below.
 # That would result in executing shell subprocess and the memory consumption
 # would be of that subprocess not of the main process we want to evaluate.
 my @COMMANDS = (
     #dummy     => './dummy.pl',
-    old_Treex  => "perl/bench_old-treex.pl $IN /tmp/out.conllu",
-    pytreex    => "python -u python/bench_pytreex.py $IN /tmp/out.conllu",
-    utreex     => "python -u python/bench_utreex.py $IN /tmp/out.conllu",
-    perlCa     => "perl/bench.pl $IN /tmp/out.conllu Ca",
-    perlCl     => "perl/bench.pl $IN /tmp/out.conllu Cl",
-    perlClAa   => "perl/bench.pl $IN /tmp/out.conllu ClAa",
-    perlClAl   => "perl/bench.pl $IN /tmp/out.conllu ClAl",
-    perlA      => "perl/bench.pl $IN /tmp/out.conllu A",
-    java       => "java -jar java/build/libs/newtreex.jar $IN /tmp/out.conllu",
-    cpp_raw    => "cpp_raw/benchmark $IN /tmp/out.conllu",
+    old_Treex  => "perl/bench_old-treex.pl $iter $IN /tmp/out.conllu",
+    pytreex    => "python -u python/bench_pytreex.py $iter $IN /tmp/out.conllu",
+    utreex     => "python -u python/bench_utreex.py $iter $IN /tmp/out.conllu",
+    perlA      => "perl/bench.pl $iter $IN /tmp/out.conllu A",
+    java       => "java -jar java/build/libs/newtreex.jar $iter $IN /tmp/out.conllu",
+    cpp_raw    => "cpp_raw/benchmark $iter $IN /tmp/out.conllu",
 );
 my %COMMANDS_HASH = @COMMANDS;
 my @COMMANDS_NAMES;
@@ -43,7 +46,7 @@ if ($HELP){
     exit;
 }
 
-my @HEADER = qw(TOTAL MAXMEM init load save iter iterF read write rehang remove add reorder);
+my @HEADER = qw(TOTAL MAXMEM init load save iter iterF iterS read write rehang remove add reorder free exit);
 my %IN_HEADER = map {$_ => 1} @HEADER;
 my @experiments = @ARGV;
 @experiments = @COMMANDS_NAMES if !@experiments;
@@ -52,13 +55,12 @@ my @experiments = @ARGV;
 sub run {
     my ($command) = @_;
     my %t;
-    @t{@HEADER} = map {'skip'} @HEADER;
     my $maxmem = 0;
-    my $start = time;
-    my $last = $start;
+    my ($start, $last);
     # TODO Ideally we would like 'trap "" SIGINT' for the CHILDPROC,
     # but we need to know $pid of the process, we want to test with `ps -orss $pid`.
     my $pid = open(CHILDPROC, "$command |");
+    $start = $last = time;
     while(<CHILDPROC>){
         my $now = time;
         my $mem = `ps -orss $pid`;
@@ -67,11 +69,15 @@ sub run {
         $maxmem = $mem if $mem > $maxmem;
         chomp;
         my $time = sprintf '%.3f', $now - $last;
-        $t{$_} = $time;
+        $t{$_} += $time;
         printf STDERR "%20s %9ss %10sMiB\n", $_, $time, $mem;
         $last = $now;
     }
-    my $total = sprintf '%.3f', time - $start;
+    my $now = time;
+    my $time = sprintf '%.3f', $now - $last;
+    my $total = sprintf '%.3f', $now - $start;
+    $t{exit} = $time;
+    printf STDERR "%20s %9ss %10sMiB\n", 'exit', $time, 0;
     printf STDERR "%20s %9ss %10sMiB\n", 'TOTAL', $total, $maxmem;
     $t{TOTAL} = $total;
     $t{MAXMEM} = $maxmem;

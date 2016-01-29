@@ -3,6 +3,7 @@ DATA=data/UD_Romanian/ro-ud-train.conllu
 DATASHORT=$(notdir $(DATA))
 EXPS=pytreex utreex perlCa perlCl perlClAa perlA java cpp_raw
 REPEATS=10
+N=1
 
 help:
 	# See README.md (https://github.com/martinpopel/newtreex)
@@ -48,7 +49,7 @@ install:  data .perl-install .python-install .cpp_raw-compile
 benchmark:
 	export PYTHONPATH=`pwd`/python/pytreex/ &&\
 	source python/venv/bin/activate &&\
-	./benchmark.pl --input=$(DATA) --repeats=$(REPEATS) $(EXPS) | (trap "" SIGINT SIGQUIT; tee results_$(DATASHORT).txt)
+	./benchmark.pl --input=$(DATA) --repeats=$(REPEATS) -n $(N) $(EXPS) | (trap "" SIGINT SIGQUIT; tee results_$(DATASHORT).txt)
 
 bu: # a quick test of utreex benchmarked
 	./benchmark.pl --input=$(DATA) --repeats=1 utreex | tee results_$(DATASHORT).txt
