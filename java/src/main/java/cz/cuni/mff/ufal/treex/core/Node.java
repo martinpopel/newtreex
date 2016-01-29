@@ -26,6 +26,8 @@ public interface Node {
 
     List<Node> getChildren();
 
+    List<Node> getOrderedChildren();
+
     /**
      * Returns parent node.
      * @return parent node

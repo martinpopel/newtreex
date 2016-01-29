@@ -25,7 +25,7 @@ public class DefaultNode implements Node {
     private String deps;
     private String misc;
 
-    private final List children = new ArrayList<>(0);
+    private final List<Node> children = new ArrayList<>(0);
 
     private Optional<Node> parent;
 
@@ -74,6 +74,13 @@ public class DefaultNode implements Node {
 
     @Override
     public List<Node> getChildren() {
+        return children;
+    }
+
+    @Override
+    public List<Node> getOrderedChildren() {
+        List<Node> children = getChildren();
+        children.sort((o1, o2) -> o1.getOrd() - o2.getOrd());
         return children;
     }
 
@@ -137,7 +144,7 @@ public class DefaultNode implements Node {
     @Override
     public List<Node> getSiblings() {
         if (parent.isPresent()) {
-            List siblings = new ArrayList<>(parent.get().getChildren());
+            List<Node> siblings = new ArrayList<>(parent.get().getChildren());
             siblings.remove(this);
             return siblings;
         } else return new ArrayList<>();

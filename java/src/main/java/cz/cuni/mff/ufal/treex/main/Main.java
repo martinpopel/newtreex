@@ -30,16 +30,27 @@ public class Main {
 
         String inCoNLL;
         String outCoNLL;
-        if ("-d".equals(args[0])) {
-            inCoNLL = args[1];
-            outCoNLL = args[2];
+        int iterations = 1;
+        int startIndex = 0;
+        if ("-d".equals(args[startIndex])) {
             debug = true;
-        } else {
-            inCoNLL = args[0];
-            outCoNLL = args[1];
+            startIndex++;
         }
+        if ("-n".equals(args[startIndex])) {
+            iterations = Integer.parseInt(args[startIndex+1]);
+            startIndex += 2;
+        }
+        inCoNLL = args[startIndex];
+        outCoNLL = args[startIndex+1];
+
         System.out.println("init");
 
+        for (int i=1; i <= iterations; i++) {
+            test(inCoNLL, outCoNLL, debug);
+        }
+    }
+
+    public static void test(String inCoNLL, String outCoNLL, boolean debug) {
         DocumentReader coNLLUReader = new CoNLLUReader(Paths.get(inCoNLL));
         Document document = coNLLUReader.readDocument();
         System.out.println("load");
@@ -64,6 +75,18 @@ public class Main {
             }
         }
         System.out.println("iterF");
+
+        for (Bundle bundle : document.getBundles()) {
+            for (Sentence sentence : bundle.getSentences()) {
+                for (Node child : sentence.getTree().getRoot().getOrderedChildren()) {
+                    for (Node node : child.getDescendants()) {
+                        //noop
+                    }
+                }
+            }
+        }
+        System.out.println("iterS");
+
 
         for (Bundle bundle : document.getBundles()) {
             for (Sentence sentence : bundle.getSentences()) {
@@ -156,6 +179,10 @@ public class Main {
         DocumentWriter coNLLUWriter = new CoNLLUWriter(Paths.get(outCoNLL));
         coNLLUWriter.writeDocument(document);
         System.out.println("save");
+
+        document = null;
+        System.gc(); // suggestion for garbage collection (In Java, it is difficult to force gc).
+        System.out.println("free");
     }
 
     private static void writeDoc(String fileName, Document document) {
