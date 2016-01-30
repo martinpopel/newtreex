@@ -3,7 +3,6 @@ use strict;
 use warnings;
 use autodie;
 use Carp;
-use Scalar::Util qw(weaken);
 use UD::NodeCa;
 use UD::NodeCl;
 use UD::NodeClAa;
@@ -26,7 +25,7 @@ use Class::XSAccessor::Array {
     },
 };
 
-sub set_document { weaken( $_[0][$DOC] = $_[1]); }
+sub set_document { $_[0][$DOC] = $_[1]; }
 
 sub trees { return @{$_[0][$TREES]}; }
 
@@ -41,6 +40,15 @@ sub create_tree {
     my $root = $class->_create_root($self);
     push @{$self->[$TREES]}, $root;
     return $root;
+}
+
+sub destroy {
+    my ($self) = @_;
+    foreach my $tree (@{$self->[$TREES]}){
+        $tree->destroy();
+    }
+    undef @$self;
+    return;
 }
 
 1;

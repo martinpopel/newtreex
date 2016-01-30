@@ -2,7 +2,6 @@ package UD::NodeA;
 use strict;
 use warnings;
 use Carp qw(confess cluck);
-use Scalar::Util qw(weaken);
 use List::Util qw(first);
 
 my @ATTRS;
@@ -35,8 +34,8 @@ sub _create_root {
     my $root = bless [], $class;
     $root->[$DESCENDANTS] = [];
     $root->[$ORD] = 0;
-    weaken( $root->[$BUNDLE] = $bundle);
-    weaken( $root->[$ROOT] = $root );
+    $root->[$BUNDLE] = $bundle;
+    $root->[$ROOT] = $root;
     return $root;
 }
 
@@ -66,10 +65,11 @@ sub set_parent {
         }
     }
 
-    weaken( $self->[$PARENT] = $parent );
+
+    $self->[$PARENT] = $parent;
     if (!$self->[$ROOT]){
         my $root = $parent->[$ROOT];
-        weaken( $self->[$ROOT] = $root );
+        $self->[$ROOT] = $root;
         $self->[$ORD] = -1 + push @{$root->[$DESCENDANTS]}, $self;
     }
 
@@ -147,6 +147,7 @@ sub remove {
     # By reblessing we make sure that
     # all methods called on removed nodes will result in fatal errors.
     foreach $node (@to_remove){
+        undef @$node;
         bless $node, 'UD::Node::Removed';
     }
     return;
@@ -318,7 +319,7 @@ sub shift_before_subtree {
 
     my $first_node;
     if ( $arg_ref->{without_children} ) {
-        foreach my $node ($reference_node, UD::NodeB::_descendantsF($reference_node)){
+        foreach my $node ($reference_node, UD::NodeA::_descendantsF($reference_node)){
             next if $node == $self;
             $first_node = $node if !$first_node || ($node->[$ORD] < $first_node->[$ORD]);
         }
@@ -394,6 +395,16 @@ sub _shift_to_node {
     }
     @all_nodes = sort { $a->[$ORD] <=> $b->[$ORD] } @all_nodes;
     $root->[$DESCENDANTS] = \@all_nodes;
+    return;
+}
+
+sub destroy {
+    my ($self) = @_;
+    foreach my $node (@{$self->[$DESCENDANTS]}){
+        undef @$node;
+    }
+    undef @{$self->[$DESCENDANTS]};
+    undef @$self;
     return;
 }
 

@@ -33,8 +33,8 @@ sub load_conllu {
     my @parents = (0);
     my $class = 'UD::Node' . $self->{implementation};
     my $store_all_descendants = $class =~ /^UD::NodeClA/;
-    my $array_based = $class eq 'UD::NodeA';
-    my $store_root = $class ne 'UD::NodeClAl' && $class ne 'UD::NodeA';
+    my $array_based = ($class eq 'UD::NodeA') || ($class eq 'UD::NodeB');
+    my $store_root_in_hash = $class ne 'UD::NodeClAl' && !$array_based;
     my ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc );
     my $comment = '';
     LINE:
@@ -69,13 +69,12 @@ sub load_conllu {
             my $new_node;
             if ($array_based){
                 $new_node = bless [undef, undef, undef, undef, undef, $root, scalar(@nodes),
-                                   $form, $lemma, $upos, $xpos, $feats, $deprel, $deps, $misc], 'UD::NodeA';
-                weaken($new_node->[5]);
+                                   $form, $lemma, $upos, $xpos, $feats, $deprel, $deps, $misc], $class;
+weaken($new_node->[5]);
             } else {
                 $new_node = $class->new(
                 ord=>scalar(@nodes), form=>$form, lemma=>$lemma, upos=>$upos, xpos=>$xpos, feats=>$feats, deprel=>$deprel, deps=>$deps, misc=>$misc);
             }
-            weaken($new_node->{_root} = $root) if $store_root;
             push @nodes, $new_node;
             push @parents, $head;
             # TODO deps
@@ -121,6 +120,17 @@ sub save_conllu {
         }
     }
     close $fh;
+    return;
+}
+
+sub destroy {
+    my ($self) = @_;
+    my $bundles_ref = $self->{_bundles};
+    foreach my $bundle (@$bundles_ref){
+        $bundle->destroy();
+    }
+    undef @$bundles_ref;
+    undef %$self;
     return;
 }
 
