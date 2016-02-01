@@ -2,7 +2,6 @@ package UD::Document;
 use strict;
 use warnings;
 use autodie;
-use Scalar::Util qw(weaken);
 use UD::Bundle;
 
 sub new {
@@ -32,9 +31,6 @@ sub load_conllu {
     my @nodes = ($root);
     my @parents = (0);
     my $class = 'UD::Node' . $self->{implementation};
-    my $store_all_descendants = $class =~ /^UD::NodeClA/;
-    my $array_based = ($class eq 'UD::NodeA') || ($class eq 'UD::NodeB');
-    my $store_root_in_hash = $class ne 'UD::NodeClAl' && !$array_based;
     my ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc );
     my $comment = '';
     LINE:
@@ -45,11 +41,7 @@ sub load_conllu {
             foreach my $i (1..$#nodes){
                 $nodes[$i]->set_parent( $nodes[ $parents[$i] ] );
             }
-            if ($store_all_descendants){
-                $root->{_descendants} = [@nodes[1..$#nodes]];
-            } elsif ($array_based){
-                $root->[0] = [@nodes[1..$#nodes]];
-            }
+            $root->[0] = [@nodes[1..$#nodes]];
             if (length $comment){
                 $nodes[0]->set_misc($comment);
                 $comment = '';
@@ -67,14 +59,8 @@ sub load_conllu {
                 next LINE;
             }
             my $new_node;
-            if ($array_based){
-                $new_node = bless [undef, undef, undef, undef, undef, $root, scalar(@nodes),
-                                   $form, $lemma, $upos, $xpos, $feats, $deprel, $deps, $misc], $class;
-weaken($new_node->[5]);
-            } else {
-                $new_node = $class->new(
-                ord=>scalar(@nodes), form=>$form, lemma=>$lemma, upos=>$upos, xpos=>$xpos, feats=>$feats, deprel=>$deprel, deps=>$deps, misc=>$misc);
-            }
+            $new_node = bless [undef, undef, undef, undef, undef, $root, scalar(@nodes),
+                               $form, $lemma, $upos, $xpos, $feats, $deprel, $deps, $misc], $class;
             push @nodes, $new_node;
             push @parents, $head;
             # TODO deps

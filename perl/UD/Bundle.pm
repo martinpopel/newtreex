@@ -3,10 +3,6 @@ use strict;
 use warnings;
 use autodie;
 use Carp;
-use UD::NodeCa;
-use UD::NodeCl;
-use UD::NodeClAa;
-use UD::NodeClAl;
 use UD::NodeA;
 
 my ($TREES, $ID, $DOC);
