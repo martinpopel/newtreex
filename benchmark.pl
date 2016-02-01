@@ -32,6 +32,7 @@ my @COMMANDS = (
     pytreex    => "python -u python/bench_pytreex.py $iter $IN /tmp/out.conllu",
     utreex     => "python -u python/bench_utreex.py $iter $IN /tmp/out.conllu",
     perlA      => "perl/bench.pl $iter $IN /tmp/out.conllu A",
+    perlB      => "perl/bench.pl $iter $IN /tmp/out.conllu B",
     java       => "java -jar java/build/libs/newtreex.jar $iter $IN /tmp/out.conllu",
     cpp_raw    => "cpp_raw/benchmark $iter $IN /tmp/out.conllu",
 );
@@ -47,7 +48,7 @@ if ($HELP){
     exit;
 }
 
-my @HEADER = qw(REAL CPU MAXMEM init load save iter iterF iterS read write rehang remove add reorder free exit);
+my @HEADER = qw(REAL CPU MAXMEM init load save iter iterF iterS read write rehang remove add reorder exit);
 my %IN_HEADER = map {$_ => 1} @HEADER;
 my @experiments = @ARGV;
 @experiments = @COMMANDS_NAMES if !@experiments;

@@ -2,7 +2,6 @@ package UD::NodeA;
 use strict;
 use warnings;
 use Carp qw(confess cluck);
-use List::Util qw(first);
 
 my @ATTRS;
 my ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING, # private (no getter nor setter)
@@ -267,77 +266,72 @@ sub next_node {
     return $self->[$ROOT][$DESCENDANTS][$self->[$ORD] + 1];
 }
 
-sub _check_shifting_method_args {
+sub shift_before_node {
     my ( $self, $reference_node, $arg_ref ) = @_;
-
-    if (!$arg_ref->{without_children} && UD::NodeA::is_descendant_of($reference_node, $self)){
-        return 1 if $arg_ref->{skip_if_descendant};
-        log_fatal '$reference_node is a descendant of $self.'
-                . ' Maybe you have forgotten {without_children=>1}. ' . "\n";
-    }
-    return 0;
+    return UD::NodeA::_shift_to_node($self, $reference_node, 0, 0, $arg_ref);
 }
 
 sub shift_after_node {
     my ( $self, $reference_node, $arg_ref ) = @_;
-    return if $self == $reference_node;
-    return if _check_shifting_method_args(@_);
-    return UD::NodeA::_shift_to_node($self, $reference_node, 1, $arg_ref->{without_children} ) if $arg_ref;
-    return UD::NodeA::_shift_to_node($self, $reference_node, 1, 0 );
-}
-
-sub shift_before_node {
-    my ( $self, $reference_node, $arg_ref ) = @_;
-    return if $self == $reference_node;
-    return if _check_shifting_method_args(@_);
-    return UD::NodeA::_shift_to_node($self, $reference_node, 0, $arg_ref->{without_children} ) if $arg_ref;
-    return UD::NodeA::_shift_to_node($self, $reference_node, 0, 0 );
-}
-
-sub shift_after_subtree {
-    my ( $self, $reference_node, $arg_ref ) = @_;
-    return if _check_shifting_method_args(@_);
-
-    my $last_node;
-    if ( $arg_ref->{without_children} ) {
-        foreach my $node ($reference_node, UD::NodeB::_descendantsF($reference_node)){
-            next if $node == $self;
-            $last_node = $node if !$last_node || ($node->[$ORD] > $last_node->[$ORD]);
-        }
-    }
-    else {
-        $last_node = UD::NodeA::descendants($reference_node, { except => $self, last_only => 1, add_self => 1 } );
-    }
-    return if !defined $last_node;
-    return $self->_shift_to_node( $last_node, 1, $arg_ref->{without_children} ) if $arg_ref;
-    return $self->_shift_to_node( $last_node, 1, 0 );
+    return UD::NodeA::_shift_to_node($self, $reference_node, 1, 0, $arg_ref);
 }
 
 sub shift_before_subtree {
     my ( $self, $reference_node, $arg_ref ) = @_;
-    return if _check_shifting_method_args(@_);
+    return UD::NodeA::_shift_to_node($self, $reference_node, 0, 1, $arg_ref);
+}
 
-    my $first_node;
-    if ( $arg_ref->{without_children} ) {
-        foreach my $node ($reference_node, UD::NodeA::_descendantsF($reference_node)){
-            next if $node == $self;
-            $first_node = $node if !$first_node || ($node->[$ORD] < $first_node->[$ORD]);
-        }
-    }
-    else {
-        $first_node = UD::NodeA::descendants($reference_node, { except => $self, first_only => 1, add_self => 1 } );
-    }
-    return if !defined $first_node;
-    return $self->_shift_to_node( $first_node, 0, $arg_ref->{without_children} ) if $arg_ref;
-    return $self->_shift_to_node( $first_node, 0, 0 );
+sub shift_after_subtree {
+    my ( $self, $reference_node, $arg_ref ) = @_;
+    return UD::NodeA::_shift_to_node($self, $reference_node, 1, 1, $arg_ref);
 }
 
 # This method does the real work for all shift_* methods.
 # However, due to unfriendly name and arguments it's not public.
 sub _shift_to_node {
-    my ( $self, $reference_node, $after, $without_children ) = @_;
-    my $root = $self->[$ROOT];
-    my @all_nodes = @{$root->[$DESCENDANTS]};
+    my ( $self, $reference_node, $after, $subtree, $args) = @_;
+
+    # $node->shift_after_node($node) should result in no action.
+    return if !$subtree && $self == $reference_node;
+
+    # Extract the optional arguments from $args.
+    my ($without_children, $skip_if_descendant);
+    if ($args){
+        $without_children = $args->{without_children};
+        $skip_if_descendant = $args->{skip_if_descendant};
+    }
+
+    # If $reference_node is a descendant of $self and without_children=>1 was not used
+    # we should raise an exception. However, checking this takes a little time,
+    # so we defer this check, until we have %is_moving.
+    # Only if the user asked skip_if_descendant=>1, i.e. if this situation is expected
+    # and should not raise the exception, we do the check now.
+    return if $skip_if_descendant && !$without_children && UD::NodeA::is_descendant_of($reference_node, $self);
+
+    # For shift_subtree_* methods, we need to find the real reference node first.
+    if ($subtree) {
+        if ($without_children) {
+            my $new_ref;
+            if ($after) {
+                foreach my $node ($reference_node, UD::NodeA::_descendantsF($reference_node)){
+                    next if $node == $self;
+                    $new_ref = $node if !$new_ref || ($node->[$ORD] > $new_ref->[$ORD]);
+                }
+            } else {
+                foreach my $node ($reference_node, UD::NodeA::_descendantsF($reference_node)){
+                    next if $node == $self;
+                    $new_ref = $node if !$new_ref || ($node->[$ORD] < $new_ref->[$ORD]);
+                }
+            }
+            return if !$new_ref;
+            $reference_node = $new_ref;
+        } else {
+            $reference_node = UD::NodeA::descendants($reference_node, {
+                except => $self, add_self => 1, ($after ? (last_only => 1) : (first_only => 1)),
+            } );
+        }
+    }
+
 
     # Which nodes are to be moved?
     # $self only (the {without_children=>1} switch)
@@ -352,11 +346,17 @@ sub _shift_to_node {
 
     # Let's make a hash, so we can easily recognize which nodes are to be moved.
     my %is_moving = map { $_ => 1 } @nodes_to_move;
+    if (!$skip_if_descendant && $is_moving{$reference_node}){
+            log_fatal '$reference_node is a descendant of $self.'
+                    . ' Maybe you have forgotten {without_children=>1}. ' . "\n";
+    }
 
     # Recompute ord of all nodes.
     # The technical root has ord=0 and the first node will have ord=1.
     my $counter     = 1;
     my $nodes_moved = 0;
+    my $root = $self->[$ROOT];
+    my @all_nodes = @{$root->[$DESCENDANTS]};
     foreach my $node (@all_nodes) {
 
         # We skip nodes that are being moved.

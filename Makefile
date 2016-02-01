@@ -49,7 +49,7 @@ install:  data .perl-install .python-install .cpp_raw-compile
 benchmark:
 	export PYTHONPATH=`pwd`/python/pytreex/ &&\
 	source python/venv/bin/activate &&\
-	./benchmark.pl --input=$(DATA) --repeats=$(REPEATS) -n $(N) $(EXPS) | (trap "" SIGINT SIGQUIT; tee results_$(DATASHORT).txt)
+	./benchmark.pl --input=$(DATA) --repeats=$(REPEATS) -n $(N) $(EXPS) | (trap "" SIGINT SIGQUIT; tee -a results_$(DATASHORT).txt)
 
 bu: # a quick test of utreex benchmarked
 	./benchmark.pl --input=$(DATA) --repeats=1 utreex | tee results_$(DATASHORT).txt
