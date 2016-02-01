@@ -48,6 +48,7 @@ public class Main {
         for (int i=1; i <= iterations; i++) {
             test(inCoNLL, outCoNLL, debug);
         }
+        System.out.println("end");
     }
 
     public static void test(String inCoNLL, String outCoNLL, boolean debug) {
@@ -180,9 +181,9 @@ public class Main {
         coNLLUWriter.writeDocument(document);
         System.out.println("save");
 
-        document = null;
-        System.gc(); // suggestion for garbage collection (In Java, it is difficult to force gc).
-        System.out.println("free");
+        //document = null;
+        //System.gc(); // suggestion for garbage collection (In Java, it is difficult to force gc).
+        //System.out.println("free");
     }
 
     private static void writeDoc(String fileName, Document document) {

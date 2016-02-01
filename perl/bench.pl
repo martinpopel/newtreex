@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use FindBin;
 use lib "$FindBin::Bin/";
+use POSIX ();
 use Carp;
 
 $SIG{INT} = sub {warn "\nbench.pl is ignoring Ctrl+C (SIGINT). Use Ctrl+\\ (SIGQUIT) to exit\n";};
@@ -150,11 +151,13 @@ for my $iter (1..$ITERS){
     print "save\n";
 
     # no need to call destroy in the last iteration
-    if ($iter == $ITERS){
-        close STDOUT;
-        exit;
-    }
+    last if $iter == $ITERS;
 
     $doc->destroy;
     print "free\n";
 }
+
+print "end\n";
+
+# No need for Perl running DESTROY and waiting for buffered outputs
+POSIX::_exit(0);

@@ -4,6 +4,7 @@ use warnings;
 use Text::Table;
 use Time::HiRes qw (time);
 use Getopt::Long;
+use Scalar::Util 'looks_like_number';
 
 my $HELP = 0;
 my $REPEATS = 10;
@@ -46,7 +47,7 @@ if ($HELP){
     exit;
 }
 
-my @HEADER = qw(TOTAL MAXMEM init load save iter iterF iterS read write rehang remove add reorder free exit);
+my @HEADER = qw(REAL CPU MAXMEM init load save iter iterF iterS read write rehang remove add reorder free exit);
 my %IN_HEADER = map {$_ => 1} @HEADER;
 my @experiments = @ARGV;
 @experiments = @COMMANDS_NAMES if !@experiments;
@@ -55,31 +56,36 @@ my @experiments = @ARGV;
 sub run {
     my ($command) = @_;
     my %t;
-    my $maxmem = 0;
     my ($start, $last);
     # TODO Ideally we would like 'trap "" SIGINT' for the CHILDPROC,
-    # but we need to know $pid of the process, we want to test with `ps -orss $pid`.
-    my $pid = open(CHILDPROC, "$command |");
+    open(CHILDPROC, "/usr/bin/time -f '%e %U %S %M' ./printpid.sh $command 2>&1 |");
+    chomp(my $pid = <CHILDPROC>);
     $start = $last = time;
     while(<CHILDPROC>){
-        my $now = time;
-        my $mem = `ps -orss $pid`;
-        $mem =~ s/[^\d]//g;
-        $mem = sprintf "%.3f", $mem/1024;
-        $maxmem = $mem if $mem > $maxmem;
         chomp;
+        last if $_ eq 'end';
+        my $now = time;
+        my $mem = `ps -orss= $pid`;
+        $mem = looks_like_number($mem) && $mem>0 ? sprintf('%.3fMiB', $mem/1024) : 'N/A';
         my $time = sprintf '%.3f', $now - $last;
         $t{$_} += $time;
-        printf STDERR "%20s %9ss %10sMiB\n", $_, $time, $mem;
+        printf STDERR "%20s %9ss %13s\n", $_, $time, $mem;
         $last = $now;
+
     }
+    my $timeoutput = <CHILDPROC>;
     my $now = time;
-    my $time = sprintf '%.3f', $now - $last;
     my $total = sprintf '%.3f', $now - $start;
+    my $time = sprintf '%.3f', $now - $last;
     $t{exit} = $time;
-    printf STDERR "%20s %9ss %10sMiB\n", 'exit', $time, 0;
-    printf STDERR "%20s %9ss %10sMiB\n", 'TOTAL', $total, $maxmem;
-    $t{TOTAL} = $total;
+    printf STDERR "%20s %9ss %13s\n", 'exit', $time, 'N/A';
+    chomp $timeoutput;
+    my ($real, $user, $sys, $maxmem) = split / /, $timeoutput;
+    my $cpu = $user + $sys;
+    $maxmem = sprintf '%.3f', $maxmem/1024;
+    print STDERR "REAL=$real ($total) CPU=$cpu ($user+$sys) maxmem=$maxmem MiB\n";
+    $t{CPU} = $cpu;
+    $t{REAL} = $real;
     $t{MAXMEM} = $maxmem;
     return \%t;
 }
@@ -148,7 +154,7 @@ sub print_results {
         }
         my $other = join ', ', map {"$_=" . $tmp{$_}{avg} } @extra_tasks;
         my @avg_times = map {$tmp{$_}{avg}} @HEADER;
-        my $total_rsd = $tmp{TOTAL}{rsd};
+        my $total_rsd = $tmp{REAL}{rsd};
         push @summary, [$exp, @avg_times, ($REPEATS>1 ? $total_rsd : ()), $other];
 
         push @details, [$exp];

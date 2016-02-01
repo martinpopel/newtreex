@@ -118,6 +118,8 @@ print("reorder")
 doc.store({'filename':sys.argv[2]})
 print("save")
 
-del doc
+#del doc
 #gc.collect()
-print("free")
+#print("free")
+
+print("end")
