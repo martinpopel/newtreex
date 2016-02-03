@@ -69,7 +69,9 @@ sub set_parent {
     if (!$self->[$ROOT]){
         my $root = $parent->[$ROOT];
         $self->[$ROOT] = $root;
-        $self->[$ORD] = -1 + push @{$root->[$DESCENDANTS]}, $self;
+        # push returns the new number of elements in the array,
+        # We need $root->[$DESCENDANTS][$n][$ORD] == $n+1, for any $n.
+        $self->[$ORD] = push @{$root->[$DESCENDANTS]}, $self;
     }
 
     $self->[$NEXTSIBLING] = $parent->[$FIRSTCHILD];
