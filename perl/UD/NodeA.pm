@@ -353,11 +353,18 @@ sub _shift_to_node {
 
     # Recompute ord of all nodes.
     # The technical root has ord=0 and the first node will have ord=1.
-    my $counter     = 1;
     my $nodes_moved = 0;
     my $root = $self->[$ROOT];
-    my @all_nodes = @{$root->[$DESCENDANTS]};
-    foreach my $node (@all_nodes) {
+    my $all_nodes = $root->[$DESCENDANTS];
+    my $reference_ord = $reference_node->[$ORD];
+    my $first_ord = $nodes_to_move[0][$ORD];
+    my $last_ord = $nodes_to_move[-1][$ORD];
+    $first_ord = $reference_ord if $reference_ord < $first_ord;
+    $last_ord  = $reference_ord if $reference_ord > $last_ord;
+    my $counter = $first_ord;
+    my $node;
+    foreach my $ord ($first_ord .. $last_ord) {
+        $node = $all_nodes->[$ord-1];
 
         # We skip nodes that are being moved.
         # Their ord is recomuted elsewhere (look 8 lines down).
@@ -393,7 +400,7 @@ sub _shift_to_node {
             $moving_node->[$ORD] = $counter++;
         }
     }
-    @all_nodes = sort { $a->[$ORD] <=> $b->[$ORD] } @all_nodes;
+    my @all_nodes = sort { $a->[$ORD] <=> $b->[$ORD] } @$all_nodes;
     $root->[$DESCENDANTS] = \@all_nodes;
     return;
 }
