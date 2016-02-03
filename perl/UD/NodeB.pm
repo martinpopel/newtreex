@@ -69,7 +69,9 @@ sub set_parent {
     if (!$self->[$ROOT]){
         my $root = $parent->[$ROOT];
         $self->[$ROOT] = $root;
-        $self->[$ORD] = -1 + push @{$root->[$DESCENDANTS]}, $self;
+        # push returns the new number of elements in the array,
+        # We need $root->[$DESCENDANTS][$n][$ORD] == $n+1, for any $n.
+        $self->[$ORD] = push @{$root->[$DESCENDANTS]}, $self;
     }
 
     $self->[$NEXTSIBLING] = $parent->[$FIRSTCHILD];
@@ -234,17 +236,15 @@ sub descendants {
 
 sub _descendants {
     my ($self, $add_self, $first_only, $last_only, $except) = @_;
-    $except ||= 0;
-    if ($self->[$DESCENDANTS]){
-        if (!$except){
-            if ($first_only){
-                return $self if $add_self;
-                return $self->[$DESCENDANTS][0];
-            }
-            return $self->[$DESCENDANTS][-1] if $last_only;
-            return @{$self->[$DESCENDANTS]};
-        }
+    if (!$except && $self->[$DESCENDANTS]){
+		if ($first_only){
+			return $self if $add_self;
+			return $self->[$DESCENDANTS][0];
+		}
+		return $self->[$DESCENDANTS][-1] if $last_only;
+		return @{$self->[$DESCENDANTS]};
     }
+    $except ||= 0;
 
     return () if $self == $except;
     my @descs = ();
@@ -276,7 +276,6 @@ sub _descendants {
 
     return sort {$a->[$ORD] <=> $b->[$ORD]} @descs;
 }
-
 
 sub is_descendant_of {
     my ($self, $another_node) = @_;
@@ -380,41 +379,34 @@ sub _shift_to_node {
     # without_children means moving just one node, which is easier
     my $root = $self->[$ROOT];
     my $all_nodes = $root->[$DESCENDANTS];
-    my $reference_ord = $reference_node->[$ORD];
-    $reference_ord++ if $after;
-    $after = 0;
+# my $reference_ord = $reference_node->[$ORD]; TODO
 
-    if (0 && $without_children) {
+    if ($without_children) {
+        my $reference_ord = $reference_node->[$ORD];
         my $my_ord = $self->[$ORD];
-        return if $my_ord == $reference_ord;
-        if ($reference_ord > $my_ord){
-            foreach my $ord ($my_ord..$reference_ord-2){
-                $all_nodes->[$ord-1] = $all_nodes->[$ord];
-                $all_nodes->[$ord-1][$ORD] = $ord;
-            }
-        } else {
+        $reference_ord++ if $after;
+        if ($reference_ord > $my_ord+1){
+             foreach my $ord ($my_ord..$reference_ord-2){
+                 $all_nodes->[$ord-1] = $all_nodes->[$ord];
+                 $all_nodes->[$ord-1][$ORD] = $ord;
+             }
+            $all_nodes->[$reference_ord-2] = $self;
+            $self->[$ORD] = $reference_ord-1;
+        } elsif ($reference_ord < $my_ord){
             foreach my $ord (reverse $reference_ord+1 .. $my_ord){
                 $all_nodes->[$ord-1] = $all_nodes->[$ord-2];
                 $all_nodes->[$ord-1][$ORD] = $ord;
             }
+            $all_nodes->[$reference_ord-1] = $self;
+            $self->[$ORD] = $reference_ord;
         }
-        $all_nodes->[$reference_ord-1] = $self;
-        $self->[$ORD] = $reference_ord;
         return;
     }
 
     # Which nodes are to be moved?
     # $self and all its descendants
-    #my @nodes_to_move = UD::NodeB::_descendants($self, 1);
-    my @nodes_to_move;
-    if ($without_children) {
-        @nodes_to_move = ($self);
-    }
-    else {
-        @nodes_to_move = UD::NodeB::_descendants($self, 1);
-    }
-
     # Let's make a hash, so we can easily recognize which nodes are to be moved.
+    my @nodes_to_move = UD::NodeB::_descendants($self, 1);
     my %is_moving = map { $_ => 1 } @nodes_to_move;
     if (!$skip_if_descendant && $is_moving{$reference_node}){
             log_fatal '$reference_node is a descendant of $self.'
@@ -425,9 +417,13 @@ sub _shift_to_node {
     # The technical root has ord=0 and the first node will have ord=1.
     my $first_ord = $nodes_to_move[0][$ORD];
     my $last_ord = $nodes_to_move[-1][$ORD];
+    my $reference_ord = $reference_node->[$ORD];
     $first_ord = $reference_ord if $reference_ord < $first_ord;
     $last_ord  = $reference_ord if $reference_ord > $last_ord;
     my $counter = $first_ord;
+
+    #$reference_ord++ if $after;
+    #$after = 0;
     my $node;
     foreach my $ord ($first_ord .. $last_ord) {
         $node = $all_nodes->[$ord-1];
@@ -445,8 +441,8 @@ sub _shift_to_node {
 
         # Now we insert (i.e. recompute ord of) all nodes which are being moved.
         # The nodes are inserted in the original order.
-        #if ( $node == $reference_node ) {
-        if ( $counter == $reference_ord ) {
+        if ( $node == $reference_node ) {
+        #if ( $ord == $reference_ord ) {
             foreach my $moving_node (@nodes_to_move) {
                 $moving_node->[$ORD] = $counter++;
             }
