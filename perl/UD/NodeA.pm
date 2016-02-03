@@ -353,7 +353,6 @@ sub _shift_to_node {
 
     # Recompute ord of all nodes.
     # The technical root has ord=0 and the first node will have ord=1.
-    my $nodes_moved = 0;
     my $root = $self->[$ROOT];
     my $all_nodes = $root->[$DESCENDANTS];
     my $reference_ord = $reference_node->[$ORD];
@@ -383,7 +382,6 @@ sub _shift_to_node {
             foreach my $moving_node (@nodes_to_move) {
                 $moving_node->[$ORD] = $counter++;
             }
-            $nodes_moved = 1;
         }
 
         # If moving "before" a node, then now it is the right moment
@@ -393,13 +391,6 @@ sub _shift_to_node {
         }
     }
 
-    # If $is_moving{$reference_node}, e.g. when there is just one node in the tree,
-    # we need to do the reordering now (otherwise the ord would be still 10000).
-    if ( !$nodes_moved ) {
-        foreach my $moving_node (@nodes_to_move) {
-            $moving_node->[$ORD] = $counter++;
-        }
-    }
     my @all_nodes = sort { $a->[$ORD] <=> $b->[$ORD] } @$all_nodes;
     $root->[$DESCENDANTS] = \@all_nodes;
     return;
