@@ -4,7 +4,7 @@ use warnings;
 use autodie;
 use Carp;
 use UD::NodeA;
-#use UD::NodeB;
+use UD::NodeB;
 
 my ($TREES, $ID, $DOC);
 BEGIN {
