@@ -87,15 +87,11 @@ sub remove {
               . ' Use $bundle->remove_tree($selector) instead';
     }
 
-    my @children = UD::NodeB::children($self);
     my $parent = $self->[$PARENT];
-    if (@children){
-        my $what_to_do = 'remove';
-        if ($arg_ref && $arg_ref->{children}){
-            $what_to_do = $arg_ref->{children};
-        }
+    if ($arg_ref && $self->[$FIRSTCHILD]){
+        my $what_to_do = $arg_ref->{children} || '';
         if ($what_to_do =~ /^rehang/){
-            foreach my $child (@children){
+            foreach my $child (UD::NodeB::children($self)){
                 UD::NodeB::set_parent($child, $parent);
             }
         }
