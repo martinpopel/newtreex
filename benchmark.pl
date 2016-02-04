@@ -33,6 +33,8 @@ my @COMMANDS = (
     utreex     => "python -u python/bench_utreex.py $iter $IN /tmp/out.conllu",
     perlA      => "perl/bench.pl $iter $IN /tmp/out.conllu A",
     perlB      => "perl/bench.pl $iter $IN /tmp/out.conllu B",
+    perlC      => "perl/bench.pl $iter $IN /tmp/out.conllu C",
+    perlD      => "perl/bench.pl $iter $IN /tmp/out.conllu D",
     java       => "java -jar java/build/libs/newtreex.jar $iter $IN /tmp/out.conllu",
     cpp_raw    => "cpp_raw/benchmark $iter $IN /tmp/out.conllu",
 );

@@ -5,6 +5,8 @@ use autodie;
 use Carp;
 use UD::NodeA;
 use UD::NodeB;
+use UD::NodeC;
+use UD::NodeD;
 
 my ($TREES, $ID, $DOC);
 BEGIN {
