@@ -61,7 +61,7 @@ for my $iter (1..$ITERS){
     foreach my $bundle ($doc->bundles){
         foreach my $tree ($bundle->trees){
             foreach my $child ($tree->children){
-                foreach my $node ($tree->descendants){
+                foreach my $node ($child->descendants){
                     # no op
                 }
             }

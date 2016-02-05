@@ -80,7 +80,7 @@ public class Main {
         for (Bundle bundle : document.getBundles()) {
             for (Sentence sentence : bundle.getSentences()) {
                 for (Node child : sentence.getTree().getRoot().getOrderedChildren()) {
-                    for (Node node : child.getDescendants()) {
+                    for (Node node : child.getOrderedDescendants()) {
                         //noop
                     }
                 }
