@@ -42,15 +42,30 @@ sub set_parent {
     my ($self, $parent, $args) = @_;
     confess('set_parent(undef) not allowed') if !defined $parent;
 
-    if ( ($self == $parent || UD::NodeA::is_descendant_of($parent, $self) )) {
+    # Check cycles
+    # if ($self == $parent || $parent->is_descendant_of($self)) {...}
+    # but we can do it faster without extra sub call.
+    if ($self == $parent){
         return if $args && $args->{cycles} eq 'skip';
         my $b_id = $self->bundle->id;
-        my $n_id = $self->ord; # TODO id instead of ord?
-        my $p_id = $parent->ord;
-        confess "Bundle $b_id: Attempt to set parent of $n_id to the node $p_id, which would lead to a cycle.";
+        my $n_id = $self->ord;
+        confess "Bundle $b_id: Attempt to set parent of $n_id to itself (cycle).";
+    }
+    if ($self->[$FIRSTCHILD]){
+        my $grandpa = $parent->[$PARENT];
+        while ($grandpa) {
+            if ($grandpa == $self){
+                return if $args && $args->{cycles} eq 'skip';
+                my $b_id = $self->bundle->id;
+                my $n_id = $self->ord;
+                my $p_id = $parent->ord;
+                confess "Bundle $b_id: Attempt to set parent of $n_id to the node $p_id, which would lead to a cycle.";
+            }
+            $grandpa = $grandpa->[$PARENT];
+        }
     }
 
-    #$self->cut() if $self->[$PARENT];
+    # Disconnect the node from its original parent
     my $origparent = $self->[$PARENT];
     if ($origparent){
         my $node = $origparent->[$FIRSTCHILD];
@@ -64,7 +79,8 @@ sub set_parent {
         }
     }
 
-    $self->[$PARENT] = $parent;
+    # If the node was not part of any tree (create_child() uses internally set_parent()),
+    # attach it to its parent's tree (set the root, ord and add it as the last node of the tree).
     if (!$self->[$ROOT]){
         my $root = $parent->[$ROOT];
         $self->[$ROOT] = $root;
@@ -73,6 +89,8 @@ sub set_parent {
         $self->[$ORD] = push @{$root->[$DESCENDANTS]}, $self;
     }
 
+    # Attach the node to its parent and linked list of siblings.
+    $self->[$PARENT] = $parent;
     $self->[$NEXTSIBLING] = $parent->[$FIRSTCHILD];
     $parent->[$FIRSTCHILD] = $self;
     return;
@@ -106,7 +124,7 @@ sub remove {
     # Remove the nodes from $root->[$DESCENDANTS].
     # projective subtrees can be deleted faster
     if ($last_ord - $first_ord + 1 == @to_remove){
-        splice @{$root->[$DESCENDANTS]}, $first_ord - 1, $last_ord - $first_ord + 1;
+        splice @$all_nodes, $first_ord - 1, $last_ord - $first_ord + 1;
     }
     # non-projective subtrees must iterated
     else {
@@ -237,11 +255,10 @@ sub _descendants {
 }
 
 sub is_descendant_of {
-    my ($self, $another_node) = @_;
-    return 0 if !$another_node->[$FIRSTCHILD];
-    my $parent = $self->[$PARENT];
+    return 0 if !$_[1][$FIRSTCHILD];
+    my $parent = $_[0][$PARENT];
     while ($parent) {
-        return 1 if $parent == $another_node;
+        return 1 if $parent == $_[1];
         $parent = $parent->[$PARENT];
     }
     return 0;
