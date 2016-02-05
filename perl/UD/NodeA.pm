@@ -42,15 +42,30 @@ sub set_parent {
     my ($self, $parent, $args) = @_;
     confess('set_parent(undef) not allowed') if !defined $parent;
 
-    if ( ($self == $parent || UD::NodeA::is_descendant_of($parent, $self) )) {
+    # Check cycles
+    # if ($self == $parent || $parent->is_descendant_of($self)) {...}
+    # but we can do it faster without extra sub call.
+    if ($self == $parent){
         return if $args && $args->{cycles} eq 'skip';
         my $b_id = $self->bundle->id;
-        my $n_id = $self->ord; # TODO id instead of ord?
-        my $p_id = $parent->ord;
-        confess "Bundle $b_id: Attempt to set parent of $n_id to the node $p_id, which would lead to a cycle.";
+        my $n_id = $self->ord;
+        confess "Bundle $b_id: Attempt to set parent of $n_id to itself (cycle).";
+    }
+    if ($self->[$FIRSTCHILD]){
+        my $grandpa = $parent->[$PARENT];
+        while ($grandpa) {
+            if ($grandpa == $self){
+                return if $args && $args->{cycles} eq 'skip';
+                my $b_id = $self->bundle->id;
+                my $n_id = $self->ord;
+                my $p_id = $parent->ord;
+                confess "Bundle $b_id: Attempt to set parent of $n_id to the node $p_id, which would lead to a cycle.";
+            }
+            $grandpa = $grandpa->[$PARENT];
+        }
     }
 
-    #$self->cut() if $self->[$PARENT];
+    # Disconnect the node from its original parent
     my $origparent = $self->[$PARENT];
     if ($origparent){
         my $node = $origparent->[$FIRSTCHILD];
@@ -64,14 +79,18 @@ sub set_parent {
         }
     }
 
-
-    $self->[$PARENT] = $parent;
+    # If the node was not part of any tree (create_child() uses internally set_parent()),
+    # attach it to its parent's tree (set the root, ord and add it as the last node of the tree).
     if (!$self->[$ROOT]){
         my $root = $parent->[$ROOT];
         $self->[$ROOT] = $root;
-        $self->[$ORD] = -1 + push @{$root->[$DESCENDANTS]}, $self;
+        # push returns the new number of elements in the array,
+        # We need $root->[$DESCENDANTS][$n][$ORD] == $n+1, for any $n.
+        $self->[$ORD] = push @{$root->[$DESCENDANTS]}, $self;
     }
 
+    # Attach the node to its parent and linked list of siblings.
+    $self->[$PARENT] = $parent;
     $self->[$NEXTSIBLING] = $parent->[$FIRSTCHILD];
     $parent->[$FIRSTCHILD] = $self;
     return;
@@ -85,15 +104,11 @@ sub remove {
               . ' Use $bundle->remove_tree($selector) instead';
     }
 
-    my @children = UD::NodeA::children($self);
     my $parent = $self->[$PARENT];
-    if (@children){
-        my $what_to_do = 'remove';
-        if ($arg_ref && $arg_ref->{children}){
-            $what_to_do = $arg_ref->{children};
-        }
+    if ($arg_ref && $self->[$FIRSTCHILD]){
+        my $what_to_do = $arg_ref->{children} || '';
         if ($what_to_do =~ /^rehang/){
-            foreach my $child (@children){
+            foreach my $child (UD::NodeA::children($self)){
                 UD::NodeA::set_parent($child, $parent);
             }
         }
@@ -109,7 +124,7 @@ sub remove {
     # Remove the nodes from $root->[$DESCENDANTS].
     # projective subtrees can be deleted faster
     if ($last_ord - $first_ord + 1 == @to_remove){
-        splice @{$root->[$DESCENDANTS]}, $first_ord - 1, $last_ord - $first_ord + 1;
+        splice @$all_nodes, $first_ord - 1, $last_ord - $first_ord + 1;
     }
     # non-projective subtrees must iterated
     else {
@@ -170,11 +185,12 @@ sub create_child {
     return $child;
 }
 
+# No $args, no sort, fastest
 sub _descendantsF {
-    my ($self) = @_;
-    return @{$self->[$DESCENDANTS]} if $self->[$DESCENDANTS];
+    #my ($self) = @_;
+    return @{$_[0][$DESCENDANTS]} if $_[0][$DESCENDANTS];
+    my @stack = $_[0][$FIRSTCHILD] || return;
     my @descs = ();
-    my @stack = $self->[$FIRSTCHILD] || ();
     while (@stack) {
         my $node = pop @stack;
         push @descs, $node;
@@ -184,21 +200,29 @@ sub _descendantsF {
     return @descs;
 }
 
+# The official API method, used e.g. my @d = $n->descendants({add_self=>1, first_only=>1}).
 sub descendants {
-    my ($self, $args) = @_;
-    if ($self->[$DESCENDANTS]){
-        return @{$self->[$DESCENDANTS]} if !$args;
-        if (!$args->{except}){
-            if ($args->{first_only}){
-                return $self if $args->{add_self};
-                return $self->[$DESCENDANTS][0];
-            }
-            return $self->[$DESCENDANTS][-1] if $args->{last_only};
-            return @{$self->[$DESCENDANTS]}; # unknown arg
-        }
+    #my ($self, $args) = @_;
+    if (!$_[1]) { # !$args
+        return @{$_[0][$DESCENDANTS]} if $_[0][$DESCENDANTS];
+        goto &UD::NodeA::_descendants;
     }
+    @_ = ($_[0], $_[1]{add_self}, $_[1]{first_only}, $_[1]{last_only}, $_[1]{except});
+    goto &UD::NodeA::_descendants;
+}
 
-    my $except = $args ? ($args->{except}||0) : 0;
+sub _descendants {
+    my ($self, $add_self, $first_only, $last_only, $except) = @_;
+    if (!$except && $self->[$DESCENDANTS]){
+        if ($first_only){
+            return $self if $add_self;
+            return $self->[$DESCENDANTS][0];
+        }
+        return $self->[$DESCENDANTS][-1] if $last_only;
+        return @{$self->[$DESCENDANTS]};
+    }
+    $except ||= 0;
+
     return () if $self == $except;
     my @descs = ();
     my @stack = $self->[$FIRSTCHILD] || ();
@@ -211,33 +235,30 @@ sub descendants {
         push @stack, $node->[$FIRSTCHILD] || ();
     }
 
-    if ($args){
-        push @descs, $self if $args->{add_self};
-        if ($args->{first_only}){
-            my $first = pop @descs;
-            foreach my $node (@descs) {
-                $first = $node if $node->[$ORD] < $first->[$ORD];
-            }
-            return $first;
+    push @descs, $self if $add_self;
+    if ($first_only){
+        my $first = pop @descs;
+        foreach my $node (@descs) {
+            $first = $node if $node->[$ORD] < $first->[$ORD];
         }
-        if ($args->{last_only}){
-            my $last = pop @descs;
-            foreach my $node (@descs) {
-                $last = $node if $node->[$ORD] > $last->[$ORD];
-            }
-            return $last;
+        return $first;
+    }
+    if ($last_only){
+        my $last = pop @descs;
+        foreach my $node (@descs) {
+            $last = $node if $node->[$ORD] > $last->[$ORD];
         }
+        return $last;
     }
 
     return sort {$a->[$ORD] <=> $b->[$ORD]} @descs;
 }
 
 sub is_descendant_of {
-    my ($self, $another_node) = @_;
-    return 0 if !$another_node->[$FIRSTCHILD];
-    my $parent = $self->[$PARENT];
+    return 0 if !$_[1][$FIRSTCHILD];
+    my $parent = $_[0][$PARENT];
     while ($parent) {
-        return 1 if $parent == $another_node;
+        return 1 if $parent == $_[1];
         $parent = $parent->[$PARENT];
     }
     return 0;
@@ -300,13 +321,15 @@ sub _shift_to_node {
         $without_children = $args->{without_children};
         $skip_if_descendant = $args->{skip_if_descendant};
     }
+    $without_children = 1 if !$self->[$FIRSTCHILD];
 
     # If $reference_node is a descendant of $self and without_children=>1 was not used
-    # we should raise an exception. However, checking this takes a little time,
-    # so we defer this check, until we have %is_moving.
-    # Only if the user asked skip_if_descendant=>1, i.e. if this situation is expected
-    # and should not raise the exception, we do the check now.
-    return if $skip_if_descendant && !$without_children && UD::NodeA::is_descendant_of($reference_node, $self);
+    # we should raise an exception (which could be ignored with skip_if_descendant=>1).
+    if (!$without_children && UD::NodeA::is_descendant_of($reference_node, $self)){
+        return if $skip_if_descendant;
+        log_fatal '$reference_node is a descendant of $self.'
+                . ' Maybe you have forgotten {without_children=>1}. ' . "\n";
+    }
 
     # For shift_subtree_* methods, we need to find the real reference node first.
     if ($subtree) {
@@ -326,73 +349,117 @@ sub _shift_to_node {
             return if !$new_ref;
             $reference_node = $new_ref;
         } else {
-            $reference_node = UD::NodeA::descendants($reference_node, {
-                except => $self, add_self => 1, ($after ? (last_only => 1) : (first_only => 1)),
-            } );
+            $reference_node = UD::NodeA::_descendants($reference_node, 1, !$after, $after, $self);
         }
     }
 
-
-    # Which nodes are to be moved?
-    # $self only (the {without_children=>1} switch)
-    # or $self and all its descendants (the default)?
-    my @nodes_to_move;
-    if ($without_children) {
-        @nodes_to_move = ($self);
-    }
-    else {
-        @nodes_to_move = UD::NodeA::descendants($self, { add_self => 1 } );
-    }
-
-    # Let's make a hash, so we can easily recognize which nodes are to be moved.
-    my %is_moving = map { $_ => 1 } @nodes_to_move;
-    if (!$skip_if_descendant && $is_moving{$reference_node}){
-            log_fatal '$reference_node is a descendant of $self.'
-                    . ' Maybe you have forgotten {without_children=>1}. ' . "\n";
-    }
-
-    # Recompute ord of all nodes.
-    # The technical root has ord=0 and the first node will have ord=1.
+    # Convert shift_after_* to shift_before_*.
     my $root = $self->[$ROOT];
     my $all_nodes = $root->[$DESCENDANTS];
     my $reference_ord = $reference_node->[$ORD];
-    my $first_ord = $nodes_to_move[0][$ORD];
-    my $last_ord = $nodes_to_move[-1][$ORD];
-    $first_ord = $reference_ord if $reference_ord < $first_ord;
-    $last_ord  = $reference_ord if $reference_ord > $last_ord;
-    my $counter = $first_ord;
-    my $node;
-    foreach my $ord ($first_ord .. $last_ord) {
-        $node = $all_nodes->[$ord-1];
+    $reference_ord++ if $after;
 
-        # We skip nodes that are being moved.
-        # Their ord is recomuted elsewhere (look 8 lines down).
-        next if $is_moving{$node};
-
-        # If moving "after" a reference node
-        # then ord of the $node can be recomputed now
-        # even if it is actually the $reference_node.
-        if ($after) {
-            $node->[$ORD] = $counter++;
-        }
-
-        # Now we insert (i.e. recompute ord of) all nodes which are being moved.
-        # The nodes are inserted in the original order.
-        if ( $node == $reference_node ) {
-            foreach my $moving_node (@nodes_to_move) {
-                $moving_node->[$ORD] = $counter++;
+    # without_children means moving just one node, which is easier
+    if ($without_children) {
+        my $my_ord = $self->[$ORD];
+        if ($reference_ord > $my_ord+1){
+             foreach my $ord ($my_ord..$reference_ord-2){
+                 $all_nodes->[$ord-1] = $all_nodes->[$ord];
+                 $all_nodes->[$ord-1][$ORD] = $ord;
+             }
+            $all_nodes->[$reference_ord-2] = $self;
+            $self->[$ORD] = $reference_ord-1;
+        } elsif ($reference_ord < $my_ord){
+            foreach my $ord (reverse $reference_ord+1 .. $my_ord){
+                $all_nodes->[$ord-1] = $all_nodes->[$ord-2];
+                $all_nodes->[$ord-1][$ORD] = $ord;
             }
+            $all_nodes->[$reference_ord-1] = $self;
+            $self->[$ORD] = $reference_ord;
         }
-
-        # If moving "before" a node, then now it is the right moment
-        # for recomputing ord of the $node
-        if ( !$after ) {
-            $node->[$ORD] = $counter++;
-        }
+        return;
     }
 
-    my @all_nodes = sort { $a->[$ORD] <=> $b->[$ORD] } @$all_nodes;
-    $root->[$DESCENDANTS] = \@all_nodes;
+    # Which nodes are to be moved?
+    # $self and all its descendants
+    my @nodes_to_move = UD::NodeA::_descendants($self, 1);
+    my $first_ord = $nodes_to_move[0][$ORD];
+    my $last_ord = $nodes_to_move[-1][$ORD];
+
+    # If there are no "gaps" in @nodes_to_move (e.g. when it is projective)
+    # we can make the shifting a bit faster and simpler.
+    if ($last_ord - $first_ord == $#nodes_to_move){
+        # First,...
+        my $trg_ord = $last_ord;
+        my $src_ord = $first_ord-1;
+        while ($src_ord >= $reference_ord) {
+            $all_nodes->[$trg_ord-1] = $all_nodes->[$src_ord-1];
+            $all_nodes->[$trg_ord-1][$ORD] = $trg_ord;
+            $trg_ord--;
+            $src_ord--;
+        }
+
+        # Second,...
+        $trg_ord = $first_ord;
+        $src_ord = $last_ord+1;
+        while ($src_ord < $reference_ord) {
+            $all_nodes->[$trg_ord-1] = $all_nodes->[$src_ord-1];
+            $all_nodes->[$trg_ord-1][$ORD] = $trg_ord;
+            $trg_ord++;
+            $src_ord++;
+        }
+
+        # Third, move @nodes_to_move to $trg_ord RIGHT-ward.
+        $trg_ord = $reference_ord if $reference_ord < $first_ord;
+        foreach my $node (@nodes_to_move){
+            $all_nodes->[$trg_ord-1] = $node;
+            $node->[$ORD] = $trg_ord++;
+        }
+        return;
+    }
+
+    # First, move a node from position $src_ord to position $trg_ord RIGHT-ward.
+    # $src_ord iterates decreasingly over nodes which are not moving.
+    my $trg_ord = $last_ord;
+    my $src_ord = $last_ord-1;
+    my $mov_ord = $#nodes_to_move-1;
+    RIGHTSWIPE:
+    while ($src_ord >= $reference_ord) {
+        while ($all_nodes->[$src_ord-1] == $nodes_to_move[$mov_ord]){
+            $src_ord--;
+            $mov_ord--;
+            last RIGHTSWIPE if $src_ord < $reference_ord;
+        }
+        $all_nodes->[$trg_ord-1] = $all_nodes->[$src_ord-1];
+        $all_nodes->[$trg_ord-1][$ORD] = $trg_ord;
+        $trg_ord--;
+        $src_ord--;
+    }
+
+    # Second, move a node from position $src_ord to position $trg_ord LEFT-ward.
+    # $src_ord iterates increasingly over nodes which are not moving.
+    $trg_ord = $first_ord;
+    $src_ord = $first_ord+1;
+    $mov_ord = 1;
+    LEFTSWIPE:
+    while ($src_ord < $reference_ord) {
+        while ($mov_ord < @nodes_to_move && $all_nodes->[$src_ord-1] == $nodes_to_move[$mov_ord]) {
+            $src_ord++;
+            $mov_ord++;
+            last LEFTSWIPE if $src_ord >= $reference_ord;
+        }
+        $all_nodes->[$trg_ord-1] = $all_nodes->[$src_ord-1];
+        $all_nodes->[$trg_ord-1][$ORD] = $trg_ord;
+        $trg_ord++;
+        $src_ord++;
+    }
+
+    # Third, move @nodes_to_move to $trg_ord RIGHT-ward.
+    $trg_ord = $reference_ord if $reference_ord < $first_ord;
+    foreach my $node (@nodes_to_move){
+        $all_nodes->[$trg_ord-1] = $node;
+        $node->[$ORD] = $trg_ord++;
+    }
     return;
 }
 
