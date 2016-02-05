@@ -64,7 +64,6 @@ sub set_parent {
         }
     }
 
-
     $self->[$PARENT] = $parent;
     if (!$self->[$ROOT]){
         my $root = $parent->[$ROOT];
@@ -308,11 +307,12 @@ sub _shift_to_node {
     $without_children = 1 if !$self->[$FIRSTCHILD];
 
     # If $reference_node is a descendant of $self and without_children=>1 was not used
-    # we should raise an exception. However, checking this takes a little time,
-    # so we defer this check, until we have %is_moving.
-    # Only if the user asked skip_if_descendant=>1, i.e. if this situation is expected
-    # and should not raise the exception, we do the check now.
-    return if $skip_if_descendant && !$without_children && UD::NodeA::is_descendant_of($reference_node, $self);
+    # we should raise an exception (which could be ignored with skip_if_descendant=>1).
+    if (!$without_children && UD::NodeA::is_descendant_of($reference_node, $self)){
+        return if $skip_if_descendant;
+        log_fatal '$reference_node is a descendant of $self.'
+                . ' Maybe you have forgotten {without_children=>1}. ' . "\n";
+    }
 
     # For shift_subtree_* methods, we need to find the real reference node first.
     if ($subtree) {
@@ -365,39 +365,71 @@ sub _shift_to_node {
 
     # Which nodes are to be moved?
     # $self and all its descendants
-    # Let's make a hash, so we can easily recognize which nodes are to be moved.
     my @nodes_to_move = UD::NodeA::_descendants($self, 1);
-    my %is_moving = map { $_ => 1 } @nodes_to_move;
-    if (!$skip_if_descendant && $is_moving{$reference_node}){
-            log_fatal '$reference_node is a descendant of $self.'
-                    . ' Maybe you have forgotten {without_children=>1}. ' . "\n";
-    }
     my $first_ord = $nodes_to_move[0][$ORD];
     my $last_ord = $nodes_to_move[-1][$ORD];
-    my $trg_ord = $last_ord;
-    my $src_ord = $last_ord-1;
 
-    # First, move a node from position $src_ord to position $trg_ord RIGHT-ward.
-    # $src_ord iterates decreasingly over nodes which are not $is_moving{...}.
-    while ($src_ord >= $reference_ord) {
-        while ($src_ord >= $reference_ord && $is_moving{$all_nodes->[$src_ord-1]}){
+    # If there are no "gaps" in @nodes_to_move (e.g. when it is projective)
+    # we can make the shifting a bit faster and simpler.
+    if ($last_ord - $first_ord == $#nodes_to_move){
+        # First,...
+        my $trg_ord = $last_ord;
+        my $src_ord = $first_ord-1;
+        while ($src_ord >= $reference_ord) {
+            $all_nodes->[$trg_ord-1] = $all_nodes->[$src_ord-1];
+            $all_nodes->[$trg_ord-1][$ORD] = $trg_ord;
+            $trg_ord--;
             $src_ord--;
         }
-        last if $src_ord < $reference_ord;
+
+        # Second,...
+        $trg_ord = $first_ord;
+        $src_ord = $last_ord+1;
+        while ($src_ord < $reference_ord) {
+            $all_nodes->[$trg_ord-1] = $all_nodes->[$src_ord-1];
+            $all_nodes->[$trg_ord-1][$ORD] = $trg_ord;
+            $trg_ord++;
+            $src_ord++;
+        }
+
+        # Third, move @nodes_to_move to $trg_ord RIGHT-ward.
+        $trg_ord = $reference_ord if $reference_ord < $first_ord;
+        foreach my $node (@nodes_to_move){
+            $all_nodes->[$trg_ord-1] = $node;
+            $node->[$ORD] = $trg_ord++;
+        }
+        return;
+    }
+
+    # First, move a node from position $src_ord to position $trg_ord RIGHT-ward.
+    # $src_ord iterates decreasingly over nodes which are not moving.
+    my $trg_ord = $last_ord;
+    my $src_ord = $last_ord-1;
+    my $mov_ord = $#nodes_to_move-1;
+    RIGHTSWIPE:
+    while ($src_ord >= $reference_ord) {
+        while ($all_nodes->[$src_ord-1] == $nodes_to_move[$mov_ord]){
+            $src_ord--;
+            $mov_ord--;
+            last RIGHTSWIPE if $src_ord < $reference_ord;
+        }
         $all_nodes->[$trg_ord-1] = $all_nodes->[$src_ord-1];
         $all_nodes->[$trg_ord-1][$ORD] = $trg_ord;
         $trg_ord--;
         $src_ord--;
     }
 
+    # Second, move a node from position $src_ord to position $trg_ord LEFT-ward.
+    # $src_ord iterates increasingly over nodes which are not moving.
     $trg_ord = $first_ord;
     $src_ord = $first_ord+1;
-
-    # Second, move a node from position $src_ord to position $trg_ord LEFT-ward.
-    # $src_ord iterates increasingly over nodes which are not $is_moving{...}.
+    $mov_ord = 1;
+    LEFTSWIPE:
     while ($src_ord < $reference_ord) {
-        while ($src_ord < $reference_ord && $is_moving{$all_nodes->[$src_ord-1]}){
+        while ($mov_ord < @nodes_to_move && $all_nodes->[$src_ord-1] == $nodes_to_move[$mov_ord]) {
             $src_ord++;
+            $mov_ord++;
+            last LEFTSWIPE if $src_ord >= $reference_ord;
         }
         $all_nodes->[$trg_ord-1] = $all_nodes->[$src_ord-1];
         $all_nodes->[$trg_ord-1][$ORD] = $trg_ord;
