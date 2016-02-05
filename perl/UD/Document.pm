@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use autodie;
 use UD::Bundle;
+use Carp;
 
 sub new {
     my ($class, $implementation) = @_;
@@ -22,6 +23,8 @@ sub create_bundle {
     return $bundle;
 }
 
+my ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING, $PARENT, $ROOT, $ORD,) = (0..10);
+
 sub load_conllu {
     my ($self, $conllu_file) = @_;
     open my $fh, '<:utf8', $conllu_file;
@@ -39,7 +42,26 @@ sub load_conllu {
         if ($line eq ''){
             next LINE if @nodes==1;
             foreach my $i (1..$#nodes){
-                $nodes[$i]->set_parent( $nodes[ $parents[$i] ] );
+                # faster version of $nodes[$i]->set_parent( $nodes[ $parents[$i] ] );
+                my $parent = $nodes[ $parents[$i] ];
+                if ($nodes[$i] == $parent){
+                    my $b_id = $self->bundle->id;
+                    confess "Conllu file $conllu_file contains cycles: Bundle $b_id: node $id is attached to itself";
+                }
+                if ($nodes[$i][$FIRSTCHILD]) {
+                    my $grandpa = $parent->[$PARENT];
+                    while ($grandpa) {
+                        if ($grandpa == $nodes[$i]){
+                            my $b_id = $self->bundle->id;
+                            my $p_id = $parent->ord;
+                            confess "Conllu file $conllu_file contains cycles: Bundle $b_id: nodes $id and $p_id.";
+                        }
+                        $grandpa = $grandpa->[$PARENT];
+                    }
+                }
+                $nodes[$i][$PARENT] = $parent;
+                $nodes[$i][$NEXTSIBLING] = $parent->[$FIRSTCHILD];
+                $parent->[$FIRSTCHILD] = $nodes[$i];
             }
             $root->[0] = [@nodes[1..$#nodes]];
             if (length $comment){
@@ -54,7 +76,7 @@ sub load_conllu {
             $comment = $comment . $line . "\n";
         } else {
             ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc ) = split /\t/, $line;
-            if ($id !~ /^\d+$/){
+            if (index($id, '-', 1) >=0){
                 # TODO multiword tokens
                 next LINE;
             }
