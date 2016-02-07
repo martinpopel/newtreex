@@ -44,28 +44,29 @@ sub load_conllu {
             foreach my $i (1..$#nodes){
                 # faster version of $nodes[$i]->set_parent( $nodes[ $parents[$i] ] );
                 my $parent = $nodes[ $parents[$i] ];
-                if ($nodes[$i] == $parent){
+                my $node = $nodes[$i];
+                if ($node == $parent){
                     my $b_id = $self->bundle->id;
                     confess "Conllu file $conllu_file contains cycles: Bundle $b_id: node $id is attached to itself";
                 }
-                if ($nodes[$i][$FIRSTCHILD]) {
+                if ($node->[$FIRSTCHILD]) {
                     my $grandpa = $parent->[$PARENT];
                     while ($grandpa) {
-                        if ($grandpa == $nodes[$i]){
-                            my $b_id = $self->bundle->id;
+                        if ($grandpa == $node){
+                            my $b_id = $node->bundle->id;
                             my $p_id = $parent->ord;
                             confess "Conllu file $conllu_file contains cycles: Bundle $b_id: nodes $id and $p_id.";
                         }
                         $grandpa = $grandpa->[$PARENT];
                     }
                 }
-                $nodes[$i][$PARENT] = $parent;
-                $nodes[$i][$NEXTSIBLING] = $parent->[$FIRSTCHILD];
-                $parent->[$FIRSTCHILD] = $nodes[$i];
+                $node->[$PARENT] = $parent;
+                $node->[$NEXTSIBLING] = $parent->[$FIRSTCHILD];
+                $parent->[$FIRSTCHILD] = $node;
             }
-            $root->[0] = [@nodes[1..$#nodes]];
+            $root->[$DESCENDANTS] = [@nodes[1..$#nodes]];
             if (length $comment){
-                $nodes[0]->set_misc($comment);
+                $root->set_misc($comment);
                 $comment = '';
             }
             my $bundle = $self->create_bundle();
@@ -80,9 +81,8 @@ sub load_conllu {
                 # TODO multiword tokens
                 next LINE;
             }
-            my $new_node;
-            $new_node = bless [undef, undef, undef, undef, undef, $root, scalar(@nodes),
-                               $form, $lemma, $upos, $xpos, $feats, $deprel, $deps, $misc], $class;
+            my $new_node = bless [undef, undef, undef, undef, undef, $root, scalar(@nodes),
+                                  $form, $lemma, $upos, $xpos, $feats, $deprel, $deps, $misc], $class;
             push @nodes, $new_node;
             push @parents, $head;
             # TODO deps
