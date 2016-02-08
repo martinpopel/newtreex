@@ -156,11 +156,10 @@ sub remove {
         }
         $node->[$NEXTSIBLING] = $self->[$NEXTSIBLING] if $node;
     }
-    $self->[$PARENT] = $self->[$NEXTSIBLING] = undef;
 
     # By reblessing we make sure that
     # all methods called on removed nodes will result in fatal errors.
-    foreach $node (@to_remove){
+    foreach my $node (@to_remove){
         undef @$node;
         bless $node, 'UD::Node::Removed';
     }
