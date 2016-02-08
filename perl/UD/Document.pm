@@ -24,7 +24,7 @@ sub create_bundle {
 }
 
 my ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING, $PARENT, $ROOT, $ORD,) = (0..10);
-my ($PREVSIBLING, $LASTCHILD) = (15, 16); # TODO:
+my $PREVSIBLING  = 15; # TODO:
 
 sub load_conllu {
     my ($self, $conllu_file) = @_;
@@ -66,14 +66,9 @@ sub load_conllu {
                     $node->[$NEXTSIBLING] = $parent->[$FIRSTCHILD];
                     $parent->[$FIRSTCHILD] = $node;
                 } else {
-                    my $prev = $parent->[$LASTCHILD];
-                    $parent->[$LASTCHILD] = $node;
-                    if ($prev){
-                        $prev->[$NEXTSIBLING] = $node;
-                        $node->[$PREVSIBLING] = $prev;
-                    } else {
-                        $parent->[$FIRSTCHILD] = $node;
-                    }
+                    $node->[$NEXTSIBLING] = $parent->[$FIRSTCHILD];
+                    $parent->[$FIRSTCHILD] = $node;
+                    $node->[$NEXTSIBLING][$PREVSIBLING] = $node if $node->[$NEXTSIBLING];
                 }
             }
             $root->[$DESCENDANTS] = [@nodes[1..$#nodes]];

@@ -7,7 +7,7 @@ my @ATTRS;
 my ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING, # private (no getter nor setter)
     $PARENT, $ROOT, $ORD,                    # public getter
     $FORM, $LEMMA, $UPOS, $XPOS, $FEATS, $DEPREL, $DEPS, $MISC,
-    $PREVSIBLING, $LASTCHILD); # TODO: fix order
+    $PREVSIBLING,); # TODO: fix order
 BEGIN {
     @ATTRS = qw(descendants bundle firstchild nextsibling
             parent root ord
@@ -16,7 +16,7 @@ BEGIN {
     ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING,
     $PARENT, $ROOT, $ORD,
     $FORM, $LEMMA, $UPOS, $XPOS, $FEATS, $DEPREL, $DEPS, $MISC,
-    $PREVSIBLING, $LASTCHILD)
+    $PREVSIBLING,)
     = (0..$#ATTRS);
 }
 
@@ -76,11 +76,7 @@ sub set_parent {
         } else {
             $self->[$PREVSIBLING][$NEXTSIBLING] = $self->[$NEXTSIBLING];
         }
-        if ($self == $origparent->[$LASTCHILD]){
-            $origparent->[$LASTCHILD] = $self->[$PREVSIBLING];
-        } else {
-            $self->[$NEXTSIBLING][$PREVSIBLING] = $self->[$PREVSIBLING];
-        }
+        $self->[$NEXTSIBLING][$PREVSIBLING] = $self->[$PREVSIBLING] if $self->[$NEXTSIBLING];
         $self->[$NEXTSIBLING] = undef;
     }
 
@@ -96,14 +92,9 @@ sub set_parent {
 
     # Attach the node to its parent and linked list of siblings.
     $self->[$PARENT] = $parent;
-    my $prev = $parent->[$LASTCHILD];
-    $self->[$PREVSIBLING] = $prev;
-    $parent->[$LASTCHILD] = $self;
-    if ($prev){
-        $prev->[$NEXTSIBLING] = $self;
-    } else {
-        $parent->[$FIRSTCHILD] = $self;
-    }
+    $self->[$NEXTSIBLING] = $parent->[$FIRSTCHILD];
+    $parent->[$FIRSTCHILD] = $self;
+    $self->[$NEXTSIBLING][$PREVSIBLING] = $self if $self->[$NEXTSIBLING];
 
     return;
 }
@@ -164,11 +155,8 @@ sub remove {
     } else {
         $self->[$PREVSIBLING][$NEXTSIBLING] = $self->[$NEXTSIBLING];
     }
-    if ($self == $parent->[$LASTCHILD]){
-        $parent->[$LASTCHILD] = $self->[$PREVSIBLING];
-    } else {
-        $self->[$NEXTSIBLING][$PREVSIBLING] = $self->[$PREVSIBLING];
-    }
+    $self->[$NEXTSIBLING][$PREVSIBLING] = $self->[$PREVSIBLING] if $self->[$NEXTSIBLING];
+    $self->[$NEXTSIBLING] = undef;
 
     # By reblessing we make sure that
     # all methods called on removed nodes will result in fatal errors.
