@@ -175,7 +175,7 @@ sub children {
         push @children, $child;
         $child = $child->[$NEXTSIBLING];
     }
-    return @children;
+    return sort {$a->[$ORD] <=> $b->[$ORD]} @children;
 }
 
 sub create_child {
