@@ -24,11 +24,12 @@ sub create_bundle {
 }
 
 my ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING, $PARENT, $ROOT, $ORD,) = (0..10);
+my ($PREVSIBLING, $LASTCHILD) = (15, 16); # TODO:
 
 sub load_conllu {
     my ($self, $conllu_file) = @_;
     open my $fh, '<:utf8', $conllu_file;
-    
+
     my $bundle = $self->create_bundle();
     my $root = $bundle->create_tree(); # {selector=>''}
     my @nodes = ($root);
@@ -61,8 +62,19 @@ sub load_conllu {
                     }
                 }
                 $node->[$PARENT] = $parent;
-                $node->[$NEXTSIBLING] = $parent->[$FIRSTCHILD];
-                $parent->[$FIRSTCHILD] = $node;
+                if ($class eq 'UD::NodeA') { # TODO
+                    $node->[$NEXTSIBLING] = $parent->[$FIRSTCHILD];
+                    $parent->[$FIRSTCHILD] = $node;
+                } else {
+                    my $prev = $parent->[$LASTCHILD];
+                    $parent->[$LASTCHILD] = $node;
+                    if ($prev){
+                        $prev->[$NEXTSIBLING] = $node;
+                        $node->[$PREVSIBLING] = $prev;
+                    } else {
+                        $parent->[$FIRSTCHILD] = $node;
+                    }
+                }
             }
             $root->[$DESCENDANTS] = [@nodes[1..$#nodes]];
             if (length $comment){
@@ -88,7 +100,7 @@ sub load_conllu {
             # TODO deps
             # TODO convert feats into iset
         }
-        
+
     }
     close $fh;
     # The last bundle should be empty (if the file ended with an empty line),
