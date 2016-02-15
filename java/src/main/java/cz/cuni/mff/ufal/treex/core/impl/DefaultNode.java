@@ -35,20 +35,24 @@ public class DefaultNode implements Node {
         this.id = tree.getDocument().generate_new_id();
     }
 
-    public DefaultNode(NLPTree tree, Node parent, int id) {
-        this.parent = Optional.ofNullable(parent);
-        this.tree = tree;
-        this.id = id;
-    }
-
     public DefaultNode(NLPTree tree) {
         this(tree, null);
     }
 
     @Override
     public void remove() {
-        getParent().ifPresent(node -> node.getChildren().remove(this));
+        getParent().ifPresent(node -> node.removeChild(this));
         getTree().normalizeOrder();
+    }
+
+    @Override
+    public void removeChild(Node child) {
+        children.remove(child);
+    }
+
+    @Override
+    public void addChild(Node childToAdd) {
+        children.add(childToAdd);
     }
 
     @Override
@@ -74,7 +78,7 @@ public class DefaultNode implements Node {
 
     @Override
     public List<Node> getChildren() {
-        return children;
+        return new ArrayList<>(children);
     }
 
     @Override
@@ -101,12 +105,12 @@ public class DefaultNode implements Node {
 
         //fix children of my parent
         if (parent.isPresent()) {
-            parent.get().getChildren().remove(this);
+            parent.get().removeChild(this);
         }
 
         //add self as the last child of my new parent
         this.parent = Optional.of(node);
-        node.getChildren().add(this);
+        node.addChild(this);
     }
 
     @Override
@@ -121,13 +125,13 @@ public class DefaultNode implements Node {
 
     @Override
     public boolean isLeaf() {
-        return 0 == getChildren().size();
+        return 0 == children.size();
     }
 
     @Override
     public List<Node> getDescendants() {
         List<Node> descendants = new ArrayList<>();
-        for (Node child : getChildren()) {
+        for (Node child : children) {
             descendants.add(child);
             descendants.addAll(child.getDescendants());
         }
@@ -144,7 +148,7 @@ public class DefaultNode implements Node {
     @Override
     public List<Node> getSiblings() {
         if (parent.isPresent()) {
-            List<Node> siblings = new ArrayList<>(parent.get().getChildren());
+            List<Node> siblings = parent.get().getChildren();
             siblings.remove(this);
             return siblings;
         } else return new ArrayList<>();

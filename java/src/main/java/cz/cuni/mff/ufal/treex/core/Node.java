@@ -14,6 +14,20 @@ public interface Node {
     void remove();
 
     /**
+     * Remove child node.
+     *
+     * @param child
+     */
+    void removeChild(Node child);
+
+    /**
+     * Add child to given node.
+     *
+     * @param childToAdd
+     */
+    void addChild(Node childToAdd);
+
+    /**
      * Return all nodes that have a reference of the given type (e.g. 'alignment', 'a/lex.rf') to this node.
      */
     List<Node> getReferencingNodes();
