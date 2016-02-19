@@ -183,6 +183,48 @@ public class DefaultNode implements Node {
     }
 
     @Override
+    public Optional<Node> getNextNode() {
+
+        int myOrd = getOrd();
+
+        int nextNodeOrd = -1;
+        Optional<Node> nextNode = Optional.empty();
+        //find closest lower ord
+        for (Node descendant : getRoot().getDescendants()) {
+            int descendantOrd = descendant.getOrd();
+            if (descendantOrd < myOrd) {
+                if (!nextNode.isPresent() || nextNodeOrd < myOrd) {
+                    nextNodeOrd = descendantOrd;
+                    nextNode = Optional.of(descendant);
+                }
+            }
+        }
+
+        return nextNode;
+    }
+
+    @Override
+    public Optional<Node> getPrevNode() {
+
+        int myOrd = getOrd();
+
+        int prevNodeOrd = -1;
+        Optional<Node> prevNode = Optional.empty();
+        //find closest higher ord
+        for (Node descendant : getRoot().getDescendants()) {
+            int descendantOrd = descendant.getOrd();
+            if (descendantOrd > myOrd) {
+                if (!prevNode.isPresent() || prevNodeOrd > myOrd) {
+                    prevNodeOrd = descendantOrd;
+                    prevNode = Optional.of(descendant);
+                }
+            }
+        }
+
+        return prevNode;
+    }
+
+    @Override
     public boolean isDescendantOf(Node node) {
         Optional<Node> pathParent = parent;
         while (pathParent.isPresent()) {

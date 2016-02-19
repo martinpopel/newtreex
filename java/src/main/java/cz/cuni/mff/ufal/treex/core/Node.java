@@ -66,6 +66,10 @@ public interface Node {
 
     Optional<Node> getNextSibling();
 
+    Optional<Node> getPrevNode();
+
+    Optional<Node> getNextNode();
+
     boolean isDescendantOf(Node node);
 
     int getDepth();
