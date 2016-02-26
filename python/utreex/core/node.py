@@ -25,7 +25,7 @@ class RuntimeException(TreexException):
 
 class Node(object):
 
-    __slots__ = [ 
+    __slots__ = [
                    # (A) features following the CoNLL-U documentation
                   "ord",      # Word index, integer starting at 1 for each new sentence; may be a range for tokens with multiple words.
                   "form",     # Word form or punctuation symbol.
@@ -38,14 +38,14 @@ class Node(object):
                   "deps",     # List of secondary dependencies (head-deprel pairs).
                   "misc",     # Any other annotation.
 
-                   # (B) utreex-specific extra features                            
+                   # (B) utreex-specific extra features
 
                   "_parent",  # parent node
-                  "_children",# ord-ordered list of child nodes  
+                  "_children",# ord-ordered list of child nodes
                   "_aux"     # other technical attributes
 
     ]
-   
+
 
     def __init__(self, data={}):
 
@@ -69,7 +69,7 @@ class Node(object):
 
         if self.parent == new_parent:
             return
-        
+
         elif self == new_parent:
             raise RuntimeException('setting the parent would lead to a loop: '+str(self))
 
@@ -101,7 +101,7 @@ class Node(object):
         for child in self.children:
             descendants.extend(child._unordered_descendants_using_children())
         return descendants
-        
+
     def root(self):
         node = self
         while (node.parent):
@@ -141,3 +141,18 @@ class Node(object):
         for node_to_move in nodes_to_move:
             node_to_move.ord = reference_node.ord + 0.5 + (node_to_move.ord-self.ord)/10000
             self._update_ordering
+
+    def prev_node(self):
+        new_ord = self.ord - 1
+        if new_ord < 0:
+            return None
+        if new_ord == 0:
+            return self.root()
+        return self.root()._aux['descendants'][self.ord - 1]
+
+    def next_node(self):
+        # Note that all_nodes[n].ord == n+1
+        try:
+            return self.root()._aux['descendants'][self.ord]
+        except IndexError:
+            return None
