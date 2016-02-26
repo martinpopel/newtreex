@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Optional;
 
 /**
  * Created by mvojtek on 12/21/15.
@@ -88,6 +89,16 @@ public class Main {
         }
         System.out.println("iterS");
 
+        for (Bundle bundle : document.getBundles()) {
+            for (Sentence sentence : bundle.getSentences()) {
+                Optional<Node> node = Optional.of(sentence.getTree().getRoot());
+                while (node.isPresent()) {
+                    node = node.get().getNextNode();
+                    //noop
+                }
+            }
+        }
+        System.out.println("iterN");
 
         for (Bundle bundle : document.getBundles()) {
             for (Sentence sentence : bundle.getSentences()) {

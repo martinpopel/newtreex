@@ -55,6 +55,14 @@ print("iterS")
 
 for bundle in doc:
     for root in bundle:
+        node = root
+        while node:
+            node = node.next_node();
+
+print("iterN")
+
+for bundle in doc:
+    for root in bundle:
         for node in root.descendants():
             form_lemma = node.form + node.lemma
 

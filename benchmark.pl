@@ -48,7 +48,7 @@ if ($HELP){
     exit;
 }
 
-my @HEADER = qw(REAL CPU MAXMEM init load save iter iterF iterS read write rehang remove add reorder exit);
+my @HEADER = qw(REAL CPU MAXMEM init load save iter iterF iterS iterN read write rehang remove add reorder exit);
 my %IN_HEADER = map {$_ => 1} @HEADER;
 my @experiments = @ARGV;
 @experiments = @COMMANDS_NAMES if !@experiments;

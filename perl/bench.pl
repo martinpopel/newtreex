@@ -71,6 +71,17 @@ for my $iter (1..$ITERS){
 
     foreach my $bundle ($doc->bundles){
         foreach my $tree ($bundle->trees){
+            my $node = $tree;
+            while ($node) {
+                $node = $node->next_node();
+                # no op
+            }
+        }
+    }
+    print "iterN\n";
+
+    foreach my $bundle ($doc->bundles){
+        foreach my $tree ($bundle->trees){
             foreach my $node ($tree->descendants){
                 my $form_lemma = $node->form . $node->lemma;
             }
