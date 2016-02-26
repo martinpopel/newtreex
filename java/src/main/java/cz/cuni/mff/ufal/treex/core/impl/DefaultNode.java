@@ -189,11 +189,11 @@ public class DefaultNode implements Node {
 
         int nextNodeOrd = -1;
         Optional<Node> nextNode = Optional.empty();
-        //find closest lower ord
+        //find closest higher ord
         for (Node descendant : getRoot().getDescendants()) {
             int descendantOrd = descendant.getOrd();
-            if (descendantOrd < myOrd) {
-                if (!nextNode.isPresent() || nextNodeOrd < myOrd) {
+            if (descendantOrd > myOrd) {
+                if (!nextNode.isPresent() || descendantOrd < nextNodeOrd) {
                     nextNodeOrd = descendantOrd;
                     nextNode = Optional.of(descendant);
                 }
@@ -210,11 +210,11 @@ public class DefaultNode implements Node {
 
         int prevNodeOrd = -1;
         Optional<Node> prevNode = Optional.empty();
-        //find closest higher ord
+        //find closest lower ord
         for (Node descendant : getRoot().getDescendants()) {
             int descendantOrd = descendant.getOrd();
-            if (descendantOrd > myOrd) {
-                if (!prevNode.isPresent() || prevNodeOrd > myOrd) {
+            if (descendantOrd < myOrd) {
+                if (!prevNode.isPresent() || descendantOrd > prevNodeOrd) {
                     prevNodeOrd = descendantOrd;
                     prevNode = Optional.of(descendant);
                 }
