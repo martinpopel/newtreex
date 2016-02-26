@@ -277,13 +277,15 @@ sub log_warn { cluck @_; }
 sub prev_node {
     my ($self) = @_;
     my $ord = $self->[$ORD] - 1;
-    return undef if $ord <= 0;
-    return $self->[$ROOT][$DESCENDANTS][$ord];
+    return undef if $ord < 0;
+    return $self->[$ROOT] if $ord == 0;
+    return $self->[$ROOT][$DESCENDANTS][$ord-1];
 }
 
 sub next_node {
     my ($self) = @_;
-    return $self->[$ROOT][$DESCENDANTS][$self->[$ORD] + 1];
+    # Note that @all_nodes[$n]->ord == $n+1
+    return $self->[$ROOT][$DESCENDANTS][$self->[$ORD]];
 }
 
 sub shift_before_node {
