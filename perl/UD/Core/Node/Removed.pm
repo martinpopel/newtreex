@@ -1,4 +1,4 @@
-package UD::Node::Removed;
+package UD::Core::Node::Removed;
 use Carp;
 
 sub AUTOLOAD {                         ## no critic (ProhibitAutoloading)

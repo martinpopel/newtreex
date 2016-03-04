@@ -1,13 +1,13 @@
-package UD::Document;
+package UD::Core::Document;
 use strict;
 use warnings;
 use autodie;
-use UD::Bundle;
+use UD::Core::Bundle;
 use Carp;
 
 sub new {
-    my ($class, $implementation) = @_;
-    my $self = {_bundles=>[], implementation => $implementation || ''};
+    my ($class) = @_;
+    my $self = {_bundles=>[], };
     return bless $self, $class;
 }
 
@@ -16,7 +16,7 @@ sub bundles {@{$_[0]->{_bundles}};}
 sub create_bundle {
     my ($self, $args) = @_;
     # TODO args->{before} args->{after}
-    my $bundle = UD::Bundle->new();
+    my $bundle = UD::Core::Bundle->new();
     $bundle->set_id(1 + @{$self->{_bundles}});
     $bundle->set_document($self);
     push @{$self->{_bundles}}, $bundle;
@@ -33,7 +33,6 @@ sub load_conllu {
     my $root = $bundle->create_tree(); # {selector=>''}
     my @nodes = ($root);
     my @parents = (0);
-    my $class = 'UD::Node' . $self->{implementation};
     my ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc );
     my $comment = '';
     LINE:
@@ -82,7 +81,7 @@ sub load_conllu {
                 next LINE;
             }
             my $new_node = bless [undef, undef, undef, undef, undef, $root, scalar(@nodes),
-                                  $form, $lemma, $upos, $xpos, $feats, $deprel, $deps, $misc], $class;
+                                  $form, $lemma, $upos, $xpos, $feats, $deprel, $deps, $misc], 'UD::Core::Node';
             push @nodes, $new_node;
             push @parents, $head;
             # TODO deps

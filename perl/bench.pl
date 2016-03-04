@@ -17,7 +17,7 @@ sub myrand {
 }
 
 STDOUT->autoflush(1);
-use UD::Document;
+use UD::Core::Document;
 
 my $DEBUG = 0;
 if ($ARGV[0] eq '-d'){
@@ -30,14 +30,14 @@ if ($ARGV[0] eq '-n'){
     $ITERS = shift @ARGV;
 }
 
-my ($in_conllu, $out_conllu, $implementation) = @ARGV;
+my ($in_conllu, $out_conllu) = @ARGV;
 print "init\n";
 
 for my $iter (1..$ITERS){
-    my $doc = UD::Document->new($implementation);
+    my $doc = UD::Core::Document->new();
     $doc->load_conllu($in_conllu);
     print "load\n";
-    $doc->save_conllu("perl$implementation-load.conllu") if $DEBUG;
+    $doc->save_conllu("perl-load.conllu") if $DEBUG;
 
     foreach my $bundle ($doc->bundles){
         # There is just one tree in each bundle, but let's make the code more general
@@ -97,7 +97,7 @@ for my $iter (1..$ITERS){
         }
     }
     print "write\n";
-    $doc->save_conllu("perl$implementation-write.conllu") if $DEBUG;
+    $doc->save_conllu("perl-write.conllu") if $DEBUG;
 
     my $cycles_skip = {cycles=>'skip'};
     foreach my $bundle ($doc->bundles){
@@ -117,17 +117,17 @@ for my $iter (1..$ITERS){
         }
     }
     print "rehang\n";
-    $doc->save_conllu("perl$implementation-rehang.conllu") if $DEBUG;
+    $doc->save_conllu("perl-rehang.conllu") if $DEBUG;
 
     foreach my $bundle ($doc->bundles){
         foreach my $tree ($bundle->trees){
             foreach my $node ($tree->descendants){
-                $node->remove if myrand(10)==0 && ref $node ne 'UD::Node::Removed';
+                $node->remove if myrand(10)==0 && ref $node ne 'UD::Core::Node::Removed';
             }
         }
     }
     print "remove\n";
-    $doc->save_conllu("perl$implementation-remove.conllu") if $DEBUG;
+    $doc->save_conllu("perl-remove.conllu") if $DEBUG;
 
     foreach my $bundle ($doc->bundles){
         foreach my $tree ($bundle->trees){
@@ -139,7 +139,7 @@ for my $iter (1..$ITERS){
         }
     }
     print "add\n";
-    $doc->save_conllu("perl$implementation-add.conllu") if $DEBUG;
+    $doc->save_conllu("perl-add.conllu") if $DEBUG;
 
     my ($skip_if_descendant, $without_children) = ({skip_if_descendant=>1}, {without_children=>1});
     foreach my $bundle ($doc->bundles){
@@ -156,7 +156,7 @@ for my $iter (1..$ITERS){
         }
     }
     print "reorder\n";
-    $doc->save_conllu("perl$implementation-reorder.conllu") if $DEBUG;
+    $doc->save_conllu("perl-reorder.conllu") if $DEBUG;
 
     $doc->save_conllu($out_conllu);
     print "save\n";

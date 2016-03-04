@@ -1,7 +1,7 @@
 SHELL=bash
 DATA=data/UD_Romanian/ro-ud-train.conllu
 DATASHORT=$(notdir $(DATA))
-EXPS=pytreex utreex perlCa perlCl perlClAa perlA java cpp_raw
+EXPS=pytreex utreex perl java cpp_raw
 REPEATS=10
 N=1
 

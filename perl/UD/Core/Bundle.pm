@@ -1,10 +1,9 @@
-package UD::Bundle;
+package UD::Core::Bundle;
 use strict;
 use warnings;
 use autodie;
 use Carp;
-use UD::NodeA;
-#use UD::NodeB;
+use UD::Core::Node;
 
 my ($TREES, $ID, $DOC);
 BEGIN {
@@ -33,8 +32,7 @@ sub create_tree {
     #my $selector = $args->{selector} //= '';
     #confess "Tree with selector '$selector' already exists" if $self->{_trees}{$selector};
     #$args->{language} ||= 'unk'
-    my $class = 'UD::Node' . $self->[$DOC]{implementation};
-    my $root = $class->_create_root($self);
+    my $root = UD::Core::Node->_create_root($self);
     push @{$self->[$TREES]}, $root;
     return $root;
 }
