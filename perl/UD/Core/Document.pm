@@ -28,7 +28,7 @@ my ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING, $PARENT, $ROOT, $ORD,) = (
 sub load_conllu {
     my ($self, $conllu_file) = @_;
     open my $fh, '<:utf8', $conllu_file;
-    
+
     my $bundle = $self->create_bundle();
     my $root = $bundle->create_tree(); # {selector=>''}
     my @nodes = ($root);
@@ -87,7 +87,7 @@ sub load_conllu {
             # TODO deps
             # TODO convert feats into iset
         }
-        
+
     }
     close $fh;
     # The last bundle should be empty (if the file ended with an empty line),

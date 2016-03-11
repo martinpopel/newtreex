@@ -1,0 +1,7 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use FindBin qw($Bin);
+use lib "$Bin/..";
+use UD::Core::Run q(treex);
+treex(\@ARGV);

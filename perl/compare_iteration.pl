@@ -51,7 +51,7 @@ cmpthese(
         copy1   => 'my @ar=copy1(); foreach my $n (@ar){}',
         copy2   => 'my @ar=copy2(); foreach my $n (@ar){}',
         ar_push => 'my @ar=ar_push(); foreach my $n (@ar){}',
-        li_push => 'my @ar=li_push(); foreach my $n (@ar){}', 
+        li_push => 'my @ar=li_push(); foreach my $n (@ar){}',
     }
 );
 
@@ -63,7 +63,7 @@ cmpthese(
         copy1  => \&copy1,
         copy2  => \&copy2,
         ar_push => \&ar_push,
-        li_push => \&li_push, 
+        li_push => \&li_push,
     }
 );
 
