@@ -1,8 +1,5 @@
 package UD::Core::Block;
-use strict;
-use warnings;
-use Moo;
-use Carp qw(confess cluck);
+use UD::Core::Common;
 
 has zones => ( is => 'ro', default => 'all' );
 

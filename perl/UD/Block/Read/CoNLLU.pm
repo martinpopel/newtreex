@@ -80,7 +80,7 @@ sub process_document {
     # The last bundle should be empty (if the file ended with an empty line),
     # so we need to remove it. But let's check it.
     if (@nodes == 1){
-        pop @{$self->{_bundles}};
+        pop @{$doc->{_bundles}};
     } else {
         foreach my $i (1..$#nodes) {
             $nodes[$i]->set_parent( $nodes[ $parents[$i] ] );
