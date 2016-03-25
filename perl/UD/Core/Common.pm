@@ -4,6 +4,7 @@ use warnings;
 use 5.010;
 use utf8;
 use Moo;
+use Carp;
 use List::Util 1.33;
 use Scalar::Util;
 use Data::Printer;
@@ -12,7 +13,7 @@ sub import {
     feature->import('say');
     utf8::import();
     my $caller = caller;
-    eval "package $caller;" .
+    my $result = eval "package $caller;" .
 <<'END';
 use Moo;
 use Carp;
@@ -24,7 +25,9 @@ use Types::Standard qw(Int Bool);
 
 sub has_ro {my $name = shift; has($name, is=>'ro', @_);};
 sub has_rw {my $name = shift; has($name, is=>'ro', writer => "set_$name", @_);};
+1;
 END
+    confess "Error in UD::Core::Common (probably a missing package):\n$@" if !$result;
     return;
 }
 
