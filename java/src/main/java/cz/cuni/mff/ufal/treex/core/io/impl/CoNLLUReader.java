@@ -5,10 +5,7 @@ import cz.cuni.mff.ufal.treex.core.impl.*;
 import cz.cuni.mff.ufal.treex.core.io.DocumentReader;
 import cz.cuni.mff.ufal.treex.core.io.TreexIOException;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,12 +17,11 @@ import java.util.regex.Pattern;
  */
 public class CoNLLUReader implements DocumentReader {
 
-    private final File coNLLUFile;
-
+    private final Reader reader;
     private final Pattern idRangePattern = Pattern.compile("(\\d+)-(\\d+)");
 
-    public CoNLLUReader(Path filePath) {
-        this.coNLLUFile = filePath.toFile();
+    public CoNLLUReader(Reader reader) {
+        this.reader = reader;
     }
 
     @Override
@@ -34,7 +30,18 @@ public class CoNLLUReader implements DocumentReader {
         final Bundle bundle = new DefaultBundle();
         document.addBundle(bundle);
 
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(coNLLUFile)))
+        readInDocument(document);
+
+        return document;
+    }
+
+    @Override
+    public void readInDocument(Document document) throws TreexIOException {
+
+        //default bundle
+        Bundle bundle = document.getBundles().get(0);
+
+        try (BufferedReader bufferedReader = new BufferedReader(reader))
         {
             String currLine;
             List<String> words = new ArrayList<>();
@@ -57,7 +64,6 @@ public class CoNLLUReader implements DocumentReader {
         {
             throw new TreexIOException(e);
         }
-        return document;
     }
 
     private void processSentence(Document document, Bundle bundle, List<String> words) {

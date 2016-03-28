@@ -7,4 +7,5 @@ import cz.cuni.mff.ufal.treex.core.Document;
  */
 public interface DocumentReader {
     Document readDocument() throws TreexIOException;
+    void readInDocument(Document document) throws TreexIOException;
 }

@@ -6,9 +6,12 @@ import cz.cuni.mff.ufal.treex.core.Node;
 import cz.cuni.mff.ufal.treex.core.Sentence;
 import cz.cuni.mff.ufal.treex.core.io.DocumentReader;
 import cz.cuni.mff.ufal.treex.core.io.DocumentWriter;
+import cz.cuni.mff.ufal.treex.core.io.TreexIOException;
 import cz.cuni.mff.ufal.treex.core.io.impl.CoNLLUReader;
 import cz.cuni.mff.ufal.treex.core.io.impl.CoNLLUWriter;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
@@ -53,7 +56,15 @@ public class Main {
     }
 
     public static void test(String inCoNLL, String outCoNLL, boolean debug) {
-        DocumentReader coNLLUReader = new CoNLLUReader(Paths.get(inCoNLL));
+
+        FileReader fileReader;
+        try {
+            fileReader = new FileReader(Paths.get(inCoNLL).toFile());
+        } catch (FileNotFoundException e) {
+            throw new TreexIOException("Provided CoNLL file '"+inCoNLL+"'not found.");
+        }
+
+        DocumentReader coNLLUReader = new CoNLLUReader(fileReader);
         Document document = coNLLUReader.readDocument();
         System.out.println("load");
         if (debug) {
@@ -188,8 +199,8 @@ public class Main {
             writeDoc("java-reorder.conllu", document);
         }
 
-        DocumentWriter coNLLUWriter = new CoNLLUWriter(Paths.get(outCoNLL));
-        coNLLUWriter.writeDocument(document);
+        DocumentWriter coNLLUWriter = new CoNLLUWriter();
+        coNLLUWriter.writeDocument(document, Paths.get(outCoNLL));
         System.out.println("save");
 
         //document = null;
@@ -198,7 +209,7 @@ public class Main {
     }
 
     private static void writeDoc(String fileName, Document document) {
-        DocumentWriter coNLLUWriter = new CoNLLUWriter(Paths.get(fileName));
-        coNLLUWriter.writeDocument(document);
+        DocumentWriter coNLLUWriter = new CoNLLUWriter();
+        coNLLUWriter.writeDocument(document, Paths.get(fileName));
     }
 }

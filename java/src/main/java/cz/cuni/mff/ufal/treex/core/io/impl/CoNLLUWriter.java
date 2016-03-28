@@ -7,8 +7,7 @@ import cz.cuni.mff.ufal.treex.core.Sentence;
 import cz.cuni.mff.ufal.treex.core.io.DocumentWriter;
 import cz.cuni.mff.ufal.treex.core.io.TreexIOException;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,17 +19,8 @@ import java.util.List;
  */
 public class CoNLLUWriter implements DocumentWriter{
 
-    private final Path outPath;
-
-    public CoNLLUWriter(Path outPath) {
-        this.outPath = outPath;
-    }
-
-    @Override
-    public void writeDocument(Document document) {
-
-        Charset charset = Charset.forName("utf-8");
-        try (BufferedWriter writer = Files.newBufferedWriter(outPath, charset)) {
+    public void writeDocument(Document document, Writer writer) {
+        try (BufferedWriter bufferedWriter = new BufferedWriter(writer)) {
             for (Bundle bundle : document.getBundles()) {
                 for (Sentence sentence : bundle.getSentences()) {
 
@@ -42,8 +32,8 @@ public class CoNLLUWriter implements DocumentWriter{
                         List<String> comments = sentence.getComments();
 
                         for (String comment : comments) {
-                            writer.write(comment, 0, comment.length());
-                            writer.newLine();
+                            bufferedWriter.write(comment, 0, comment.length());
+                            bufferedWriter.newLine();
                         }
 
                         //TODO: multiword
@@ -51,17 +41,25 @@ public class CoNLLUWriter implements DocumentWriter{
 
                         for (Node descendant : descendants) {
                             String line = buildLine(descendant);
-                            writer.write(line, 0, line.length());
-                            writer.newLine();
+                            bufferedWriter.write(line, 0, line.length());
+                            bufferedWriter.newLine();
                         }
-                        writer.newLine();
+                        bufferedWriter.newLine();
                     }
                 }
             }
         } catch (IOException e) {
             throw new TreexIOException(e);
         }
+    }
 
+    @Override
+    public void writeDocument(Document document, Path outPath) {
+        try {
+            writeDocument(document, new FileWriter(outPath.toFile()));
+        } catch (IOException e) {
+            throw new TreexIOException("Failed to open file '"+outPath+"'.", e);
+        }
     }
 
     private String buildLine(Node node) {
