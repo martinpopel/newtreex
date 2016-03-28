@@ -113,11 +113,11 @@ for bundle in doc:
         nodes = root.descendants()
         for node in nodes:
             rand_index = myrand(len(nodes))
-            if myrand(10) == 0:
-                # Catch an exception if nodes[rand_index] is a descendant of $node
-                node.shift_subtree_after(nodes[rand_index])
+            if myrand(10) == 0: 
+                if not nodes[rand_index].is_descendant_of(node):
+                    node.shift(nodes[rand_index], after=1, move_subtree=1, reference_subtree=0)
             elif myrand(10) == 0:
-                node.shift_after(nodes[rand_index])  # TODO: dodelat, tady se chce neco trochu jineho
+                node.shift(nodes[rand_index], after=0, move_subtree=0, reference_subtree=1)
 
 print("reorder")
 

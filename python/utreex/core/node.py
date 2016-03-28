@@ -96,6 +96,14 @@ class Node(object):
         else:
             return sorted( self._unordered_descendants_using_children() )
 
+    def is_descendant_of(self,node):
+	climber = self.parent
+	while climber:
+	    if climber==node:
+                return True
+            climber = climber.parent
+        return False
+
     def _unordered_descendants_using_children(self):
         descendants = [self]
         for child in self.children:
@@ -152,7 +160,7 @@ class Node(object):
 	reference_ord = reference_node.ord
 
 	if reference_subtree:
-  	    for node in reference_node.descendants:
+  	    for node in reference_node.descendants():
 	        if (after and node.ord > reference_ord) or (not after and node.ord < reference_ord):
 		    reference_ord = node.ord
 
