@@ -128,19 +128,46 @@ class Node(object):
         self.parent._children = [ child for child in self.parent._children if child != self ]
         self.parent._update_ordering()
 
-    def shift_subtree_after(self, reference_node):
-        nodes_to_move = [self] + self.descendants()
+#    def shift_subtree_after(self, reference_node):
+#        nodes_to_move = [self] + self.descendants()
+#
+#        for node_to_move in nodes_to_move:
+#            node_to_move.ord = reference_node.ord + 0.5 + (node_to_move.ord-self.ord)/10000
+#        self._update_ordering
+#
+#    def shift_after(self, reference_node):  # TODO, silly, unify with the one above
+#        nodes_to_move = [self]
+#
+#        for node_to_move in nodes_to_move:
+#            node_to_move.ord = reference_node.ord + 0.5 + (node_to_move.ord-self.ord)/10000
+#            self._update_ordering
 
-        for node_to_move in nodes_to_move:
-            node_to_move.ord = reference_node.ord + 0.5 + (node_to_move.ord-self.ord)/10000
-        self._update_ordering
 
-    def shift_after(self, reference_node):  # TODO, silly, unify with the one above
+    def shift(self, reference_node, after=0, move_subtree=0, reference_subtree=0):
         nodes_to_move = [self]
 
+	if move_subtree:
+	    nodes_to_move.extend(self.descendants())
+
+	reference_ord = reference_node.ord
+
+	if reference_subtree:
+  	    for node in reference_node.descendants:
+	        if (after and node.ord > reference_ord) or (not after and node.ord < reference_ord):
+		    reference_ord = node.ord
+
+        common_delta = 0.5 if after else -0.5
+
         for node_to_move in nodes_to_move:
-            node_to_move.ord = reference_node.ord + 0.5 + (node_to_move.ord-self.ord)/10000
-            self._update_ordering
+            node_to_move.ord = reference_node.ord + common_delta + (node_to_move.ord-self.ord)/100000.  # TODO: can we use some sort of epsilon instead of choosing a silly upper bound for out-degree?
+	
+	self._update_ordering
+
+    def shift_after(self, reference_node):
+	self.shift(reference_node,after=1,move_subtree=0,reference_subtree=0)
+
+    def shift_subtree_after(self, reference_node):
+	self.shift(reference_node,after=1,move_subtree=1,reference_subtree=0)
 
     def prev_node(self):
         new_ord = self.ord - 1

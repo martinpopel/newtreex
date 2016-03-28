@@ -98,7 +98,6 @@ print("remove")
 for bundle in doc:
     for root in bundle:
         for node in root.descendants():
-            pass
             if myrand(10) == 0:
                 child = Node()
                 child.ord = 100000 # TODO: silly
