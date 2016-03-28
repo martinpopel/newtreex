@@ -36,14 +36,6 @@ if(!opts || opts.help) {
 def runInstance = Class.forName("cz.cuni.mff.ufal.treex.core.Run").newInstance()
 
 StringBuilder input = new StringBuilder();
-/*
-System.in.withReader { console ->
-    console.eachLine { line ->
-        println ">>> $line"
-    }
-}*/
-
-
 
 if (opts.arguments().isEmpty()) {
     runInstance.run(opts.dump_scenario?:false, opts.quiet?:false)
