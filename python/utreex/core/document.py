@@ -94,21 +94,23 @@ class Document(object):
 
         for bundle in self:
             for root in bundle:
-                fh.write(root._aux['comment'])
+                # Skip empty sentences (no nodes, just a comment). They are not allowed in CoNLL-U.
+                if root.descendants():
+                    fh.write(root._aux['comment'])
 
-                for node in root.descendants():
+                    for node in root.descendants():
 
-                    values = [ getattr(node,attrname) for attrname in Document.attrnames ]
-                    values[0] = str(values[0]) # ord
+                        values = [ getattr(node,attrname) for attrname in Document.attrnames ]
+                        values[0] = str(values[0]) # ord
 
-                    try:
-                        values[6] = str(node.parent.ord)
-                    except:
-                        values[6] = '0'
+                        try:
+                            values[6] = str(node.parent.ord)
+                        except:
+                            values[6] = '0'
 
-                    fh.write('\t'.join(values) )
-                    fh.write('\n')
+                        fh.write('\t'.join(values) )
+                        fh.write('\n')
 
-                fh.write("\n")
+                    fh.write("\n")
 
         fh.close()
