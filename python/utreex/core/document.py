@@ -8,7 +8,10 @@ from bundle import Bundle
 
 class Document(object):
 
-    attrnames = ["ord", "form", "lemma", "upostag", "xpostag", "feats", "head", "deprel", "deps"]  # TODO: pridat misc a poresit tolerovani jeho absence
+    attrnames = ["ord", "form", "lemma", "upostag", "xpostag", "feats", "head", "deprel", "deps", "misc"]
+    # ZZ: TODO: poresit tolerovani jeho absence misc
+    # MP: Proc, kdyz je to povinny atribut dle http://universaldependencies.org/format.html ?
+    # "If the MISC field is not used, it should contain an underscore."
 
     def __init__(self):
         self.bundles = []
@@ -17,7 +20,7 @@ class Document(object):
         return iter(self.bundles)
 
     def load(self,args):
-        
+
         fh = None
 
         try:
@@ -72,11 +75,11 @@ class Document(object):
             else: # an empty line is guaranteed even after the last sentence in a conll-u file
 
                 nodes[0]._aux['descendants'] = nodes[1:]
-   
+
                 for node in nodes[1:]:
 
                     node.set_parent( nodes[node.head] )
-                
+
                 nodes = []
                 comment = ''
 
