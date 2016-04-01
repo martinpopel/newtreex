@@ -22,14 +22,20 @@ def myrand(modulo):
     seed = (1103515245 * seed + 12345) % maxseed;
     return seed % modulo;
 
+debug = False
+if sys.argv[1] == "-d":
+    debug = True
+    sys.argv.pop(1)
+in_conllu = sys.argv[1]
+out_conllu = sys.argv[2]
+
 print("init")
 
-
 doc = Document()
-doc.load({'filename':sys.argv[1]})
+doc.load({'filename':in_conllu})
 
 print("load")
-
+if debug: doc.store({'filename':'utreex-load.conllu'})
 
 for bundle in doc:
     for root in bundle:
@@ -74,6 +80,7 @@ for bundle in doc:
             node.deprel = 'dep'
 
 print("write")
+if debug: doc.store({'filename':'utreex-write.conllu'})
 
 for bundle in doc:
     for root in bundle:
@@ -86,6 +93,7 @@ for bundle in doc:
                 pass
 
 print("rehang")
+if debug: doc.store({'filename':'utreex-rehang.conllu'})
 
 for bundle in doc:
     for root in bundle:
@@ -94,6 +102,7 @@ for bundle in doc:
                 node.remove()
 
 print("remove")
+if debug: doc.store({'filename':'utreex-remove.conllu'})
 
 for bundle in doc:
     for root in bundle:
@@ -107,6 +116,7 @@ for bundle in doc:
                 child.form="x"
 
 print("add")
+if debug: doc.store({'filename':'utreex-add.conllu'})
 
 for bundle in doc:
     for root in bundle:
@@ -120,9 +130,9 @@ for bundle in doc:
                 node.shift(nodes[rand_index], after=0, move_subtree=0, reference_subtree=1)
 
 print("reorder")
+if debug: doc.store({'filename':'utreex-reorder.conllu'})
 
-
-doc.store({'filename':sys.argv[2]})
+doc.store({'filename':out_conllu})
 print("save")
 
 #del doc
