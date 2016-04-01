@@ -52,10 +52,24 @@ print("iterF")
 
 for bundle in doc.bundles:
     for zone in bundle.get_all_zones():
+        for child in zone.atree.get_children():
+            for node in child.get_descendants():
+                pass
+print("iterS")
+
+for bundle in doc.bundles:
+    for zone in bundle.get_all_zones():
+        node = zone.atree
+        while node:
+            node = node.get_next_node();
+print("iterN")
+
+for bundle in doc.bundles:
+    for zone in bundle.get_all_zones():
         for node in zone.atree.get_descendants(ordered=1):
             form_lemma = node.form + node.lemma
 print("read")
-        
+
 for bundle in doc.bundles:
     for zone in bundle.get_all_zones():
         for node in zone.atree.get_descendants(ordered=1):
@@ -112,3 +126,8 @@ if debug: WriteCoNLLU(None, {'to':'pytreex-reorder.conllu', 'language':'unk'}).p
 
 conllu_writer.process_document(doc)
 print("save")
+
+#del doc
+#gc.collect()
+#print("free")
+print("end")
