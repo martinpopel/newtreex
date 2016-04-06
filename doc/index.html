@@ -1,0 +1,269 @@
+<html>
+<head>
+
+<style> 
+  table,th,td { border:2px solid green; } 
+  table { border-collapse:collapse; width:20%; } 
+  td { height:30px; } 
+  tbody tr:nth-child(even) { background: lightgrey; } </style>
+
+
+</head>
+
+<body>
+
+<table  border="1" cellspacing="0" cellpadding="5">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+
+
+<!---------------------- DATA CLASSES ------------------------------>
+
+<tr>
+  <td colspan="4" align="center" bgcolor="green"> DATA CLASSES </td>
+</tr>
+
+<tr style="background: lightgreen">
+  <td>  </td>
+  <td> Perl </td>
+  <td> Python </td>
+  <td> Java </td>
+</tr>
+
+
+<!---------------------- DOCUMENT ------------------------------>
+
+<tr>
+  <td colspan=4 bgcolor='lightgreen'> DOCUMENT </td>
+</tr>
+
+
+<tr>
+  <td> importing the class</td>
+  <td>  use Udapi::Core::Document; </td>
+  <td>  import Document from udapi.core.document  </td>
+  <td>  import cz.cuni.mff.ufal.treex.core.Document </td>
+</tr>
+
+<tr>
+  <td> &bull; construction </td>
+  <td>  my $doc = Udapi::Core::Document->new() </td>
+  <td>  doc = Document()  </td>
+  <td>  ??? </td>
+</tr>
+
+<tr>
+  <td> &bull; loading a document from a file </td>
+  <td>  $doc->load_conllu('test.conllu') </td>
+  <td>  doc.load({'filename':'test.conllu'}) <br/>
+  doc.load({'filehandle': fh}) </td>
+  <td>  ??? </td>
+</tr>
+
+
+<tr>
+  <td> &bull; saving a document to a file </td>
+  <td>  $doc->save_conllu('test.conllu') </td>
+  <td>  doc.store({'filename':'test.conllu'})<br/>
+  doc.store({'filehandle': fh})
+  </td>
+  <td>  ??? </td>
+</tr>
+
+<tr>
+  <td> &bull; get all bundles in the document</td>
+  <td>  $doc->bundles </td>
+  <td>  doc.bundles<br/>
+        for bundle in doc: # iterator version
+  </td>
+  <td>  ??? </td>
+</tr>
+
+<tr>
+  <td> &bull; append a new bundle to the end of the document </td>
+  <td>  $doc->create_bundle($args_hash_ref???) </td>
+  <td>  doc.store({'filename':'test.conllu'})<br/>
+  doc.store({'filehandle': fh})
+  </td>
+  <td>  ??? </td>
+</tr>
+
+
+
+
+
+<!---------------------- BUNDLE ------------------------------>
+
+<tr>
+  <td colspan=4 bgcolor='lightgreen'> BUNDLE </td>
+</tr>
+
+<tr>
+  <td> importing the class </td>
+  <td>  use Udapi::Core::Bundle; </td>
+  <td>  import Bundle from udapi.core.document  </td>
+  <td>  import cz.cuni.mff.ufal.treex.core.Document </td>
+</tr>
+
+<tr>
+  <td> &bull; construction </td>
+  <td>  my $bun = Udapi::Core::Bundle->new() </td>
+  <td>  bun = Bundle()  </td>
+  <td>  ??? </td>
+</tr>
+
+<tr>
+  <td> &bull; get all trees contained in the bundle </td>
+  <td>  my @tree_roots = $bun->trees() </td>
+  <td>  trees = bun.trees <br/>
+        for tree in bun:  # iterator version
+  </td>
+  <td>  ??? </td>
+</tr>
+
+<tr>
+  <td> &bull; add a new tree to the bundle </td>
+  <td>  my $root = bun->create_tree() </td>
+  <td>  bun.trees.append(root)  </td>
+  <td>  ??? </td>
+</tr>
+
+<tr>
+  <td colspan=4 bgcolor='lightgreen'> NODE </td>
+</tr>
+
+<tr>
+  <td> importing the class </td>
+  <td>  use Udapi::Core::Node; </td>
+  <td>  import Node from udapi.core.node  </td>
+  <td>  import cz.cuni.mff.ufal.treex.core.Node </td>
+</tr>
+
+<tr>
+  <td> &bull; constructor </td>
+  <td>  my $node =  Udapi::Core::Node->new(); </td>
+  <td>  node = Node()  </td>
+  <td>  ??? </td>
+</tr>
+
+<tr>
+  <td> &bull; getting an attribute value </td>
+  <td>  $node->lemma; </td>
+  <td>  node.lemma  </td>
+  <td>  ??? </td>
+</tr>
+
+<tr>
+  <td> &bull; writing an attribute value </td>
+  <td>  $node->lemma; </td>
+  <td>  node.lemma  </td>
+  <td>  ??? </td>
+</tr>
+
+<tr>
+  <td> &bull; getting the node's parent </td>
+  <td>  $node->parent; </td>
+  <td>  node.parent  </td>
+  <td>  ??? </td>
+</tr>
+
+<tr>
+  <td> &bull; setting the node's parent </td>
+  <td>  $node->set_parent($new_parent); </td>
+  <td>  node.set_parent(new_parent)  </td>
+  <td>  ??? </td>
+</tr>
+
+<tr>
+  <td> &bull; creating a node </td>
+  <td>  my $child = $node->create_child(); </td>
+  <td>  node.????  </td>
+  <td>  ??? </td>
+</tr>
+
+<tr>
+  <td> &bull; removing a node </td>
+  <td>  $node->remove(); </td>
+  <td>  node.remove  </td>
+  <td>  ??? </td>
+</tr>
+
+<tr>
+  <td> &bull; getting all node's descendants </td>
+  <td>  $node->descendants(); </td>
+  <td>  node.descendants()  </td>
+  <td>  ??? </td>
+</tr>
+
+
+
+
+
+<!---------------------- PROCESSING CLASSES ------------------------------>
+
+<tr>
+  <td style="background: lightgreen" colspan="4" align="center"> PROCESSING CLASSES </td>
+</tr>
+
+<tr>
+  <td>  </td>
+  <td> Perl </td>
+  <td> Python </td>
+  <td> Java </td>
+</tr>
+
+<tr>
+  <td> <b>BLOCK:</b> <br/> basic processing unit </td>
+  <td>  use Udapi::Core::Block; </td>
+  <td>  import Block from udapi.core.block  </td>
+  <td>  import cz.cuni.mff.ufal.treex.core.Block </td>
+</tr>
+
+
+<tr>
+  <td> construction (of a derived class) </td>
+  <td>  use Udapi::Block::Dummy; </td>
+  <td>  import Dummy from udapi.block.dummy  </td>
+  <td>  ??? </td>
+</tr>
+
+
+
+
+
+<tr>
+  <td> <b>RUNNER:</b> <br/> more complex processing unit, typically a
+  sequence of blocks </td>
+  <td>  use Udapi::Core::Run; </td>
+  <td>  import Run from udapi.core.run  </td>
+  <td>  import cz.cuni.mff.ufal.treex.core.Run </td>
+</tr>
+
+
+
+
+<!---------------------- COMMAND LINE EXECUTION ------------------------------>
+
+<tr>
+  <td style="background: lightgreen" colspan="4" align="center"> COMMAND LINE EXECUTION </td>
+</tr>
+
+<tr>
+  <td>  </td>
+  <td> Perl </td>
+  <td> Python </td>
+  <td> Java </td>
+</tr>
+
+
+
+
+
+
+
+</table>
+
+</body>
+</html>
