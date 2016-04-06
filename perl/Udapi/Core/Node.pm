@@ -1,4 +1,4 @@
-package UD::Core::Node;
+package Udapi::Core::Node;
 use strict;
 use warnings;
 use Carp qw(confess cluck);
@@ -108,8 +108,8 @@ sub remove {
     if ($arg_ref && $self->[$FIRSTCHILD]){
         my $what_to_do = $arg_ref->{children} || '';
         if ($what_to_do =~ /^rehang/){
-            foreach my $child (UD::Core::Node::children($self)){
-                UD::Core::Node::set_parent($child, $parent);
+            foreach my $child (Udapi::Core::Node::children($self)){
+                Udapi::Core::Node::set_parent($child, $parent);
             }
         }
         if ($what_to_do =~ /warn$/){
@@ -117,7 +117,7 @@ sub remove {
         }
     }
 
-    my @to_remove = sort {$a->[$ORD] <=> $b->[$ORD]} ($self, UD::Core::Node::_descendantsF($self));
+    my @to_remove = sort {$a->[$ORD] <=> $b->[$ORD]} ($self, Udapi::Core::Node::_descendantsF($self));
     my ($first_ord, $last_ord) = ($to_remove[0]->[$ORD], $to_remove[-1]->[$ORD]);
     my $all_nodes = $root->[$DESCENDANTS];
 
@@ -161,7 +161,7 @@ sub remove {
     # all methods called on removed nodes will result in fatal errors.
     foreach my $node (@to_remove){
         undef @$node;
-        bless $node, 'UD::Core::Node::Removed';
+        bless $node, 'Udapi::Core::Node::Removed';
     }
     return;
 }
@@ -179,8 +179,8 @@ sub children {
 
 sub create_child {
     my $self = shift;
-    my $child = UD::Core::Node->new(@_); #ref($self)->new(@_);
-    UD::Core::Node::set_parent($child, $self);
+    my $child = Udapi::Core::Node->new(@_); #ref($self)->new(@_);
+    Udapi::Core::Node::set_parent($child, $self);
     return $child;
 }
 
@@ -204,10 +204,10 @@ sub descendants {
     #my ($self, $args) = @_;
     if (!$_[1]) { # !$args
         return @{$_[0][$DESCENDANTS]} if $_[0][$DESCENDANTS];
-        goto &UD::Core::Node::_descendants;
+        goto &Udapi::Core::Node::_descendants;
     }
     @_ = ($_[0], $_[1]{add_self}, $_[1]{first_only}, $_[1]{last_only}, $_[1]{except});
-    goto &UD::Core::Node::_descendants;
+    goto &Udapi::Core::Node::_descendants;
 }
 
 sub _descendants {
@@ -290,22 +290,22 @@ sub next_node {
 
 sub shift_before_node {
     my ( $self, $reference_node, $arg_ref ) = @_;
-    return UD::Core::Node::_shift_to_node($self, $reference_node, 0, 0, $arg_ref);
+    return Udapi::Core::Node::_shift_to_node($self, $reference_node, 0, 0, $arg_ref);
 }
 
 sub shift_after_node {
     my ( $self, $reference_node, $arg_ref ) = @_;
-    return UD::Core::Node::_shift_to_node($self, $reference_node, 1, 0, $arg_ref);
+    return Udapi::Core::Node::_shift_to_node($self, $reference_node, 1, 0, $arg_ref);
 }
 
 sub shift_before_subtree {
     my ( $self, $reference_node, $arg_ref ) = @_;
-    return UD::Core::Node::_shift_to_node($self, $reference_node, 0, 1, $arg_ref);
+    return Udapi::Core::Node::_shift_to_node($self, $reference_node, 0, 1, $arg_ref);
 }
 
 sub shift_after_subtree {
     my ( $self, $reference_node, $arg_ref ) = @_;
-    return UD::Core::Node::_shift_to_node($self, $reference_node, 1, 1, $arg_ref);
+    return Udapi::Core::Node::_shift_to_node($self, $reference_node, 1, 1, $arg_ref);
 }
 
 # This method does the real work for all shift_* methods.
@@ -326,7 +326,7 @@ sub _shift_to_node {
 
     # If $reference_node is a descendant of $self and without_children=>1 was not used
     # we should raise an exception (which could be ignored with skip_if_descendant=>1).
-    if (!$without_children && UD::Core::Node::is_descendant_of($reference_node, $self)){
+    if (!$without_children && Udapi::Core::Node::is_descendant_of($reference_node, $self)){
         return if $skip_if_descendant;
         log_fatal '$reference_node is a descendant of $self.'
                 . ' Maybe you have forgotten {without_children=>1}. ' . "\n";
@@ -337,12 +337,12 @@ sub _shift_to_node {
         if ($without_children) {
             my $new_ref;
             if ($after) {
-                foreach my $node ($reference_node, UD::Core::Node::_descendantsF($reference_node)){
+                foreach my $node ($reference_node, Udapi::Core::Node::_descendantsF($reference_node)){
                     next if $node == $self;
                     $new_ref = $node if !$new_ref || ($node->[$ORD] > $new_ref->[$ORD]);
                 }
             } else {
-                foreach my $node ($reference_node, UD::Core::Node::_descendantsF($reference_node)){
+                foreach my $node ($reference_node, Udapi::Core::Node::_descendantsF($reference_node)){
                     next if $node == $self;
                     $new_ref = $node if !$new_ref || ($node->[$ORD] < $new_ref->[$ORD]);
                 }
@@ -350,7 +350,7 @@ sub _shift_to_node {
             return if !$new_ref;
             $reference_node = $new_ref;
         } else {
-            $reference_node = UD::Core::Node::_descendants($reference_node, 1, !$after, $after, $self);
+            $reference_node = Udapi::Core::Node::_descendants($reference_node, 1, !$after, $after, $self);
         }
     }
 
@@ -383,7 +383,7 @@ sub _shift_to_node {
 
     # Which nodes are to be moved?
     # $self and all its descendants
-    my @nodes_to_move = UD::Core::Node::_descendants($self, 1);
+    my @nodes_to_move = Udapi::Core::Node::_descendants($self, 1);
     my $first_ord = $nodes_to_move[0][$ORD];
     my $last_ord = $nodes_to_move[-1][$ORD];
 

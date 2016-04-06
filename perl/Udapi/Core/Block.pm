@@ -1,5 +1,5 @@
-package UD::Core::Block;
-use UD::Core::Common;
+package Udapi::Core::Block;
+use Udapi::Core::Common;
 
 has zones => ( is => 'ro', default => 'all' );
 

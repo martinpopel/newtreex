@@ -1,6 +1,6 @@
-package UD::Block::Write::TextModeTrees;
-use UD::Core::Common;
-extends 'UD::Core::Block';
+package Udapi::Block::Write::TextModeTrees;
+use Udapi::Core::Common;
+extends 'Udapi::Core::Block';
 
 binmode STDOUT, 'utf8';
 
@@ -198,7 +198,7 @@ __END__
 
 =head1 NAME
 
-UD::Block::Write::TextModeTrees - legible dependency trees
+Udapi::Block::Write::TextModeTrees - legible dependency trees
 
 =head1 SYNOPSIS
 

@@ -9,7 +9,7 @@ help:
 	# See README.md (https://github.com/martinpopel/newtreex)
 	# Usage:
 	# make install
-	# make benchmark EXPS='old_Treex pytreex utreex perlCa perlCl perlClAa perlA java cpp_raw' DATA=data/UD_Czech/cs-ud-train-l.conllu REPEATS=5
+	# make benchmark EXPS='old_Treex pytreex utreex perl java cpp_raw' DATA=data/UD_Czech/cs-ud-train-l.conllu REPEATS=5
 
 data:
 	wget -O ud1.2.tgz 'https://lindat.mff.cuni.cz/repository/xmlui/bitstream/handle/11234/1-1548/ud-treebanks-v1.2.tgz?sequence=1&isAllowed=y'

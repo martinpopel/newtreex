@@ -1,20 +1,35 @@
-package UD::Block::Read::CoNLLU;
-use UD::Core::Common;
-extends 'UD::Core::Block';
-#extends 'UD::Core::DocumentReader';
+package Udapi::Core::Document;
+use strict;
+use warnings;
+use autodie;
+use Udapi::Core::Bundle;
+use Carp;
+
+sub new {
+    my ($class) = @_;
+    my $self = {_bundles=>[], };
+    return bless $self, $class;
+}
+
+sub bundles {@{$_[0]->{_bundles}};}
+
+sub create_bundle {
+    my ($self, $args) = @_;
+    # TODO args->{before} args->{after}
+    my $bundle = Udapi::Core::Bundle->new();
+    $bundle->set_id(1 + @{$self->{_bundles}});
+    $bundle->set_document($self);
+    push @{$self->{_bundles}}, $bundle;
+    return $bundle;
+}
 
 my ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING, $PARENT, $ROOT, $ORD,) = (0..10);
 
-sub process_document {
-    my ($self, $doc) = @_;
+sub load_conllu {
+    my ($self, $conllu_file) = @_;
+    open my $fh, '<:utf8', $conllu_file;
 
-    # TODO $self->from
-    #open my $fh, '<:utf8', $conllu_file;
-    my $conllu_file = '/dev/stdin';
-    binmode STDIN, 'utf8';
-    my $fh = \*STDIN;
-
-    my $bundle = $doc->create_bundle();
+    my $bundle = $self->create_bundle();
     my $root = $bundle->create_tree(); # {selector=>''}
     my @nodes = ($root);
     my @parents = (0);
@@ -53,7 +68,7 @@ sub process_document {
                 $root->set_misc($comment);
                 $comment = '';
             }
-            my $bundle = $doc->create_bundle();
+            my $bundle = $self->create_bundle();
             $root = $bundle->create_tree(); # {selector=>''}
             @nodes = ($root);
             @parents = (0);
@@ -66,7 +81,7 @@ sub process_document {
                 next LINE;
             }
             my $new_node = bless [undef, undef, undef, undef, undef, $root, scalar(@nodes),
-                                  $form, $lemma, $upos, $xpos, $feats, $deprel, $deps, $misc], 'UD::Core::Node';
+                                  $form, $lemma, $upos, $xpos, $feats, $deprel, $deps, $misc], 'Udapi::Core::Node';
             push @nodes, $new_node;
             push @parents, $head;
             # TODO deps
@@ -74,18 +89,55 @@ sub process_document {
         }
 
     }
-
-    #close $fh;
-
+    close $fh;
     # The last bundle should be empty (if the file ended with an empty line),
     # so we need to remove it. But let's check it.
     if (@nodes == 1){
-        pop @{$doc->{_bundles}};
+        pop @{$self->{_bundles}};
     } else {
         foreach my $i (1..$#nodes) {
             $nodes[$i]->set_parent( $nodes[ $parents[$i] ] );
         }
     }
+    return;
+}
+
+sub save_conllu {
+    my ($self, $conllu_file) = @_;
+    open my $fh, '>:utf8', $conllu_file;
+    my @nodes;
+    foreach my $bundle ($self->bundles){
+        foreach my $tree ($bundle->trees){
+            @nodes = $tree->descendants;
+            # Empty sentences are not allowed in CoNLL-U.
+            next if !@nodes;
+            my $comment = $tree->misc;
+            if (length $comment){
+                chomp $comment;
+                $comment =~ s/\n/\n#/g;
+                print {$fh} "#", $comment, "\n";
+            }
+            foreach my $node (@nodes){
+                print {$fh} join("\t", map {(defined $_ and $_ ne '') ? $_ : '_'}
+                    $node->ord, $node->form, $node->lemma, $node->upos, $node->xpos,
+                    $node->feats, $node->parent->ord, $node->deprel, $node->deps, $node->misc,
+                ), "\n";
+            }
+            print {$fh} "\n";
+        }
+    }
+    close $fh;
+    return;
+}
+
+sub destroy {
+    my ($self) = @_;
+    my $bundles_ref = $self->{_bundles};
+    foreach my $bundle (@$bundles_ref){
+        $bundle->destroy();
+    }
+    undef @$bundles_ref;
+    undef %$self;
     return;
 }
 

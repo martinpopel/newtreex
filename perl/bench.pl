@@ -17,7 +17,7 @@ sub myrand {
 }
 
 STDOUT->autoflush(1);
-use UD::Core::Document;
+use Udapi::Core::Document;
 
 my $DEBUG = 0;
 if ($ARGV[0] eq '-d'){
@@ -34,7 +34,7 @@ my ($in_conllu, $out_conllu) = @ARGV;
 print "init\n";
 
 for my $iter (1..$ITERS){
-    my $doc = UD::Core::Document->new();
+    my $doc = Udapi::Core::Document->new();
     $doc->load_conllu($in_conllu);
     print "load\n";
     $doc->save_conllu("perl-load.conllu") if $DEBUG;
@@ -122,7 +122,7 @@ for my $iter (1..$ITERS){
     foreach my $bundle ($doc->bundles){
         foreach my $tree ($bundle->trees){
             foreach my $node ($tree->descendants){
-                $node->remove if myrand(10)==0 && ref $node ne 'UD::Core::Node::Removed';
+                $node->remove if myrand(10)==0 && ref $node ne 'Udapi::Core::Node::Removed';
             }
         }
     }

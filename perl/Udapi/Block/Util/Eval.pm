@@ -1,6 +1,6 @@
-package UD::Block::Util::Eval;
-use UD::Core::Common;
-extends 'UD::Core::Block';
+package Udapi::Block::Util::Eval;
+use Udapi::Core::Common;
+extends 'Udapi::Core::Block';
 
 has_ro [qw(doc bundle tree node)];
 
@@ -95,7 +95,7 @@ __END__
 
 =head1 NAME
 
-UD::Block::Util::Eval - Special block for evaluating code given by parameters.
+Udapi::Block::Util::Eval - Special block for evaluating code given by parameters.
 
 =head1 SYNOPSIS
 

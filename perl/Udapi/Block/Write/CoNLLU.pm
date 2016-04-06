@@ -1,6 +1,6 @@
-package UD::Block::Write::CoNLLU;
-use UD::Core::Common;
-extends 'UD::Core::Block';
+package Udapi::Block::Write::CoNLLU;
+use Udapi::Core::Common;
+extends 'Udapi::Core::Block';
 
 binmode STDOUT, 'utf8';
 

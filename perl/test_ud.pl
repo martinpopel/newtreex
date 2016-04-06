@@ -7,12 +7,12 @@ use lib "$FindBin::Bin/";
 binmode(STDERR, ":utf8");
 #STDOUT->autoflush(1);
 
-use UD::Document;
+use Udapi::Core::Document;
 
 #warn "start";
 foreach my $rep (1..1){
     warn "new";
-    my $doc = UD::Document->new('A');
+    my $doc = Udapi::Core::Document->new('A');
     warn "start_load";
     $doc->load_conllu('../t.conllu');
     warn "end_load";

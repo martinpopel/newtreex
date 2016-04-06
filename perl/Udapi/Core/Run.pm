@@ -1,4 +1,4 @@
-package UD::Core::Run;
+package Udapi::Core::Run;
 use strict;
 use warnings;
 use Carp;
@@ -11,7 +11,7 @@ use base 'Exporter';
 our @EXPORT_OK = q(treex);
 
 use List::MoreUtils qw(first_index);
-use UD::Core::Document;
+use Udapi::Core::Document;
 
 option dump_scenario => (
     is    => 'ro',
@@ -49,14 +49,14 @@ sub treex {
             push @args, filenames => [ splice @$arguments, $idx + 1 ];
             pop @$arguments;    # delete "--"
         }
-        my $runner = UD::Core::Run->new_with_options( @args );
+        my $runner = Udapi::Core::Run->new_with_options( @args );
         $runner->execute();
     }
     elsif ( defined $arguments && ref($arguments) ne 'ARRAY' ) {
         treex( [ grep { defined $_ && $_ ne '' } split( /\s/, $arguments ) ] );
     }
     else {
-        UD::Core::Run->new_with_options()->options_usage();
+        Udapi::Core::Run->new_with_options()->options_usage();
     }
     return;
 }
@@ -112,7 +112,7 @@ sub execute {
 
     DOC:
     while(!$was_last_document) {
-        my $doc = UD::Core::Document->new();
+        my $doc = Udapi::Core::Document->new();
         $doc_number++;
         my $block_number = 0;
         foreach my $block (@blocks) {
@@ -155,7 +155,7 @@ sub _parse_scenario_string {
     $scen_str =~ s/^ //g;
     $scen_str =~ s/ $//g;
 
-    my @tokens = map {{block_name=>"UD::Block::$_", block_parameters=>[]}} split / /, $scen_str;
+    my @tokens = map {{block_name=>"Udapi::Block::$_", block_parameters=>[]}} split / /, $scen_str;
     return @tokens;
 }
 

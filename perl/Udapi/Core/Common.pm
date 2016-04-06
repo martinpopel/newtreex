@@ -1,4 +1,4 @@
-package UD::Core::Common;
+package Udapi::Core::Common;
 use strict;
 use warnings;
 use 5.010;
@@ -27,7 +27,7 @@ sub has_ro {my $name = shift; has($name, is=>'ro', @_);};
 sub has_rw {my $name = shift; has($name, is=>'ro', writer => "set_$name", @_);};
 1;
 END
-    confess "Error in UD::Core::Common (probably a missing package):\n$@" if !$result;
+    confess "Error in Udapi::Core::Common (probably a missing package):\n$@" if !$result;
     return;
 }
 
@@ -39,13 +39,13 @@ __END__
 
 =head1 NAME
 
-UD::Core::Common - shorten the "C<use>" part of your Perl codes
+Udapi::Core::Common - shorten the "C<use>" part of your Perl codes
 
 =head1 SYNOPSIS
 
 Write just
 
- use UD::Core::Common;
+ use Udapi::Core::Common;
  has_ro foo => (default=>42);
  has_rw bar => (default=>43, isa=>Int);
  # now you can use $self->set_bar(44);

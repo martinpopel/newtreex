@@ -1,6 +1,6 @@
-package UD::Block::Dummy;
-use UD::Core::Common;
-extends 'UD::Core::Block';
+package Udapi::Block::Dummy;
+use Udapi::Core::Common;
+extends 'Udapi::Core::Block';
 
 binmode STDOUT, 'utf8';
 

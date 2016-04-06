@@ -85,7 +85,7 @@ BEGIN {
     }
 }
 
-#use UD::Node;
+#use Udapi::Node;
 
 use Benchmark qw(:all :hireswallclock);
 
@@ -98,7 +98,7 @@ print "Testing Perl $], Moose $Moose::VERSION, Moo $Moo::VERSION, Class::XSAcces
 cmpthese(
     -10,
     {
-        #UD       => sub { my $n = UD::Node->new(@INIT); },
+        #Udapi    => sub { my $n = Udapi::Node->new(@INIT); },
         #MooseMut => sub { my $n = Node::MooseMutable->new(@INIT); },
         Moose    => sub { my $n = Node::Moose->new(@INIT); },
         #HMoose   => sub { my $n = Node::Moose->new({@INIT}); },
@@ -121,7 +121,7 @@ cmpthese(
 __END__
 
 Testing Perl 5.014002, Moose 2.1204, Moo 2.000002, Class::XSAccessor 1.19, Class::XSAccessor::Array 1.19
-             Rate MooseMut Moose  Moo ManualA ManualH XSAccHp XSAccAs   UD XSAccH XSAccAf ManualAf
+             Rate MooseMut Moose  Moo ManualA ManualH XSAccHp XSAccAs   Udapi XSAccH XSAccAf ManualAf
 MooseMut   4509/s       --  -93% -94%    -95%    -98%    -98%    -98% -98%   -98%    -99%     -99%
 Moose     65941/s    1362%    -- -16%    -34%    -66%    -67%    -71% -72%   -72%    -80%     -80%
 Moo       78156/s    1633%   19%   --    -21%    -59%    -60%    -65% -66%   -67%    -76%     -77%
@@ -129,7 +129,7 @@ ManualA   99508/s    2107%   51%  27%      --    -48%    -50%    -56% -57%   -58
 ManualH  191911/s    4156%  191% 146%     93%      --     -3%    -14% -18%   -19%    -41%     -42%
 XSAccHp  197371/s    4277%  199% 153%     98%      3%      --    -12% -15%   -16%    -39%     -41%
 XSAccAs  224108/s    4870%  240% 187%    125%     17%     14%      --  -4%    -5%    -31%     -33%
-UD       233073/s    5069%  253% 198%    134%     21%     18%      4%   --    -1%    -28%     -30%
+Udapi    233073/s    5069%  253% 198%    134%     21%     18%      4%   --    -1%    -28%     -30%
 XSAccH   235633/s    5125%  257% 201%    137%     23%     19%      5%   1%     --    -27%     -29%
 XSAccAf  324620/s    7099%  392% 315%    226%     69%     64%     45%  39%    38%      --      -3%
 ManualAf 333188/s    7289%  405% 326%    235%     74%     69%     49%  43%    41%      3%       --

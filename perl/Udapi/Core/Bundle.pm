@@ -1,9 +1,9 @@
-package UD::Core::Bundle;
+package Udapi::Core::Bundle;
 use strict;
 use warnings;
 use autodie;
 use Carp;
-use UD::Core::Node;
+use Udapi::Core::Node;
 
 my ($TREES, $ID, $DOC);
 BEGIN {
@@ -32,7 +32,7 @@ sub create_tree {
     #my $selector = $args->{selector} //= '';
     #confess "Tree with selector '$selector' already exists" if $self->{_trees}{$selector};
     #$args->{language} ||= 'unk'
-    my $root = UD::Core::Node->_create_root($self);
+    my $root = Udapi::Core::Node->_create_root($self);
     push @{$self->[$TREES]}, $root;
     return $root;
 }

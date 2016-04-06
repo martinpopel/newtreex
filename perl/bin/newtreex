@@ -3,5 +3,5 @@ use strict;
 use warnings;
 use FindBin qw($Bin);
 use lib "$Bin/..";
-use UD::Core::Run q(treex);
+use Udapi::Core::Run q(treex);
 treex(\@ARGV);
