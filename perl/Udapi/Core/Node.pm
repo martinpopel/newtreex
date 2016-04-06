@@ -7,6 +7,8 @@ my @ATTRS;
 my ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING, # private (no getter nor setter)
     $PARENT, $ROOT, $ORD,                    # public getter
     $FORM, $LEMMA, $UPOS, $XPOS, $FEATS, $DEPREL, $DEPS, $MISC);
+my $SENTENCE = $MISC+1;
+
 BEGIN {
     @ATTRS = qw(descendants bundle firstchild nextsibling
             parent root ord
@@ -471,6 +473,19 @@ sub destroy {
     }
     undef @{$self->[$DESCENDANTS]};
     undef @$self;
+    return;
+}
+
+sub sentence {
+    my ($self) = @_;
+    confess 'sentence() can be called only on root' if !$self->is_root;
+    return $self->[$SENTENCE];
+}
+
+sub set_sentence {
+    my ($self, $sent) = @_;
+    confess 'set_sentence() can be called only on root' if !$self->is_root;
+    $self->[$SENTENCE] = $sent;
     return;
 }
 
