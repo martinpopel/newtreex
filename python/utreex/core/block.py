@@ -5,8 +5,8 @@
 
 class Block(object):
 
-#    def __init__(self):
-#        self.bundles = []
+    def __init__(self,args):
+        pass
 
     def process_start(self):
         pass

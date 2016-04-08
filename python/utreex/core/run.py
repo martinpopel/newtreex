@@ -53,7 +53,7 @@ class Run(object):
 
         blocks = []
 
-        for block_number in range(0,number_of_blocks-1):
+        for block_number in range(0,number_of_blocks):
             sub_path, class_name = ("."+block_names[block_number]).rsplit('.', 1)
             module = "utreex.block" + sub_path + "." + class_name.lower()
             try:
