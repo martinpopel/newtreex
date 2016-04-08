@@ -9,6 +9,9 @@ from basereader import BaseReader
 import re
 import sys
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 sys.path.append( os.path.dirname(os.path.abspath(__file__)) + '/../../')
 
@@ -33,17 +36,17 @@ class Run(object):
         number_of_blocks = 0
 
         for arg in self.command_line_argv[1:]:
-            print "token "+arg
+            logging.info("token "+arg)
             if not '=' in arg:
-                print "Rozpoznan nazev bloku"
+                logging.info("Rozpoznan nazev bloku")
                 block_names.append(arg)
                 block_args.append({})
                 number_of_blocks += 1
             else:
-                print "rozpoznan argument"
+                logging.info("rozpoznan argument")
                 attrname,attrvalue = arg.split('=',2)  # TODO: test for another '=' inside quotes 
                 if (number_of_blocks == 0):
-                    print "block attribute pair "+arg+" without a prior block name" # TODO, dodelat, asi nahodit vyjimku
+                    logging.info("block attribute pair "+arg+" without a prior block name") # TODO, dodelat, asi nahodit vyjimku
                     raise
                 block_args[number_of_blocks-1][attrname] = attrvalue
 
@@ -57,14 +60,14 @@ class Run(object):
             module = "udapi.block" + sub_path + "." + class_name.lower()
             try:
                 command = "from " + module + " import " + class_name + " as b" + str(block_number)
-                print "Trying to run this: "+command
+                logging.info("Trying to run this: "+command)
                 exec(command)
             except:
-                print "Error when trying import the block"
+                logging.info("Error when trying import the block")
                 raise
             
             command = "b"+str(block_number)+"(block_args[block_number])"
-            print "Trying to evaluate this: "+command
+            logging.info("Trying to evaluate this: "+command)
             new_block_instance =  eval (command)
             blocks.append(new_block_instance)
 
@@ -85,9 +88,9 @@ class Run(object):
         finished = False
         while not finished:
             document = Document
-            print " ---- ROUND ----"
+            logging.info(" ---- ROUND ----")
             for block in blocks:
-                print "        Executing block " + block.__class__.__name__
+                logging.info("        Executing block " + block.__class__.__name__)
                 block.process_document(document)
 
             finished = True
