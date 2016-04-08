@@ -489,4 +489,20 @@ sub set_sentence {
     return;
 }
 
+sub get_attrs {
+    my $self = shift;
+    return map {
+          $_ eq 'ord'    ? $self->[$ORD]
+        : $_ eq 'form'   ? $self->[$FORM]
+        : $_ eq 'lemma'  ? $self->[$LEMMA]
+        : $_ eq 'upos'   ? $self->[$UPOS]
+        : $_ eq 'xpos'   ? $self->[$XPOS]
+        : $_ eq 'feats'  ? $self->[$FEATS]
+        : $_ eq 'deprel' ? $self->[$DEPREL]
+        : $_ eq 'deps'   ? $self->[$DEPS]
+        : $_ eq 'misc'   ? $self->[$MISC]
+        : confess "Unknown attribute '$_'";
+    } @_;
+}
+
 1;
