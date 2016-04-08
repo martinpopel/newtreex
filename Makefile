@@ -1,7 +1,7 @@
 SHELL=bash
 DATA=data/UD_Romanian/ro-ud-train.conllu
 DATASHORT=$(notdir $(DATA))
-EXPS=pytreex utreex perl java cpp_raw
+EXPS=pytreex udapi perl java cpp_raw
 REPEATS=10
 N=1
 
@@ -9,7 +9,7 @@ help:
 	# See README.md (https://github.com/martinpopel/newtreex)
 	# Usage:
 	# make install
-	# make benchmark EXPS='old_Treex pytreex utreex perl java cpp_raw' DATA=data/UD_Czech/cs-ud-train-l.conllu REPEATS=5
+	# make benchmark EXPS='old_Treex pytreex udapi perl java cpp_raw' DATA=data/UD_Czech/cs-ud-train-l.conllu REPEATS=5
 
 data:
 	wget -O ud1.2.tgz 'https://lindat.mff.cuni.cz/repository/xmlui/bitstream/handle/11234/1-1548/ud-treebanks-v1.2.tgz?sequence=1&isAllowed=y'
@@ -51,5 +51,5 @@ benchmark:
 	source python/venv/bin/activate &&\
 	./benchmark.pl --input=$(DATA) --repeats=$(REPEATS) -n $(N) $(EXPS) | (trap "" SIGINT SIGQUIT; tee -a results_$(DATASHORT).txt)
 
-bu: # a quick test of utreex benchmarked
-	./benchmark.pl --input=$(DATA) --repeats=1 utreex | tee results_$(DATASHORT).txt
+bu: # a quick test of udapi benchmarked
+	./benchmark.pl --input=$(DATA) --repeats=1 udapi | tee results_$(DATASHORT).txt
