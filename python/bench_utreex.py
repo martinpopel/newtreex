@@ -106,11 +106,12 @@ if debug: doc.store({'filename':'utreex-remove.conllu'})
 
 for bundle in doc:
     for root in bundle:
-        for node in root.descendants():
+        for parent in root.descendants():
             if myrand(10) == 0:
-                child = node.create_child()
+                child = parent.create_child()
                 child.lemma="x"
                 child.form="x"
+                child.shift(parent,1,0,1)
 
 print("add")
 

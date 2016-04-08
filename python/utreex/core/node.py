@@ -2,6 +2,11 @@
 
 from operator import attrgetter
 
+import codecs
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
 # ----- nasledujici jen kvuli tomu, abych mohl poustet benchmark (pri prevesovani nastavaji cykly a ocekava se RuntimeException) ---
 
 class TreexException(Exception):
@@ -60,8 +65,7 @@ class Node(object):
             try:
                 getattr(self,name)
             except:
-                setattr(self,name,None)
-
+                setattr(self,name,'_')
 
     @property
     def children(self):
@@ -114,9 +118,11 @@ class Node(object):
 
     def create_child(self):
         new_node = Node()
-        new_node.ord = len(self.root()._aux['descendants'])
+        new_node.ord = len(self.root()._aux['descendants'])+1
         self.root()._aux['descendants'].append(new_node)
-        new_node.set_parent(self)
+        self._children.append(new_node)
+        new_node._parent = self
+#        new_node.set_parent(self)
         return new_node
 
 
@@ -137,37 +143,39 @@ class Node(object):
 
     def _update_ordering(self):
          """ update the ord attribute in all nodes and update the list or descendants stored in the tree root (after node removal or addition) """
+         self.info("UPDATE start")
+
          root = self.root()
 
          descendants = sorted( [node for node in root._unordered_descendants_using_children() if node != root] ,
                                key=attrgetter('ord') )
+         
+
+         self.info ("descendanti podle children: "+(" ".join([node.form+"-"+str(node.ord) for node in descendants])))
+                    
 
          root._aux['descendants'] = descendants
 
-         for ord in range(0,len(root._aux['descendants'])):
-             descendants[ord].ord = ord+1
+         ord = 1
+         for node in descendants:
+             node.ord = ord
+             ord += 1
+
+         self.info ("descendanti podle children: "+(" ".join([node.form+"-"+str(node.ord) for node in self.root().descendants()])))
+
+         self.info("UPDATE hotovo")
+
 
     def remove(self):
 
         self.parent._children = [ child for child in self.parent._children if child != self ]
         self.parent._update_ordering()
 
-#    def shift_subtree_after(self, reference_node):
-#        nodes_to_move = [self] + self.descendants()
-#
-#        for node_to_move in nodes_to_move:
-#            node_to_move.ord = reference_node.ord + 0.5 + (node_to_move.ord-self.ord)/10000
-#        self._update_ordering
-#
-#    def shift_after(self, reference_node):  # TODO, silly, unify with the one above
-#        nodes_to_move = [self]
-#
-#        for node_to_move in nodes_to_move:
-#            node_to_move.ord = reference_node.ord + 0.5 + (node_to_move.ord-self.ord)/10000
-#            self._update_ordering
-
 
     def shift(self, reference_node, after=0, move_subtree=0, reference_subtree=0):
+
+        self.info("SHIFT")
+
         nodes_to_move = [self]
 
 	if move_subtree:
@@ -176,16 +184,25 @@ class Node(object):
 	reference_ord = reference_node.ord
 
 	if reference_subtree:
-  	    for node in reference_node.descendants():
+  	    for node in [n for n in reference_node.descendants() if n != self]:
 	        if (after and node.ord > reference_ord) or (not after and node.ord < reference_ord):
 		    reference_ord = node.ord
+                    try:
+                        self.info("last reference node: "+node.upostag)
+                    except:
+                        pass
+
+        self.info("final reference ord "+str(reference_ord))
 
         common_delta = 0.5 if after else -0.5
 
         for node_to_move in nodes_to_move:
-            node_to_move.ord = reference_node.ord + common_delta + (node_to_move.ord-self.ord)/100000.  # TODO: can we use some sort of epsilon instead of choosing a silly upper bound for out-degree?
-	
-	self._update_ordering
+            node_to_move.ord = reference_ord + common_delta + (node_to_move.ord-self.ord)/100000.  # TODO: can we use some sort of epsilon instead of choosing a silly upper bound for out-degree?
+            self.info("NEW ORD OF x: "+str(node_to_move.ord))
+
+	self._update_ordering()
+        
+
 
     def shift_after(self, reference_node):
 	self.shift(reference_node,after=1,move_subtree=0,reference_subtree=0)
@@ -207,3 +224,7 @@ class Node(object):
             return self.root()._aux['descendants'][self.ord]
         except IndexError:
             return None
+
+    def info(self,message):
+        import sys
+        sys.stderr.write("INFO "+message+"\n")
