@@ -8,10 +8,9 @@ use Carp;
 use List::Util 1.33;
 use Scalar::Util;
 use Data::Printer;
+use Import::Into;
 
 sub import {
-    feature->import('say');
-    utf8::import();
     my $caller = caller;
     my $result = eval "package $caller;" .
 <<'END';
@@ -28,12 +27,33 @@ sub has_rw {my $name = shift; has($name, is=>'ro', writer => "set_$name", @_);};
 1;
 END
     confess "Error in Udapi::Core::Common (probably a missing package):\n$@" if !$result;
+    require feature;
+    'feature'->import('say');
+    'utf8'->import;
+    'strict'->import;
+    'warnings'->import;
+    'open'->import::into($caller, qw{:encoding(UTF-8) :std});
     return;
 }
 
 1;
 
 __END__
+
+# TODO
+use Carp qw(carp croak confess cluck);
+# give a full stack dump on any untrapped exceptions
+local $SIG{__DIE__} = sub {
+    confess "Uncaught exception: @_" unless $^S;
+};
+
+# now promote run-time warnings into stackdumped exceptions
+#   *unless* we're in an try block, in which
+#   case just generate a clucking stackdump instead
+local $SIG{__WARN__} = sub {
+    if ($^S) { cluck   "Trapped warning: @_" }
+    else     { confess "Deadly warning: @_"  }
+};
 
 =encoding utf-8
 
@@ -56,6 +76,7 @@ Instead of
  use strict;
  use warnings;
  use feature 'say';
+ use open qw(:encoding(UTF-8) :std); # STD(IN|OUT|ERR) in utf8
  use Moo;
  use Carp;
  use List::Util qw(first min max all any none);
