@@ -1,7 +1,7 @@
-from utreex.core.basereader import BaseReader
-from utreex.core.document import Document
-from utreex.core.bundle import Bundle
-from utreex.core.node import Node
+from udapi.core.basereader import BaseReader
+from udapi.core.document import Document
+from udapi.core.bundle import Bundle
+from udapi.core.node import Node
 import codecs
 import re
 

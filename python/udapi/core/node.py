@@ -43,7 +43,7 @@ class Node(object):
                   "deps",     # List of secondary dependencies (head-deprel pairs).
                   "misc",     # Any other annotation.
 
-                   # (B) utreex-specific extra features
+                   # (B) udapi-specific extra features
 
                   "_parent",  # parent node
                   "_children",# ord-ordered list of child nodes

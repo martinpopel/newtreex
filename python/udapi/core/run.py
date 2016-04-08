@@ -54,7 +54,7 @@ class Run(object):
 
         for block_number in range(0,number_of_blocks):
             sub_path, class_name = ("."+block_names[block_number]).rsplit('.', 1)
-            module = "utreex.block" + sub_path + "." + class_name.lower()
+            module = "udapi.block" + sub_path + "." + class_name.lower()
             try:
                 command = "from " + module + " import " + class_name + " as b" + str(block_number)
                 print "Trying to run this: "+command

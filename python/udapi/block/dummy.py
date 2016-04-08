@@ -1,4 +1,4 @@
-from utreex.core.block import Block
+from udapi.core.block import Block
 
 class Dummy(Block):
     def process_tree(self,root):

@@ -11,9 +11,9 @@ import sys
 import os
 import gc
 
-sys.path.append( os.path.dirname(os.path.abspath(__file__)) + '/utreex/')
-from utreex.core.document import Document, Node
-from utreex.core.node import RuntimeException
+sys.path.append( os.path.dirname(os.path.abspath(__file__)) + '/udapi/')
+from udapi.core.document import Document, Node
+from udapi.core.node import RuntimeException
 
 seed = 42;
 maxseed = 2**32;
@@ -35,7 +35,7 @@ doc = Document()
 doc.load({'filename':in_conllu})
 
 print("load")
-if debug: doc.store({'filename':'utreex-load.conllu'})
+if debug: doc.store({'filename':'udapi-load.conllu'})
 
 for bundle in doc:
     for root in bundle:
@@ -80,7 +80,7 @@ for bundle in doc:
             node.deprel = 'dep'
 
 print("write")
-if debug: doc.store({'filename':'utreex-write.conllu'})
+if debug: doc.store({'filename':'udapi-write.conllu'})
 
 for bundle in doc:
     for root in bundle:
@@ -93,7 +93,7 @@ for bundle in doc:
                 pass
 
 print("rehang")
-if debug: doc.store({'filename':'utreex-rehang.conllu'})
+if debug: doc.store({'filename':'udapi-rehang.conllu'})
 
 for bundle in doc:
     for root in bundle:
@@ -102,7 +102,7 @@ for bundle in doc:
                 node.remove()
 
 print("remove")
-if debug: doc.store({'filename':'utreex-remove.conllu'})
+if debug: doc.store({'filename':'udapi-remove.conllu'})
 
 for bundle in doc:
     for root in bundle:
@@ -116,7 +116,7 @@ for bundle in doc:
 print("add")
 
 
-if debug: doc.store({'filename':'utreex-add.conllu'})
+if debug: doc.store({'filename':'udapi-add.conllu'})
 
 for bundle in doc:
     for root in bundle:
@@ -130,7 +130,7 @@ for bundle in doc:
                 node.shift(nodes[rand_index], after=0, move_subtree=0, reference_subtree=1)
 
 print("reorder")
-if debug: doc.store({'filename':'utreex-reorder.conllu'})
+if debug: doc.store({'filename':'udapi-reorder.conllu'})
 
 doc.store({'filename':out_conllu})
 print("save")
