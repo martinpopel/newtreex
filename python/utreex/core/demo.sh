@@ -1,2 +1,2 @@
 #!/bin/bash
-./run.py read.Conllu filename=../../tmp.conllu Dummy
+ ./run.py read.Conllu filename=../../tmp.conllu bundles_per_document=7 Dummy

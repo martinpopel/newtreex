@@ -29,7 +29,6 @@ class Run(object):
         block_args = []
 
         # 1. parse scenario string
-        
 
         number_of_blocks = 0
 
@@ -75,29 +74,32 @@ class Run(object):
 
         # 5. apply blocks on the data
 
-        readers = [block for block in blocks if issubclass(block.__class__,BaseReader)]
-
+        readers = []
+        for block in blocks:
+            try:
+                block.finished
+                readers.append(block)
+            except:
+                pass
+            
         finished = False
         while not finished:
             document = Document
-            print "    New round"
+            print " ---- ROUND ----"
             for block in blocks:
-                print "        Executing block: "+str(block.__class__)
+                print "        Executing block " + block.__class__.__name__
                 block.process_document(document)
 
             finished = True
+
             for reader in readers:
                 finished = finished and reader.finished
-
-        print "No more unfinished readers => all data is done"
-
 
         # 6. close blocks (process_end) 
         for block in blocks:
             block.process_end()
 
 if __name__ == "__main__":
-    print "Bezim"
 
     runner = Run(command_line_argv = sys.argv )
     runner.execute()

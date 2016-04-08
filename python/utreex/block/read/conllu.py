@@ -8,7 +8,13 @@ import re
 class Conllu(BaseReader):
 
     def __init__( self, args = {} ):
+
+        self.finished = False # TODO: this should be invoked from the parent class
+
         self.bundles_per_document = float("inf")
+
+        if 'bundles_per_document' in args:
+            self.bundles_per_document = int(args['bundles_per_document'])
 
         self.filehandle = None
 
@@ -25,7 +31,6 @@ class Conllu(BaseReader):
         self.filehandle = codecs.getreader('utf8')(self.filehandle)
 
 
-
     def process_document( self, document ):
 
         number_of_loaded_bundles = 0
@@ -33,16 +38,12 @@ class Conllu(BaseReader):
         nodes = []
         comment = ''
 
-        print "Reading from "+str(self.filehandle)
-
         while number_of_loaded_bundles < self.bundles_per_document:
-            number_of_loaded_bundles += 1
 
             # TODO: more or less cut'n'paste from document.py (in which it should be deleted)
 
             line = self.filehandle.readline()
-            if line == '':
-                print "END OF FILE"
+            if line == '': # EOF
                 self.finished = True
                 return
                 # TODO: the last processed bundle should be finished at this point (because of the guaranteed empty line), but it should be checked
@@ -92,6 +93,8 @@ class Conllu(BaseReader):
                 if len(nodes) == 0:
                     print "Warning: this is weird: probably two empty lines following each other" # TODO: resolve
                 else:
+#                    print "QQQ A tree completed, tree number "+str(number_of_loaded_bundles)
+                    number_of_loaded_bundles += 1
                     nodes[0]._aux['descendants'] = nodes[1:]
                     for node in nodes[1:]:
                         node.set_parent( nodes[node.head] )

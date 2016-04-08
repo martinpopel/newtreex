@@ -26,8 +26,8 @@ class Block(object):
             self.process_tree(tree)
 
     def process_document(self,document):
-        print "Document "+str(document)
-        print str(document.bundles)
+#        print "Document "+str(document)
+#        print str(document.bundles)
         for bundle in document.bundles:
             self.process_bundle(bundle)
 
