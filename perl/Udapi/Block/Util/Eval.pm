@@ -64,8 +64,8 @@ sub process_tree {
     my ( $self, $tree, $bundleNo ) = @_;
 
     # Extract variables $bundle, $document ($doc), so they can be used in eval code
-    my $bundle   = $zone->get_bundle();
-    my $document = $bundle->get_document();
+    my $bundle   = $tree->bundle;
+    my $document = $bundle->document;
     my $doc      = $document;
     my $this     = $tree;
     if ( $self->tree ) {
@@ -100,7 +100,7 @@ Udapi::Block::Util::Eval - Special block for evaluating code given by parameters
 =head1 SYNOPSIS
 
   # on the command line
-  newtreex Rad::CoNLLU from=a.txt Util::Eval anode='say $.lemma'
+  newtreex Read::CoNLLU from=a.txt Util::Eval node='say $.lemma'
 
 =head1 AUTHOR
 
