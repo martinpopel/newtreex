@@ -8,3 +8,4 @@ class BaseReader(Block):
 
     def __init__(self):
         self.finished = False
+

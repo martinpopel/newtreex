@@ -46,17 +46,15 @@ class Run(object):
                 if (number_of_blocks == 0):
                     print "block attribute pair "+arg+" without a prior block name" # TODO, dodelat, asi nahodit vyjimku
                     raise
-                block_args[number_of_blocks-1][attr_name] = attr_value
+                block_args[number_of_blocks-1][attrname] = attrvalue
 
 
         # 2. import blocks (classes) and construct block instances
 
         blocks = []
 
-        block_number = 0
-        for block_name in block_names:
-            block_number += 1
-            sub_path, class_name = ("."+block_name).rsplit('.', 1)
+        for block_number in range(0,number_of_blocks-1):
+            sub_path, class_name = ("."+block_names[block_number]).rsplit('.', 1)
             module = "utreex.block" + sub_path + "." + class_name.lower()
             try:
                 command = "from " + module + " import " + class_name + " as b" + str(block_number)
@@ -66,7 +64,7 @@ class Run(object):
                 print "Error when trying import the block"
                 raise
             
-            command = "b"+str(block_number)+"()"
+            command = "b"+str(block_number)+"(block_args[block_number])"
             print "Trying to evaluate this: "+command
             new_block_instance =  eval (command)
             blocks.append(new_block_instance)
@@ -90,6 +88,8 @@ class Run(object):
             finished = True
             for reader in readers:
                 finished = finished and reader.finished
+
+        print "No more unfinished readers => all data is done"
 
 
         # 6. close blocks (process_end) 
