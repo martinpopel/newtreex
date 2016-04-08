@@ -56,6 +56,13 @@ class Node(object):
         for name in data:
             setattr(self,name,data[name])
 
+        for name in Node.__slots__:
+            try:
+                getattr(self,name)
+            except:
+                setattr(self,name,None)
+
+
     @property
     def children(self):
         return self._children
@@ -103,6 +110,15 @@ class Node(object):
                 return True
             climber = climber.parent
         return False
+
+
+    def create_child(self):
+        new_node = Node()
+        new_node.ord = len(self.root()._aux['descendants'])
+        self.root()._aux['descendants'].append(new_node)
+        new_node.set_parent(self)
+        return new_node
+
 
     def _unordered_descendants_using_children(self):
         descendants = [self]

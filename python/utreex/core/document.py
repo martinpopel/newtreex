@@ -110,7 +110,11 @@ class Document(object):
                         except:
                             values[6] = '0'
 
-                        fh.write('\t'.join(values) )
+                        for index in range(0,len(values)):
+                            if values[index] == None:
+                                values[index] = ''
+
+                        fh.write('\t'.join([value for value in values] ))
                         fh.write('\n')
 
                     fh.write("\n")

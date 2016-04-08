@@ -108,14 +108,13 @@ for bundle in doc:
     for root in bundle:
         for node in root.descendants():
             if myrand(10) == 0:
-                child = Node()
-                child.ord = 100000 # TODO: silly
-                child.set_parent(node)
-                child.shift_after(node)
+                child = node.create_child()
                 child.lemma="x"
                 child.form="x"
 
 print("add")
+
+
 if debug: doc.store({'filename':'utreex-add.conllu'})
 
 for bundle in doc:
