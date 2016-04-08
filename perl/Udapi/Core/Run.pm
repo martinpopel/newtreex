@@ -12,6 +12,7 @@ our @EXPORT_OK = q(treex);
 
 use List::MoreUtils qw(first_index);
 use Udapi::Core::Document;
+use Udapi::Core::ScenarioParser;
 
 option dump_scenario => (
     is    => 'ro',
@@ -82,7 +83,7 @@ sub execute {
     # $self->tokenize $self->lang $self->selector $self->save
 
     # parse the scenario specification stored in string, load subscenarios
-    my @block_items = $self->_parse_scenario_string($scen_str);
+    my @block_items = Udapi::Core::ScenarioParser::parse($scen_str);
 
     # We want to fail as soon as possible if there are any bugs in the blocks.
     # So we divide loading of blocks into 4 steps: use, new, process_start, process_document.
@@ -146,19 +147,6 @@ sub _construct_scenario_string_with_quoted_whitespace {
     return join ' ', @arguments;
 }
 
-sub _parse_scenario_string {
-    my ($self, $scen_str) = @_;
-
-    # TODO better parsing, recognizing parameters (with spaces, quotes etc.)
-    $scen_str =~ s/#.+$//mg;    # delete comments ended by a newline or last line
-    $scen_str =~ s/\s+/ /g;     # collapse whitespaces
-    $scen_str =~ s/^ //g;
-    $scen_str =~ s/ $//g;
-
-    my @tokens = map {{block_name=>"Udapi::Block::$_", block_parameters=>[]}} split / /, $scen_str;
-    return @tokens;
-}
-
 sub _use_block {
     my ( $self, $block_item ) = @_;
     my $block_name = $block_item->{block_name};
@@ -175,7 +163,7 @@ sub _create_block {
 
     # which can be overriden by (local) block parameters.
     foreach my $param ( @{ $block_item->{block_parameters} } ) {
-        my ( $name, $value ) = split /=/, $param, 2;
+        my ( $name, $value ) = @$param;
         $params{$name} = $value;
     }
 
