@@ -3,23 +3,24 @@
 #from node import Node
 #from bundle import Bundle
 
+
 from document import Document
+from basereader import BaseReader
+import re
+import sys
+import os
+
+sys.path.append( os.path.dirname(os.path.abspath(__file__)) + '/../../')
 
 class Run(object):
 
-    def __init__(self, scenario_string):
-        self.blocks = []
+    def __init__(self, scenario_string="", command_line_argv=[]):
+        self.scenario_string = scenario_string
+        self.command_line_argv = command_line_argv
 
 
-
-    def __parse_scenario_string(self):
-        pass
-
-    def __import_block_class(self,block_class_name):
-        pass
-
-
-    def run(self):                                                                              pass     
+    def run(self):
+        pass     
         
 
     def execute(self):
@@ -28,29 +29,75 @@ class Run(object):
         block_args = []
 
         # 1. parse scenario string
+        
+
+        number_of_blocks = 0
+
+        for arg in self.command_line_argv[1:]:
+            print "token "+arg
+            if not '=' in arg:
+                print "Rozpoznan nazev bloku"
+                block_names.append(arg)
+                block_args.append({})
+                number_of_blocks += 1
+            else:
+                print "rozpoznan argument"
+                attrname,attrvalue = arg.split('=',2)  # TODO: test for another '=' inside quotes 
+                if (number_of_blocks == 0):
+                    print "block attribute pair "+arg+" without a prior block name" # TODO, dodelat, asi nahodit vyjimku
+                    raise
+                block_args[number_of_blocks-1][attr_name] = attr_value
+
 
         # 2. import blocks (classes) and construct block instances
 
         blocks = []
 
+        block_number = 0
         for block_name in block_names:
-            sub_path, class_name = block_data["block"].rsplit('.', 1)
-            module = "utreex." + path + "." + class_name.lower()
-            exec "import module"
-            blocks.append = eval "utreex"+sub_path+class_name+"()"
+            block_number += 1
+            sub_path, class_name = ("."+block_name).rsplit('.', 1)
+            module = "utreex.block" + sub_path + "." + class_name.lower()
+            try:
+                command = "from " + module + " import " + class_name + " as b" + str(block_number)
+                print "Trying to run this: "+command
+                exec(command)
+            except:
+                print "Error when trying import the block"
+                raise
+            
+            command = "b"+str(block_number)+"()"
+            print "Trying to evaluate this: "+command
+            new_block_instance =  eval (command)
+            blocks.append(new_block_instance)
 
         # 4. initialize blocks (process_start)
         for block in blocks:
             block.process_start()
 
         # 5. apply blocks on the data
-        finish = 0
-        while not finish:
+
+        readers = [block for block in blocks if issubclass(block.__class__,BaseReader)]
+
+        finished = False
+        while not finished:
             document = Document
+            print "    New round"
             for block in blocks:
-                finish = finish or block.process_document(document)
+                print "        Executing block: "+str(block.__class__)
+                block.process_document(document)
+
+            finished = True
+            for reader in readers:
+                finished = finished and reader.finished
 
 
         # 6. close blocks (process_end) 
         for block in blocks:
             block.process_end()
+
+if __name__ == "__main__":
+    print "Bezim"
+
+    runner = Run(command_line_argv = sys.argv )
+    runner.execute()

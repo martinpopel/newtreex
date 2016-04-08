@@ -13,6 +13,8 @@ class Document(object):
     # MP: Proc, kdyz je to povinny atribut dle http://universaldependencies.org/format.html ?
     # "If the MISC field is not used, it should contain an underscore."
 
+    bundles = []
+
     def __init__(self):
         self.bundles = []
 
