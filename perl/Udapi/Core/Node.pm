@@ -169,12 +169,29 @@ sub remove {
 }
 
 sub children {
-    my ($self) = @_;
+    my ($self, $args) = @_;
     my @children = ();
     my $child = $self->[$FIRSTCHILD];
     while ($child) {
         push @children, $child;
         $child = $child->[$NEXTSIBLING];
+    }
+    if ($args) {
+        push @children, $self if $args->{add_self};
+        if ($args->{first_only}){
+            my $first = pop @children;
+            foreach my $node (@children) {
+                $first = $node if $node->[$ORD] < $first->[$ORD];
+            }
+            return $first;
+        }
+        if ($args->{last_only}){
+            my $last = pop @children;
+            foreach my $node (@children) {
+                $last = $node if $node->[$ORD] > $last->[$ORD];
+            }
+            return $last;
+        }
     }
     return sort {$a->[$ORD] <=> $b->[$ORD]} @children;
 }
