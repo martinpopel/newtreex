@@ -2,12 +2,14 @@ package Udapi::Block::Util::Eval;
 use Udapi::Core::Common;
 extends 'Udapi::Core::Block';
 
-has_ro [qw(doc bundle tree node)];
+has_ro [qw(doc bundle tree node start end)];
 
 has_ro expand_code => (
     default => 1,
     doc => 'Should "$." be expanded to "$this->" in all eval codes?'
 );
+
+# TODO expand all the codes just once in BUILD
 
 sub expand_eval_code {
     my ($self, $to_eval) = @_;
@@ -81,6 +83,24 @@ sub process_tree {
                 confess "Eval error: $@";
             }
         }
+    }
+    return;
+}
+
+sub process_start {
+    my ($self) = @_;
+    if ( $self->start ) {
+        my $to_eval = $self->expand_eval_code($self->start);
+        eval($to_eval) or confess("While evaluating '$to_eval' got error: $@");
+    }
+    return;
+}
+
+sub process_end {
+    my ($self) = @_;
+    if ( $self->end ) {
+        my $to_eval = $self->expand_eval_code($self->end);
+        eval($to_eval) or confess("While evaluating '$to_eval' got error: $@");
     }
     return;
 }
