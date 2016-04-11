@@ -2,8 +2,6 @@ package Udapi::Block::Write::CoNLLU;
 use Udapi::Core::Common;
 extends 'Udapi::Core::Block';
 
-binmode STDOUT, 'utf8';
-
 sub process_tree {
     my ($self, $tree) = @_;
     my @nodes = $tree->descendants;

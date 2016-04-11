@@ -4,8 +4,6 @@ extends 'Udapi::Core::Block';
 
 #has_ro compress => ( isa => Bool, default => 1, doc => 'create *.treex.gz files');
 
-binmode STDOUT, 'utf8';
-
 before process_document => sub {
     my ($self, $doc) = @_;
     print << 'END';

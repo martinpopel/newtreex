@@ -11,7 +11,6 @@ sub process_document {
     # TODO $self->from
     #open my $fh, '<:utf8', $conllu_file;
     my $conllu_file = '/dev/stdin';
-    binmode STDIN, 'utf8';
     my $fh = \*STDIN;
 
     my $bundle = $doc->create_bundle();

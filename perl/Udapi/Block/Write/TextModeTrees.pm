@@ -2,8 +2,6 @@ package Udapi::Block::Write::TextModeTrees;
 use Udapi::Core::Common;
 extends 'Udapi::Core::Block';
 
-binmode STDOUT, 'utf8';
-
 has_ro tree_ids => ( isa => Bool, default => 0 );
 has_ro sents    => ( isa => Bool, default => 0 );
 has_ro indent   => ( isa => Int,  default => 1, doc => 'number of columns for better readability');
