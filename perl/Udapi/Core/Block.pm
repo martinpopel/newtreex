@@ -6,6 +6,9 @@ has zones => ( is => 'ro', default => 'all' );
 sub process_start {
 }
 
+sub process_end {
+}
+
 sub process_document {
     my ($self, $doc) = @_;
 

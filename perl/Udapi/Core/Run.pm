@@ -127,6 +127,11 @@ sub execute {
         $was_last_document = 1;
     }
 
+    # 5. call process_end();
+    foreach my $block (@blocks) {
+        $block->process_end();
+    }
+
     return;
 }
 

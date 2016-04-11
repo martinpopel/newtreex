@@ -522,4 +522,9 @@ sub get_attrs {
     } @_;
 }
 
+sub precedes {
+    my ( $self, $another_node ) = @_;
+    return $self->[$ORD] < $another_node->[$ORD];
+}
+
 1;
