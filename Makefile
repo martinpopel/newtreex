@@ -17,7 +17,7 @@ data:
 	mv universal-dependencies-1.2 data
 
 .perl-install:
-	cpanm Text::Table && touch $@
+	cpanm MooX::Options MooX::TypeTiny Class::XSAccessor::Array Data::Printer Text::Table && touch $@
 
 .python-install:
 	virtualenv --version || sudo pip install virtualenv
