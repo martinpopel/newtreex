@@ -14,6 +14,7 @@ public class DefaultSentence implements Sentence {
 
     private List<String> comments = new ArrayList<>();
     private List<String> multiwords = new ArrayList<>();
+    private String text;
 
     public DefaultSentence(Document document, Bundle bundle) {
         tree = createTree(document, bundle);
@@ -43,4 +44,16 @@ public class DefaultSentence implements Sentence {
     public List<String> getMultiwords() {
         return multiwords;
     }
+
+    @Override
+    public void setText(String sentenceText) {
+        this.text = sentenceText;
+    }
+
+    @Override
+    public String getText() {
+        return text;
+    }
+
+
 }

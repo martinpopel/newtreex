@@ -11,4 +11,6 @@ public interface Sentence {
     List<String> getComments();
     void addMultiword(String multiword);
     List<String> getMultiwords();
+    void setText(String sentenceText);
+    String getText();
 }

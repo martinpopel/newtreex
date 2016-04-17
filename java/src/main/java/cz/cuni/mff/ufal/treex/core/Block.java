@@ -13,6 +13,10 @@ public class Block {
         this.params = params;
     }
 
+    protected Map<String, String> getParams() {
+        return params;
+    }
+
     public void processStart() {
 
     }
