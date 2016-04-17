@@ -33,7 +33,7 @@ if(!opts || opts.help) {
     return
 }
 
-def runInstance = Class.forName("cz.cuni.mff.ufal.treex.core.Run").newInstance()
+def runInstance = Class.forName("cz.ufal.udapi.core.Run").newInstance()
 
 StringBuilder input = new StringBuilder();
 

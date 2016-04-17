@@ -23,6 +23,6 @@ task wrapper(type: Wrapper) {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'cz.cuni.mff.ufal.treex.main.Main'
+        attributes 'Main-Class': 'cz.ufal.udapi.main.Main'
     }
 }
