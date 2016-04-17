@@ -123,4 +123,6 @@ public interface Node {
     void shiftAfterSubtree(Node node, boolean withoutChildren);
 
     void shiftBeforeSubtree(Node node, boolean withoutChildren);
+
+    boolean precedes(Node anotherNode);
 }

@@ -353,6 +353,11 @@ public class DefaultNode implements Node {
     }
 
     @Override
+    public boolean precedes(Node anotherNode) {
+        return ord < anotherNode.getOrd();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
