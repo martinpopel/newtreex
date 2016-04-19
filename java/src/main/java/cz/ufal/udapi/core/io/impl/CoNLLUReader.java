@@ -31,7 +31,7 @@ public class CoNLLUReader implements DocumentReader {
     @Override
     public Document readDocument() {
         final Document document = new DefaultDocument();
-        final Bundle bundle = new DefaultBundle();
+        final Bundle bundle = new DefaultBundle(document);
         document.addBundle(bundle);
 
         readInDocument(document);

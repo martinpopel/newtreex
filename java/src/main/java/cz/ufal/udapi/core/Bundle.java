@@ -8,4 +8,6 @@ import java.util.List;
 public interface Bundle {
     void addSentence(Sentence sentence);
     List<Sentence> getSentences();
+    void setDocument(Document document);
+    Document getDocument();
 }

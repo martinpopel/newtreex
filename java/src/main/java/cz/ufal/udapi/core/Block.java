@@ -21,6 +21,10 @@ public class Block {
 
     }
 
+    public void processEnd() {
+
+    }
+
     public void processDocument(Document document) {
         int bundleNo = 1;
         for (Bundle bundle : document.getBundles()) {

@@ -81,7 +81,7 @@ public class Run {
 
         while (!wasLastDocument) {
             Document newDocument = new DefaultDocument();
-            Bundle bundle = new DefaultBundle();
+            Bundle bundle = new DefaultBundle(newDocument);
             newDocument.addBundle(bundle);
 
             docNumber++;
@@ -96,6 +96,11 @@ public class Run {
 
             //TODO:
             wasLastDocument = true;
+        }
+
+        //call processEnd
+        for (String blockName : blockNames) {
+            blockInstances.get(blockName).processEnd();
         }
     }
 
@@ -222,7 +227,9 @@ public class Run {
     }
 
     private String[] tokenize(String scenarioString) {
-
+        System.out.println("scenarioString->");
+        System.out.println(scenarioString);
+        System.out.println("end scnarioString");
         List<String> tokens = new ArrayList<>();
 
         boolean insideApostrophes = false;
