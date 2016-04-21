@@ -18,12 +18,21 @@ sub create_bundle {
     # TODO args->{before} args->{after}
     my $bundle = Udapi::Core::Bundle->new();
     $bundle->set_id(1 + @{$self->{_bundles}});
-    $bundle->set_document($self);
+    $bundle->_set_document($self);
     push @{$self->{_bundles}}, $bundle;
     return $bundle;
 }
 
 my ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING, $PARENT, $ROOT, $ORD,) = (0..10);
+
+sub _read_conllu_tree_from_fh {
+    my ($self, $fh) = @_;
+    # TODO:
+    my ($bundle, $zone);
+    my $root = Udapi::Core::Node->_create_root($bundle, $zone);
+    # TODO
+    return $root;
+}
 
 sub load_conllu {
     my ($self, $conllu_file) = @_;

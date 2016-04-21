@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use autodie;
 use Carp;
+use List::Util qw(any);
 use Udapi::Core::Node;
 
 my ($TREES, $ID, $DOC);
@@ -14,6 +15,7 @@ use Class::XSAccessor::Array {
     constructor => 'new',
     setters => {
         set_id => $ID,
+        _set_document => $DOC,
     },
     getters => {
         id => $ID,
@@ -21,17 +23,21 @@ use Class::XSAccessor::Array {
     },
 };
 
-sub set_document { $_[0][$DOC] = $_[1]; }
-
 sub trees { return @{$_[0][$TREES]}; }
 
 sub create_tree {
-    my ($self) = @_;
-    # TODO: $args->{after}
-    #$args ||= {};
-    #my $selector = $args->{selector} //= '';
-    #confess "Tree with selector '$selector' already exists" if $self->{_trees}{$selector};
-    #$args->{language} ||= 'unk'
+    my ($self, $args) = @_;
+    my $zone = 'und';
+    if ($args && $args->{zone}){
+        $zone = $args->{zone};
+        confess "'$zone' is not a valid zone name" if $zone !~ /^[a-z-]+(_[A-Za-z0-9-])?$/;
+        confess "'all' cannot be used as a zone name" if $zone eq 'all';
+    }
+
+    if (any {$zone eq $_->zone} @{$self->[$TREES]}) {
+        confess "Tree with zone '$zone' already exists in bundle " . $self->id;
+    }
+
     my $root = Udapi::Core::Node->_create_root($self);
     push @{$self->[$TREES]}, $root;
     return $root;

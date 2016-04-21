@@ -6,22 +6,22 @@ use Carp qw(confess cluck);
 my @ATTRS;
 my ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING, # private (no getter nor setter)
     $PARENT, $ROOT, $ORD,                    # public getter
-    $FORM, $LEMMA, $UPOS, $XPOS, $FEATS, $DEPREL, $DEPS, $MISC);
-my $SENTENCE = $MISC+1;
+    $FORM, $LEMMA, $UPOS, $XPOS, $FEATS, $DEPREL, $DEPS, $MISC, $ZONE);
+my $SENTENCE = $ZONE+1;
 
 BEGIN {
     @ATTRS = qw(descendants bundle firstchild nextsibling
             parent root ord
-            form lemma upos xpos feats deprel deps misc);
+            form lemma upos xpos feats deprel deps misc zone);
     ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING,
     $PARENT, $ROOT, $ORD,
-    $FORM, $LEMMA, $UPOS, $XPOS, $FEATS, $DEPREL, $DEPS, $MISC)
+    $FORM, $LEMMA, $UPOS, $XPOS, $FEATS, $DEPREL, $DEPS, $MISC, $ZONE)
     = (0..$#ATTRS);
 }
 
 use Class::XSAccessor::Array {
-    setters => { map {('set_'.$ATTRS[$_] => $_)} ($FORM..$MISC) },
-    getters => { map {(       $ATTRS[$_] => $_)} ($PARENT..$MISC) },
+    setters => { map {('set_'.$ATTRS[$_] => $_)} ($FORM..$ZONE) },
+    getters => { map {(       $ATTRS[$_] => $_)} ($PARENT..$ZONE) },
 };
 
 sub new {
@@ -31,12 +31,13 @@ sub new {
 }
 
 sub _create_root {
-    my ($class, $bundle) = @_;
+    my ($class, $bundle, $zone) = @_;
     my $root = bless [], $class;
     $root->[$DESCENDANTS] = [];
     $root->[$ORD] = 0;
     $root->[$BUNDLE] = $bundle;
     $root->[$ROOT] = $root;
+    $root->[$ZONE] = $zone || 'und';
     return $root;
 }
 
