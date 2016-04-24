@@ -228,3 +228,9 @@ class Node(object):
     def info(self,message):
         import sys
         sys.stderr.write("INFO "+message+"\n")
+
+    def zone(self):
+        return self._aux['zone']
+
+    def set_zone(self,zone):
+        self._aux['zone'] = zone
