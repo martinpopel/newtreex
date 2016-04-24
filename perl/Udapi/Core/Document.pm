@@ -26,62 +26,21 @@ sub create_bundle {
 my ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING, $PARENT, $ROOT, $ORD,) = (0..10);
 
 sub _read_conllu_tree_from_fh {
-    my ($self, $fh) = @_;
-    # TODO:
-    my ($bundle, $zone);
-    my $root = Udapi::Core::Node->_create_root($bundle, $zone);
-    # TODO
-    return $root;
-}
+    my ($self, $fh, $error_context) = @_;
 
-sub load_conllu {
-    my ($self, $conllu_file) = @_;
-    open my $fh, '<:utf8', $conllu_file;
-
-    my $bundle = $self->create_bundle();
-    my $root = $bundle->create_tree(); # {selector=>''}
+    # We could use _create_root($bundle),
+    # but the $bundle is not known yet, it will be specified later.
+    my $root = Udapi::Core::Node->_create_root();
     my @nodes = ($root);
     my @parents = (0);
     my ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc );
     my $comment = '';
+
     LINE:
     while (my $line = <$fh>) {
         chomp $line;
-        if ($line eq ''){
-            next LINE if @nodes==1;
-            foreach my $i (1..$#nodes){
-                # faster version of $nodes[$i]->set_parent( $nodes[ $parents[$i] ] );
-                my $parent = $nodes[ $parents[$i] ];
-                my $node = $nodes[$i];
-                if ($node == $parent){
-                    my $b_id = $self->bundle->id;
-                    confess "Conllu file $conllu_file contains cycles: Bundle $b_id: node $id is attached to itself";
-                }
-                if ($node->[$FIRSTCHILD]) {
-                    my $grandpa = $parent->[$PARENT];
-                    while ($grandpa) {
-                        if ($grandpa == $node){
-                            my $b_id = $node->bundle->id;
-                            my $p_id = $parent->ord;
-                            confess "Conllu file $conllu_file contains cycles: Bundle $b_id: nodes $id and $p_id.";
-                        }
-                        $grandpa = $grandpa->[$PARENT];
-                    }
-                }
-                $node->[$PARENT] = $parent;
-                $node->[$NEXTSIBLING] = $parent->[$FIRSTCHILD];
-                $parent->[$FIRSTCHILD] = $node;
-            }
-            $root->[$DESCENDANTS] = [@nodes[1..$#nodes]];
-            if (length $comment){
-                $root->set_misc($comment);
-                $comment = '';
-            }
-            my $bundle = $self->create_bundle();
-            $root = $bundle->create_tree(); # {selector=>''}
-            @nodes = ($root);
-            @parents = (0);
-        } elsif ($line =~ s/^#// ){
+        last LINE if $line eq '';
+        if ($line =~ s/^#// ){
             $comment = $comment . $line . "\n";
         } else {
             ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc ) = split /\t/, $line;
@@ -96,18 +55,58 @@ sub load_conllu {
             # TODO deps
             # TODO convert feats into iset
         }
+    }
 
-    }
-    close $fh;
-    # The last bundle should be empty (if the file ended with an empty line),
-    # so we need to remove it. But let's check it.
-    if (@nodes == 1){
-        pop @{$self->{_bundles}};
-    } else {
-        foreach my $i (1..$#nodes) {
-            $nodes[$i]->set_parent( $nodes[ $parents[$i] ] );
+    # If no nodes were read from $fh (so only $root remained in @nodes),
+    # we return undef as a sign of failure (end of file or more than one empty line).
+    return undef if @nodes==1;
+
+    # Set dependency parents (now, all nodes of the tree are created).
+    # The following code does the same as
+    # $nodes[$i]->set_parent($nodes[$parents[$i]]) for my $i (1..$#nodes);
+    # but slightly faster (set_parent has some checks we can skip here).
+    foreach my $i (1..$#nodes){
+        my $parent = $nodes[ $parents[$i] ];
+        my $node = $nodes[$i];
+        if ($node == $parent){
+            confess "Conllu file $error_context (before line $.) contains a cycle: node $id is attached to itself";
         }
+        if ($node->[$FIRSTCHILD]) {
+            my $grandpa = $parent->[$PARENT];
+            while ($grandpa) {
+                if ($grandpa == $node){
+                    my $b_id = $node->bundle->id;
+                    my $p_id = $parent->ord;
+                    confess "Conllu file $error_context (before line $.) contains a cycle: nodes $id and $p_id.";
+                }
+                $grandpa = $grandpa->[$PARENT];
+            }
+        }
+        $node->[$PARENT] = $parent;
+        $node->[$NEXTSIBLING] = $parent->[$FIRSTCHILD];
+        $parent->[$FIRSTCHILD] = $node;
     }
+
+    # Set root attributes (descendants for faster iteration of all nodes in a tree).
+    $root->[$DESCENDANTS] = [@nodes[1..$#nodes]];
+    if (length $comment){
+        $root->set_misc($comment);
+        $comment = '';
+    }
+
+    return $root;
+}
+
+sub load_conllu {
+    my ($self, $conllu_file) = @_;
+    open my $fh, '<:utf8', $conllu_file;
+
+    while (my $root = $self->_read_conllu_tree_from_fh($fh, $conllu_file)){
+        my $bundle = $self->create_bundle();
+        $bundle->add_tree($root);
+    }
+
+    close $fh;
     return;
 }
 

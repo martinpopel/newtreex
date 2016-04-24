@@ -26,21 +26,34 @@ use Class::XSAccessor::Array {
 sub trees { return @{$_[0][$TREES]}; }
 
 sub create_tree {
-    my ($self, $args) = @_;
-    my $zone = 'und';
-    if ($args && $args->{zone}){
-        $zone = $args->{zone};
+    my ($self, $zone) = @_;
+    my $root = Udapi::Core::Node->_create_root($self);
+    $root->_set_zone($zone);
+    $self->add_tree($root);
+    return $root;
+}
+
+sub add_tree {
+    my ($self, $root) = @_;
+    my $zone = $root->zone;
+    if (!defined $zone){
+        $zone = 'und';
+        $root->_set_zone($zone);
+    } else {
         confess "'$zone' is not a valid zone name" if $zone !~ /^[a-z-]+(_[A-Za-z0-9-])?$/;
         confess "'all' cannot be used as a zone name" if $zone eq 'all';
     }
+    confess "Tree with zone '$zone' already exists in bundle " . $self->id
+        if any {$zone eq $_->zone} @{$self->[$TREES]};
 
-    if (any {$zone eq $_->zone} @{$self->[$TREES]}) {
-        confess "Tree with zone '$zone' already exists in bundle " . $self->id;
-    }
-
-    my $root = Udapi::Core::Node->_create_root($self);
+    $root->_set_bundle($self);
     push @{$self->[$TREES]}, $root;
-    return $root;
+    return;
+}
+
+sub get_tree {
+    my ($self, $zone) = @_;
+    return first {$zone eq $_->zone} @{$self->[$TREES]};
 }
 
 sub destroy {

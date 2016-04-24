@@ -20,7 +20,7 @@ BEGIN {
 }
 
 use Class::XSAccessor::Array {
-    setters => { map {('set_'.$ATTRS[$_] => $_)} ($FORM..$ZONE) },
+    setters => { _set_zone=>$ZONE, _set_bundle=>$BUNDLE, map {('set_'.$ATTRS[$_] => $_)} ($FORM..$MISC) },
     getters => { map {(       $ATTRS[$_] => $_)} ($PARENT..$ZONE) },
 };
 
@@ -31,13 +31,12 @@ sub new {
 }
 
 sub _create_root {
-    my ($class, $bundle, $zone) = @_;
+    my ($class, $bundle) = @_;
     my $root = bless [], $class;
     $root->[$DESCENDANTS] = [];
     $root->[$ORD] = 0;
     $root->[$BUNDLE] = $bundle;
     $root->[$ROOT] = $root;
-    $root->[$ZONE] = $zone || 'und';
     return $root;
 }
 
