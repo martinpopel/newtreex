@@ -10,6 +10,7 @@ import cz.ufal.udapi.core.io.TreexIOException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -32,7 +33,7 @@ public class Sentences extends Block {
         }
 
         if (inAvailable) {
-            try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in)))
+            try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8)))
             {
                 //default bundle
                 Bundle bundle = document.getBundles().get(0);

@@ -8,6 +8,7 @@ import cz.ufal.udapi.core.io.impl.CoNLLUReader;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -31,7 +32,7 @@ public class CoNLLU extends Block {
         }
 
         if (inAvailable) {
-            DocumentReader coNLLUReader = new CoNLLUReader(new InputStreamReader(System.in));
+            DocumentReader coNLLUReader = new CoNLLUReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
             coNLLUReader.readInDocument(document);
         } else {
             throw new TreexIOException("Expected CoNNLU on the standard input.");

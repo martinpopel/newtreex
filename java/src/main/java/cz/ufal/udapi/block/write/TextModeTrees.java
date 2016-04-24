@@ -2,7 +2,11 @@ package cz.ufal.udapi.block.write;
 
 import cz.ufal.udapi.core.Block;
 import cz.ufal.udapi.core.NLPTree;
+import cz.ufal.udapi.core.io.TreexIOException;
+import cz.ufal.udapi.exception.TreexException;
 
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -22,6 +26,8 @@ public class TextModeTrees extends Block {
     private static final String HB = "\u252C"; // ┬
     private static final String HT = "\u2534"; // ┴
     private static final String HV = "\u253C"; // ┼
+
+    PrintStream ps = null;
 
     private static final Pattern replacePattern = Pattern.compile(".*["+H+"|"+RT + "|" + RB + "|"+ RV +"]$");
 
@@ -45,6 +51,12 @@ public class TextModeTrees extends Block {
 
     public TextModeTrees(Map<String, String> params) {
         super(params);
+
+        try {
+            ps = new PrintStream(System.out, true, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new TreexException(e);
+        }
 
         if (indent > 0) {
             int[] lineSigns = {Hi, LTi, LBi, LVi, HBi, HTi, HVi};
@@ -227,7 +239,7 @@ public class TextModeTrees extends Block {
         }
 
         for (int i = 0; i < tree.size(); i++) {
-            System.out.println(tree.get(i).print.toString());
+            ps.println(tree.get(i).print.toString());
         }
     }
 

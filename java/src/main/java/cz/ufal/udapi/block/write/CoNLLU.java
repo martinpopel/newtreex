@@ -5,6 +5,7 @@ import cz.ufal.udapi.core.Document;
 import cz.ufal.udapi.core.io.impl.CoNLLUWriter;
 
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -18,7 +19,7 @@ public class CoNLLU extends Block {
     @Override
     public void processDocument(Document document) {
         CoNLLUWriter coNLLUWriter = new CoNLLUWriter();
-        coNLLUWriter.writeDocument(document, new OutputStreamWriter(System.out));
+        coNLLUWriter.writeDocument(document, new OutputStreamWriter(System.out, StandardCharsets.UTF_8));
     }
 
 }
