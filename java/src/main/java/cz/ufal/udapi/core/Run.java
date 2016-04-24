@@ -227,9 +227,6 @@ public class Run {
     }
 
     private String[] tokenize(String scenarioString) {
-        System.out.println("scenarioString->");
-        System.out.println(scenarioString);
-        System.out.println("end scnarioString");
         List<String> tokens = new ArrayList<>();
 
         boolean insideApostrophes = false;

@@ -14,6 +14,12 @@ import java.util.Map;
  *
  * Example usage:
  * Util::Eval node="println doc"
+ *
+ * cat UD_Czech/cs-ud-dev.conllu | udapi.groovy Read::CoNLLU Util::Eval
+ *     node='if (c.self.upos == "ADP" && !c.self.precedes(c.self.parent.get()))
+ *     {println c.tree.root.getOrderedDescendants().collect{String val = "";
+ *     if (it == c.self) { val = "***" } else if (it == c.self.parent.get())
+ *     {val = "+++"}; val += it.form}.join(" ")}' | head
  */
 public class Eval extends Block {
 

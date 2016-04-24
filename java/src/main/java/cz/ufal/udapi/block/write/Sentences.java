@@ -22,6 +22,9 @@ public class Sentences extends Block {
 
     public Sentences(Map<String, String> params) {
         super(params);
+        if (!params.containsKey(IF_MISSING)) {
+            params.put(IF_MISSING, DETOKENIZE);
+        }
     }
 
     @Override
