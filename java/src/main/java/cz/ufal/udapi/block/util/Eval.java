@@ -21,7 +21,7 @@ import java.util.Map;
  */
 public class Eval extends Block {
 
-    Method evalMethod;
+    private final Method evalMethod;
 
     private static final String DOC = "doc";
     private static final String BUNDLE = "bundle";

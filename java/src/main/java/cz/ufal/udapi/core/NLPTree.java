@@ -13,7 +13,7 @@ public interface NLPTree {
     List<String> getComments();
     void addMultiword(String multiword);
     List<String> getMultiwords();
-    void setText(String sentenceText);
-    String getText();
+    void setSentence(String sentenceText);
+    String getSentence();
     void normalizeOrder();
 }

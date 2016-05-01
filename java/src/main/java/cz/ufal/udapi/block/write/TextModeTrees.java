@@ -27,7 +27,7 @@ public class TextModeTrees extends Block {
     private static final String HT = "\u2534"; // ┴
     private static final String HV = "\u253C"; // ┼
 
-    PrintStream ps = null;
+    private final PrintStream ps;
 
     private static final Pattern replacePattern = Pattern.compile(".*["+H+"|"+RT + "|" + RB + "|"+ RV +"]$");
 
@@ -44,8 +44,6 @@ public class TextModeTrees extends Block {
     private static final int HVi = 10;
 
     private String[] signs = {H, V, LT, LB, RB, RT, RV, LV, HB, HT, HV};
-
-    //private Map<String, String> signs = new HashMap<>();
 
     private static final int indent = 1;
 

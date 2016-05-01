@@ -30,13 +30,24 @@ public class Block {
 
     }
 
+    public void beforeProcessDocument(Document document) {
+
+    }
+
     public void processDocument(Document document) {
         int bundleNo = 1;
         for (Bundle bundle : document.getBundles()) {
             if (shouldProcessBundle(bundle, bundleNo)) {
+                beforeProcessBundle(bundle, bundleNo);
                 processBundle(bundle, bundleNo);
+                afterProcessBundle(bundle, bundleNo);
             }
+            bundleNo++;
         }
+    }
+
+    public void afterProcessDocument(Document document) {
+
     }
 
     protected boolean shouldProcessBundle(Bundle bundle, int bundleNo) {
@@ -49,12 +60,20 @@ public class Block {
         return true;
     }
 
+    public void beforeProcessBundle(Bundle bundle, int bundleNo) {
+
+    }
+
     public void processBundle(Bundle bundle, int bundleNo) {
         for (NLPTree tree : bundle.getTrees()) {
             if (shouldProcessTree(tree)) {
                 processTree(tree, bundleNo);
             }
         }
+    }
+
+    public void afterProcessBundle(Bundle bundle, int bundleNo) {
+
     }
 
     public void processTree(NLPTree tree, int bundleNo) {

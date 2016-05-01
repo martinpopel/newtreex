@@ -22,7 +22,7 @@ public class Sentences extends Block {
 
     public static final String FATAL = "fatal";
 
-    PrintStream ps = null;
+    private final PrintStream ps;
 
     public Sentences(Map<String, String> params) {
         super(params);
@@ -40,7 +40,7 @@ public class Sentences extends Block {
     @Override
     public void processTree(NLPTree tree, int bundleNo) {
 
-        String sentence = tree.getText();
+        String sentence = tree.getSentence();
         if (null == sentence) {
             if (getParams().containsKey(IF_MISSING)) {
                 String ifMissing = getParams().get(IF_MISSING);

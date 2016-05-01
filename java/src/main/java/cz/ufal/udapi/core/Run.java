@@ -89,7 +89,10 @@ public class Run {
                 if (!quiet) {
                     System.err.println("Applying block " + blockNumber + "/" + numberOfBlocks + " " + blockName);
                 }
-                blockInstances.get(blockName).processDocument(newDocument);
+                Block block = blockInstances.get(blockName);
+                block.beforeProcessDocument(newDocument);
+                block.processDocument(newDocument);
+                block.afterProcessDocument(newDocument);
             }
 
             //TODO:

@@ -72,12 +72,12 @@ public class DefaultTree implements NLPTree {
     }
 
     @Override
-    public void setText(String sentenceText) {
+    public void setSentence(String sentenceText) {
         this.text = sentenceText;
     }
 
     @Override
-    public String getText() {
+    public String getSentence() {
         return text;
     }
 }
