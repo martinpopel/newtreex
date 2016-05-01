@@ -44,14 +44,16 @@
   <td> importing the class</td>
   <td>  use Udapi::Core::Document; </td>
   <td>  import Document from udapi.core.document  </td>
-  <td>  import cz.cuni.mff.ufal.treex.core.Document </td>
+  <td>  import cz.ufal.udapi.core.impl.DefaultDocument;<br/>
+        import cz.ufal.udapi.core.Document;
+  </td>
 </tr>
 
 <tr>
   <td> &bull; construction </td>
   <td>  my $doc = Udapi::Core::Document->new() </td>
   <td>  doc = Document()  </td>
-  <td>  ??? </td>
+  <td>  Document doc = new DefaultDocument(); </td>
 </tr>
 
 <tr>
@@ -59,7 +61,7 @@
   <td>  $doc->load_conllu('test.conllu') </td>
   <td>  doc.load({'filename':'test.conllu'}) <br/>
   doc.load({'filehandle': fh}) </td>
-  <td>  ??? </td>
+  <td>  doc = new CoNLLUReader("test.conllu").readDocument(); </td>
 </tr>
 
 
@@ -69,7 +71,9 @@
   <td>  doc.store({'filename':'test.conllu'})<br/>
   doc.store({'filehandle': fh})
   </td>
-  <td>  ??? </td>
+  <td>  CoNLLUWriter coNLLUWriter = new CoNLLUWriter();<br/>
+    coNLLUWriter.writeDocument(doc, Paths.get("test.conllu"));
+  </td>
 </tr>
 
 <tr>
@@ -78,7 +82,7 @@
   <td>  doc.bundles<br/>
         for bundle in doc: # iterator version
   </td>
-  <td>  ??? </td>
+  <td>  doc.getBundles() </td>
 </tr>
 
 <tr>
@@ -87,7 +91,7 @@
   <td>  doc.store({'filename':'test.conllu'})<br/>
   doc.store({'filehandle': fh})
   </td>
-  <td>  ??? </td>
+  <td>  doc.addBundle(); </td>
 </tr>
 
 
@@ -104,14 +108,16 @@
   <td> importing the class </td>
   <td>  use Udapi::Core::Bundle; </td>
   <td>  import Bundle from udapi.core.document  </td>
-  <td>  import cz.cuni.mff.ufal.treex.core.Document </td>
+  <td>  import cz.ufal.udapi.core.Bundle;<br/>
+    import cz.ufal.udapi.core.impl.DefaultBundle;
+  </td>
 </tr>
 
 <tr>
   <td> &bull; construction </td>
   <td>  my $bun = Udapi::Core::Bundle->new() </td>
   <td>  bun = Bundle()  </td>
-  <td>  ??? </td>
+  <td>  Bundle bun = new DefaultBundle(doc) </td>
 </tr>
 
 <tr>
@@ -120,14 +126,14 @@
   <td>  trees = bun.trees <br/>
         for tree in bun:  # iterator version
   </td>
-  <td>  ??? </td>
+  <td>  List&lt;NLPTree&gt; trees = bun.getTrees(); </td>
 </tr>
 
 <tr>
   <td> &bull; add a new tree to the bundle </td>
   <td>  my $root = bun->create_tree() </td>
   <td>  bun.trees.append(root)  </td>
-  <td>  ??? </td>
+  <td>  bun.addTree(); </td>
 </tr>
 
 <tr>
@@ -138,63 +144,65 @@
   <td> importing the class </td>
   <td>  use Udapi::Core::Node; </td>
   <td>  import Node from udapi.core.node  </td>
-  <td>  import cz.cuni.mff.ufal.treex.core.Node </td>
+  <td>  import cz.ufal.udapi.core.Node;<br/>
+    import cz.ufal.udapi.core.imple.DefaultNode;
+  </td>
 </tr>
 
 <tr>
   <td> &bull; constructor </td>
   <td>  my $node =  Udapi::Core::Node->new(); </td>
   <td>  node = Node()  </td>
-  <td>  ??? </td>
+  <td>  Node node = new DefaultNode(tree); </td>
 </tr>
 
 <tr>
   <td> &bull; getting an attribute value </td>
   <td>  $node->lemma; </td>
   <td>  node.lemma  </td>
-  <td>  ??? </td>
+  <td>  node.getLemma(); </td>
 </tr>
 
 <tr>
   <td> &bull; writing an attribute value </td>
   <td>  $node->lemma; </td>
   <td>  node.lemma  </td>
-  <td>  ??? </td>
+  <td>  node.setLemma(lemma); </td>
 </tr>
 
 <tr>
   <td> &bull; getting the node's parent </td>
   <td>  $node->parent; </td>
   <td>  node.parent  </td>
-  <td>  ??? </td>
+  <td>  node.getParent(); </td>
 </tr>
 
 <tr>
   <td> &bull; setting the node's parent </td>
   <td>  $node->set_parent($new_parent); </td>
   <td>  node.set_parent(new_parent)  </td>
-  <td>  ??? </td>
+  <td>  node.setParent(newParent); </td>
 </tr>
 
 <tr>
   <td> &bull; creating a node </td>
   <td>  my $child = $node->create_child(); </td>
   <td>  node.????  </td>
-  <td>  ??? </td>
+  <td>  Node child = node.createChild(); </td>
 </tr>
 
 <tr>
   <td> &bull; removing a node </td>
   <td>  $node->remove(); </td>
   <td>  node.remove  </td>
-  <td>  ??? </td>
+  <td>  node.remove(); </td>
 </tr>
 
 <tr>
   <td> &bull; getting all node's descendants </td>
   <td>  $node->descendants(); </td>
   <td>  node.descendants()  </td>
-  <td>  ??? </td>
+  <td>  node.getDescendants(); </td>
 </tr>
 
 
@@ -218,7 +226,9 @@
   <td> <b>BLOCK:</b> <br/> basic processing unit </td>
   <td>  use Udapi::Core::Block; </td>
   <td>  import Block from udapi.core.block  </td>
-  <td>  import cz.cuni.mff.ufal.treex.core.Block </td>
+  <td>  import cz.ufal.udapi.core.Block;<br/>
+    import cz.ufal.udapi.block.Dummy;
+  </td>
 </tr>
 
 
@@ -226,11 +236,8 @@
   <td> construction (of a derived class) </td>
   <td>  use Udapi::Block::Dummy; </td>
   <td>  import Dummy from udapi.block.dummy  </td>
-  <td>  ??? </td>
+  <td>  import cz.ufal.udapi.block.Dummy; </td>
 </tr>
-
-
-
 
 
 <tr>
@@ -238,7 +245,7 @@
   sequence of blocks </td>
   <td>  use Udapi::Core::Run; </td>
   <td>  import Run from udapi.core.run  </td>
-  <td>  import cz.cuni.mff.ufal.treex.core.Run </td>
+  <td>  import cz.ufal.udapi.core.Run </td>
 </tr>
 
 
@@ -257,8 +264,26 @@
   <td> Java </td>
 </tr>
 
+<tr>
+  <td> Bash </td>
+  <td>  </td>
+  <td>  </td>
+  <td>
+    cat ../data/UD_Czech/cs-ud-dev.conllu | ./bin/udapi.groovy Read::CoNLLU Write::TextModeTrees </td>
+</tr>
 
-
+<tr>
+  <td> PowerShell </td>
+  <td>  </td>
+  <td>  </td>
+  <td>
+    Use Lucida Sans Unicode in Powershell ISE<br/>
+    <pre>
+    cmd.exe /c
+    echo [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $OutputEncoding = New-Object -typename System.Text.UTF8Encoding
+    Get-Content -encoding utf8 ..\data\UD_Czech\cs-ud-dev.conllu | out-string | groovy .\bin\udapi.groovy Read::CoNLLU Write::TextModeTrees</pre> </td>
+</tr>
 
 
 

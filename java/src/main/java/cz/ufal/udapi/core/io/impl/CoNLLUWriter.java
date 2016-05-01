@@ -1,9 +1,6 @@
 package cz.ufal.udapi.core.io.impl;
 
-import cz.ufal.udapi.core.Bundle;
-import cz.ufal.udapi.core.Document;
-import cz.ufal.udapi.core.Node;
-import cz.ufal.udapi.core.Sentence;
+import cz.ufal.udapi.core.*;
 import cz.ufal.udapi.core.io.DocumentWriter;
 import cz.ufal.udapi.core.io.TreexIOException;
 
@@ -20,14 +17,14 @@ public class CoNLLUWriter implements DocumentWriter{
     public void writeDocument(Document document, Writer writer) {
         try (BufferedWriter bufferedWriter = new BufferedWriter(writer)) {
             for (Bundle bundle : document.getBundles()) {
-                for (Sentence sentence : bundle.getSentences()) {
+                for (NLPTree tree : bundle.getTrees()) {
 
-                    List<Node> descendants = sentence.getTree().getRoot().getOrderedDescendants();
+                    List<Node> descendants = tree.getRoot().getOrderedDescendants();
 
                     //do not write empty sentences
                     if (descendants.size() > 0) {
 
-                        List<String> comments = sentence.getComments();
+                        List<String> comments = tree.getComments();
 
                         for (String comment : comments) {
                             bufferedWriter.write(comment, 0, comment.length());

@@ -9,5 +9,6 @@ public interface Document {
     int generate_new_id();
 
     void addBundle(Bundle bundle);
+    Bundle addBundle();
     List<Bundle> getBundles();
 }

@@ -4,9 +4,7 @@ import cz.ufal.udapi.core.*;
 import cz.ufal.udapi.exception.TreexException;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -80,9 +78,9 @@ public class Eval extends Block {
         }
 
         if (getParams().containsKey(TREE) || getParams().containsKey(NODE)) {
-            for (Sentence sentence : bundle.getSentences()) {
-                if (shouldProcessTree(sentence.getTree())) {
-                    processTree(sentence.getTree(), bundleNo);
+            for (NLPTree tree : bundle.getTrees()) {
+                if (shouldProcessTree(tree)) {
+                    processTree(tree, bundleNo);
                 }
             }
         }

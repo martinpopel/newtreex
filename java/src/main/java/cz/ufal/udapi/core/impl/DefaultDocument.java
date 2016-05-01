@@ -20,9 +20,21 @@ public class DefaultDocument implements Document {
         return uniqueId.incrementAndGet();
     }
 
+    public DefaultDocument() {
+        Bundle bundle = new DefaultBundle(this);
+        bundles.add(bundle);
+    }
+
     @Override
     public void addBundle(Bundle bundle) {
         bundles.add(bundle);
+    }
+
+    @Override
+    public Bundle addBundle() {
+        Bundle bundle = new DefaultBundle(this);
+        bundles.add(bundle);
+        return bundle;
     }
 
     @Override

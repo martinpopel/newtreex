@@ -2,15 +2,15 @@ package cz.ufal.udapi.core.io.impl;
 
 import cz.ufal.udapi.core.Bundle;
 import cz.ufal.udapi.core.Document;
+import cz.ufal.udapi.core.NLPTree;
 import cz.ufal.udapi.core.Node;
-import cz.ufal.udapi.core.Sentence;
-import cz.ufal.udapi.core.impl.DefaultBundle;
 import cz.ufal.udapi.core.impl.DefaultDocument;
-import cz.ufal.udapi.core.impl.DefaultSentence;
 import cz.ufal.udapi.core.io.DocumentReader;
 import cz.ufal.udapi.core.io.TreexIOException;
 
 import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -28,11 +28,33 @@ public class CoNLLUReader implements DocumentReader {
         this.reader = reader;
     }
 
+    public CoNLLUReader(String inCoNLL) {
+        try {
+            reader = new FileReader(Paths.get(inCoNLL).toFile());
+        } catch (FileNotFoundException e) {
+            throw new TreexIOException("Provided CoNLL file '"+inCoNLL+"' not found.");
+        }
+    }
+
+    public CoNLLUReader(Path inCoNLL) {
+        try {
+            reader = new FileReader(inCoNLL.toFile());
+        } catch (FileNotFoundException e) {
+            throw new TreexIOException("Provided CoNLL file '"+inCoNLL+"' not found.");
+        }
+    }
+
+    public CoNLLUReader(File inCoNLL) {
+        try {
+            reader = new FileReader(inCoNLL);
+        } catch (FileNotFoundException e) {
+            throw new TreexIOException("Provided CoNLL file '"+inCoNLL.getAbsolutePath()+"' not found.");
+        }
+    }
+
     @Override
     public Document readDocument() {
         final Document document = new DefaultDocument();
-        final Bundle bundle = new DefaultBundle(document);
-        document.addBundle(bundle);
 
         readInDocument(document);
 
@@ -55,14 +77,14 @@ public class CoNLLUReader implements DocumentReader {
                 String trimLine = currLine.trim();
                 if ("".equals(trimLine)) {
                     //end of sentence
-                    processSentence(document, bundle, words);
+                    processSentence(bundle, words);
                     words.clear();
                 } else {
                     words.add(trimLine);
                 }
             }
             //process last sentence if there was no empty line after it
-            processSentence(document, bundle, words);
+            processSentence(bundle, words);
         }
         catch (IOException e)
         {
@@ -70,16 +92,15 @@ public class CoNLLUReader implements DocumentReader {
         }
     }
 
-    private void processSentence(Document document, Bundle bundle, List<String> words) {
+    private void processSentence(Bundle bundle, List<String> words) {
         //ignore empty sentences
         if (0 == words.size()) {
             return;
         }
 
-        Sentence sentence = new DefaultSentence(document, bundle);
-        bundle.addSentence(sentence);
+        NLPTree tree = bundle.addTree();
 
-        Node root = sentence.getTree().getRoot();
+        Node root = tree.getRoot();
 
         List<Node> nodes = new ArrayList<>();
         nodes.add(root);
@@ -90,10 +111,10 @@ public class CoNLLUReader implements DocumentReader {
             if (word.startsWith("#")) {
                 //comment
                 //TODO: process comments, e.g. sent_id
-                sentence.addComment(word);
+                tree.addComment(word);
             } else {
                 //process word
-                processWord(sentence, root, nodes, parents, word);
+                processWord(tree, root, nodes, parents, word);
             }
         }
 
@@ -104,7 +125,7 @@ public class CoNLLUReader implements DocumentReader {
 
     }
 
-    private void processWord(Sentence sentence, Node root, List<Node> nodes, List<Integer> parents, String word) {
+    private void processWord(NLPTree tree, Node root, List<Node> nodes, List<Integer> parents, String word) {
         String[] fields = word.split("\\t", 10);
         String     id = fields[0];
         String   form = fields[1];
@@ -139,7 +160,7 @@ public class CoNLLUReader implements DocumentReader {
             Matcher m = idRangePattern.matcher(id);
             if (m.matches()) {
                 //TODO: multiword
-                sentence.addMultiword(word);
+                tree.addMultiword(word);
             }
         }
     }

@@ -2,7 +2,7 @@ package cz.ufal.udapi.core.impl;
 
 import cz.ufal.udapi.core.Bundle;
 import cz.ufal.udapi.core.Document;
-import cz.ufal.udapi.core.Sentence;
+import cz.ufal.udapi.core.NLPTree;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class DefaultBundle implements Bundle {
 
-    private List<Sentence> sentences = new ArrayList<>();
+    private List<NLPTree> trees = new ArrayList<>();
     private Document document;
 
     public DefaultBundle(Document document) {
@@ -20,13 +20,20 @@ public class DefaultBundle implements Bundle {
     }
 
     @Override
-    public void addSentence(Sentence sentence) {
-        sentences.add(sentence);
+    public void addTree(NLPTree tree) {
+        trees.add(tree);
     }
 
     @Override
-    public List<Sentence> getSentences() {
-        return sentences;
+    public NLPTree addTree() {
+        NLPTree tree = new DefaultTree(document, this);
+        trees.add(tree);
+        return tree;
+    }
+
+    @Override
+    public List<NLPTree> getTrees() {
+        return trees;
     }
 
     @Override

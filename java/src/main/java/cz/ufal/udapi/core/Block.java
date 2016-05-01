@@ -45,8 +45,7 @@ public class Block {
     }
 
     public void processBundle(Bundle bundle, int bundleNo) {
-        for (Sentence sentence : bundle.getSentences()) {
-            NLPTree tree = sentence.getTree();
+        for (NLPTree tree : bundle.getTrees()) {
             if (shouldProcessTree(tree)) {
                 processTree(tree, bundleNo);
             }

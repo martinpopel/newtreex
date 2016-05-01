@@ -81,8 +81,6 @@ public class Run {
 
         while (!wasLastDocument) {
             Document newDocument = new DefaultDocument();
-            Bundle bundle = new DefaultBundle(newDocument);
-            newDocument.addBundle(bundle);
 
             docNumber++;
             int blockNumber = 0;
