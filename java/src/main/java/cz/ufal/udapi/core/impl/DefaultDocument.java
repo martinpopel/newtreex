@@ -42,4 +42,9 @@ public class DefaultDocument implements Document {
         return bundles;
     }
 
+    @Override
+    public Bundle getDefaultBundle() {
+        return bundles.get(0);
+    }
+
 }

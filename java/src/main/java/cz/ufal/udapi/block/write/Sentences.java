@@ -40,8 +40,7 @@ public class Sentences extends Block {
     @Override
     public void processTree(NLPTree tree, int bundleNo) {
 
-        //TODO: select correct sentence or refactor
-        String sentence = tree.getBundle().getTrees().get(0).getText();
+        String sentence = tree.getText();
         if (null == sentence) {
             if (getParams().containsKey(IF_MISSING)) {
                 String ifMissing = getParams().get(IF_MISSING);

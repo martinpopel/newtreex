@@ -12,9 +12,6 @@ import java.util.Map;
  * Created by mvojtek on 3/27/16.
  */
 public class CoNLLU extends Block {
-    public CoNLLU(Map<String, String> params) {
-        super(params);
-    }
 
     @Override
     public void processDocument(Document document) {

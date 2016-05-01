@@ -28,12 +28,6 @@ import cz.ufal.udapi.core.Node;
  */
 public class DeleteCommas extends Block {
 
-    private List<Node> nodes = new ArrayList<>();
-
-    public DeleteCommas(Map<String, String> params) {
-        super(params);
-    }
-
     @Override
     public void processNode(Node node, int bundleNo) {
         if (",".equals(node.getLemma())) {

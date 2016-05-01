@@ -28,10 +28,6 @@ public class ToPositions extends Block {
 
     private static final String ADP = "ADP";
 
-    public ToPositions(Map<String, String> params) {
-        super(params);
-    }
-
     @Override
     public void processNode(Node node, int bundleNo) {
         if (node.getParent().isPresent()) {

@@ -31,10 +31,6 @@ public class Adpositions extends Block {
 
     private static final String ADP = "ADP";
 
-    public Adpositions(Map<String, String> params) {
-        super(params);
-    }
-
     @Override
     public void processNode(Node node, int bundleNo) {
         // TODO: Your task: distinguish prepositions and postpositions

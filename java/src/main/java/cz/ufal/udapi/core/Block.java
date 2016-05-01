@@ -1,5 +1,6 @@
 package cz.ufal.udapi.core;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -8,6 +9,10 @@ import java.util.Map;
 public class Block {
 
     private final Map<String, String> params;
+
+    public Block() {
+        this(new HashMap<>());
+    }
 
     public Block(Map<String, String> params) {
         this.params = params;

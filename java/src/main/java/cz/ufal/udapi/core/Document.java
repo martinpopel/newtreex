@@ -11,4 +11,5 @@ public interface Document {
     void addBundle(Bundle bundle);
     Bundle addBundle();
     List<Bundle> getBundles();
+    Bundle getDefaultBundle();
 }

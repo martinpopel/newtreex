@@ -17,9 +17,6 @@ import java.util.Map;
  * Created by mvojtek on 4/17/16.
  */
 public class Sentences extends Block {
-    public Sentences(Map<String, String> params) {
-        super(params);
-    }
 
     @Override
     public void processDocument(Document document) {
@@ -36,7 +33,7 @@ public class Sentences extends Block {
             try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8)))
             {
                 //default bundle
-                Bundle bundle = document.getBundles().get(0);
+                Bundle bundle = document.getDefaultBundle();
                 String currLine;
 
                 while ((currLine = bufferedReader.readLine()) != null) {
