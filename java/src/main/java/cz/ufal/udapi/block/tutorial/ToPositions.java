@@ -32,7 +32,7 @@ public class ToPositions extends Block {
     public void processNode(Node node, int bundleNo) {
         if (node.getParent().isPresent()) {
             if (ADP.equals(node.getUpos()) && node.precedes(node.getParent().get())) {
-                node.shiftAfterSubtree(node.getParent().get(), false);
+                node.shiftAfterSubtree(node.getParent().get());
             }
         }
     }

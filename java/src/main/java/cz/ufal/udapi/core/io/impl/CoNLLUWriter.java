@@ -19,7 +19,7 @@ public class CoNLLUWriter implements DocumentWriter{
             for (Bundle bundle : document.getBundles()) {
                 for (NLPTree tree : bundle.getTrees()) {
 
-                    List<Node> descendants = tree.getRoot().getOrderedDescendants();
+                    List<Node> descendants = tree.getRoot().getDescendants();
 
                     //do not write empty sentences
                     if (descendants.size() > 0) {

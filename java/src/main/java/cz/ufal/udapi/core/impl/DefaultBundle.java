@@ -14,14 +14,11 @@ public class DefaultBundle implements Bundle {
 
     private List<NLPTree> trees = new ArrayList<>();
     private Document document;
+    private int id;
 
     public DefaultBundle(Document document) {
         this.document = document;
-    }
-
-    @Override
-    public void addTree(NLPTree tree) {
-        trees.add(tree);
+        id = document.getUniqueBundleId();
     }
 
     @Override
@@ -44,5 +41,9 @@ public class DefaultBundle implements Bundle {
     @Override
     public Document getDocument() {
         return document;
+    }
+
+    public int getId() {
+        return id;
     }
 }

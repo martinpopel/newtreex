@@ -46,7 +46,7 @@ public class Sentences extends Block {
                 String ifMissing = getParams().get(IF_MISSING);
                 if (DETOKENIZE.equals(ifMissing)) {
                     // TODO SpaceAfter=No
-                    sentence = tree.getRoot().getOrderedDescendants().stream().map(node -> node.getForm()).collect(Collectors.joining(" "));
+                    sentence = tree.getRoot().getDescendants().stream().map(node -> node.getForm()).collect(Collectors.joining(" "));
                 } else  if (EMPTY.equals(ifMissing)) {
                     sentence = "";
                 } else {

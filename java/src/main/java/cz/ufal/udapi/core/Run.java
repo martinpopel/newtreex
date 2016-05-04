@@ -1,6 +1,5 @@
 package cz.ufal.udapi.core;
 
-import cz.ufal.udapi.core.impl.DefaultBundle;
 import cz.ufal.udapi.core.impl.DefaultDocument;
 import cz.ufal.udapi.exception.TreexException;
 

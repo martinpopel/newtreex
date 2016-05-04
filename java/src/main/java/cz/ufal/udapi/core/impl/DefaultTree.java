@@ -19,6 +19,7 @@ public class DefaultTree implements NLPTree {
 
     private List<String> comments = new ArrayList<>();
     private List<String> multiwords = new ArrayList<>();
+    private List<Node> descendants = new ArrayList<>();
     private String text;
 
     public DefaultTree(Document document, Bundle bundle) {
@@ -50,9 +51,14 @@ public class DefaultTree implements NLPTree {
     @Override
     public void normalizeOrder() {
         int newOrder = 1;
-        for (Node descendant : rootNode.getOrderedDescendants()) {
+        for (Node descendant : rootNode.getDescendants()) {
             descendant.setOrd(newOrder++);
         }
+    }
+
+    @Override
+    public List<Node> getDescendants() {
+        return descendants;
     }
 
     public void addComment(String comment) {

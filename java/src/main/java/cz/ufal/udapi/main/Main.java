@@ -10,10 +10,7 @@ import cz.ufal.udapi.core.io.impl.CoNLLUWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Created by mvojtek on 12/21/15.
@@ -64,13 +61,14 @@ public class Main {
         DocumentReader coNLLUReader = new CoNLLUReader(fileReader);
         Document document = coNLLUReader.readDocument();
         System.out.println("load");
+
         if (debug) {
             writeDoc("java-load.conllu", document);
         }
 
         for (Bundle bundle : document.getBundles()) {
             for (NLPTree tree : bundle.getTrees()) {
-                for (Node node : tree.getRoot().getOrderedDescendants()) {
+                for (Node node : tree.getRoot().getDescendants()) {
                     //noop
                 }
             }
@@ -88,8 +86,8 @@ public class Main {
 
         for (Bundle bundle : document.getBundles()) {
             for (NLPTree tree : bundle.getTrees()) {
-                for (Node child : tree.getRoot().getOrderedChildren()) {
-                    for (Node node : child.getOrderedDescendants()) {
+                for (Node child : tree.getRoot().getChildren()) {
+                    for (Node node : child.getDescendants()) {
                         //noop
                     }
                 }
@@ -110,7 +108,7 @@ public class Main {
 
         for (Bundle bundle : document.getBundles()) {
             for (NLPTree tree : bundle.getTrees()) {
-                for (Node node : tree.getRoot().getOrderedDescendants()) {
+                for (Node node : tree.getDescendants()) {
                     String form_lemma_tag = node.getForm() + node.getLemma();
                 }
             }
@@ -119,7 +117,7 @@ public class Main {
 
         for (Bundle bundle : document.getBundles()) {
             for (NLPTree tree : bundle.getTrees()) {
-                for (Node node : tree.getRoot().getOrderedDescendants()) {
+                for (Node node : tree.getDescendants()) {
                     node.setDeprel("dep");
                 }
             }
@@ -131,7 +129,7 @@ public class Main {
 
         for (Bundle bundle : document.getBundles()) {
             for (NLPTree tree : bundle.getTrees()) {
-                List<Node> descendants = tree.getRoot().getOrderedDescendants();
+                List<Node> descendants = tree.getDescendants();
                 for (Node node : descendants) {
                     int rand_index = myrand(descendants.size());
                     node.setParent(descendants.get(rand_index), true);
@@ -143,15 +141,11 @@ public class Main {
             writeDoc("java-rehang.conllu", document);
         }
 
-        Set<Node> alreadyRemoved = new HashSet<>();
         for (Bundle bundle : document.getBundles()) {
             for (NLPTree tree : bundle.getTrees()) {
-                for (Node node : tree.getRoot().getOrderedDescendants()) {
+                for (Node node : new ArrayList<Node>(tree.getDescendants())) {
                     if (myrand(10) == 0) {
-                        if (!alreadyRemoved.contains(node)) {
-                            node.remove();
-                            alreadyRemoved.add(node);
-                        }
+                        node.remove();
                     }
                 }
             }
@@ -163,12 +157,12 @@ public class Main {
 
         for (Bundle bundle : document.getBundles()) {
             for (NLPTree tree : bundle.getTrees()) {
-                for (Node node : tree.getRoot().getOrderedDescendants()) {
+                for (Node node : new ArrayList<Node>(tree.getDescendants())) {
                     if (myrand(10) == 0) {
                         Node nodeChild = node.createChild();
                         nodeChild.setLemma("x");
                         nodeChild.setForm("x");
-                        nodeChild.shiftAfterSubtree(node, false);
+                        nodeChild.shiftAfterSubtree(node);
                     }
                 }
             }
@@ -180,13 +174,13 @@ public class Main {
 
         for (Bundle bundle : document.getBundles()) {
             for (NLPTree tree : bundle.getTrees()) {
-                List<Node> nodes = tree.getRoot().getOrderedDescendants();
+                List<Node> nodes = new ArrayList(tree.getDescendants());
                 for (Node node : nodes) {
                     int rand_index = myrand(nodes.size());
                     if (myrand(10) == 0) {
-                        node.shiftAfterNode(nodes.get(rand_index), false);
+                        node.shiftAfterNode(nodes.get(rand_index), EnumSet.of(Node.ShiftArg.SKIP_IF_DESCENDANT));
                     } else if (myrand(10) == 0) {
-                        node.shiftBeforeSubtree(nodes.get(rand_index), true);
+                        node.shiftBeforeSubtree(nodes.get(rand_index), EnumSet.of(Node.ShiftArg.WITHOUT_CHILDREN));
                     }
                 }
             }

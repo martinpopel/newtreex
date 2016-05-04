@@ -16,4 +16,5 @@ public interface NLPTree {
     void setSentence(String sentenceText);
     String getSentence();
     void normalizeOrder();
+    List<Node> getDescendants();
 }

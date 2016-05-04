@@ -13,6 +13,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,17 +58,17 @@ public class CoNLLUReader implements DocumentReader {
     @Override
     public Document readDocument() {
         final Document document = new DefaultDocument();
-
         readInDocument(document);
 
         return document;
     }
 
     @Override
-    public void readInDocument(Document document) throws TreexIOException {
+    public void readInDocument(final Document document) throws TreexIOException {
 
         //default bundle
-        Bundle bundle = document.getBundles().get(0);
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
 
         try (BufferedReader bufferedReader = new BufferedReader(reader))
         {
@@ -77,26 +80,36 @@ public class CoNLLUReader implements DocumentReader {
                 String trimLine = currLine.trim();
                 if ("".equals(trimLine)) {
                     //end of sentence
-                    processSentence(bundle, words);
-                    words.clear();
+                    List<String> finalWords = words;
+                    executor.submit(() -> processSentence(document, finalWords));
+                    words = new ArrayList<>();
                 } else {
                     words.add(trimLine);
                 }
             }
             //process last sentence if there was no empty line after it
-            processSentence(bundle, words);
+            List<String> finalWords = words;
+            executor.submit(() -> processSentence(document, finalWords));
         }
         catch (IOException e)
         {
             throw new TreexIOException(e);
         }
+
+        executor.shutdown();
+        try {
+            executor.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            System.err.println("Wait for executor termination interrupted.");
+        }
     }
 
-    private void processSentence(Bundle bundle, List<String> words) {
+    private void processSentence(final Document document, List<String> words) {
         //ignore empty sentences
-        if (0 == words.size()) {
+        if (words.isEmpty()) {
             return;
         }
+        Bundle bundle = document.addBundle();
 
         NLPTree tree = bundle.addTree();
 
@@ -122,7 +135,6 @@ public class CoNLLUReader implements DocumentReader {
         for (int i = 1; i < nodes.size(); i++) {
             nodes.get(i).setParent(nodes.get(parents.get(i)));
         }
-
     }
 
     private void processWord(NLPTree tree, Node root, List<Node> nodes, List<Integer> parents, String word) {
@@ -143,7 +155,6 @@ public class CoNLLUReader implements DocumentReader {
 
         if (-1 == id.indexOf("-")) {
             Node child = root.createChild();
-            child.setOrd(nodes.size());
             child.setForm(form);
             child.setLemma(lemma);
             child.setUpos(upos);

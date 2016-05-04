@@ -53,7 +53,7 @@ public class Treex extends Block {
 
     @Override
     public void afterProcessBundle(Bundle bundle, int bundleNo) {
-        ps.println("      </zones>");
+        ps.println("      </zones>\n    </LM>");
     }
 
     @Override
@@ -116,7 +116,7 @@ public class Treex extends Block {
 
         ps.print(toPrint.toString());
 
-        List<Node> children = node.getOrderedChildren();
+        List<Node> children = node.getChildren();
         if (!children.isEmpty()) {
             ps.println(in + "<children>");
             for (Node child : children) {

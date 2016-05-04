@@ -15,7 +15,7 @@ import java.util.Map;
  *
  * cat UD_Czech/cs-ud-dev.conllu | udapi.groovy Read::CoNLLU Util::Eval
  *     node='if (c.self.upos == "ADP" && !c.self.precedes(c.self.parent.get()))
- *     {println c.tree.root.getOrderedDescendants().collect{String val = "";
+ *     {println c.tree.root.getDescendants().collect{String val = "";
  *     if (it == c.self) { val = "***" } else if (it == c.self.parent.get())
  *     {val = "+++"}; val += it.form}.join(" ")}' | head
  */

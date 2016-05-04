@@ -6,7 +6,8 @@ import java.util.List;
  * Created by martin.vojtek on 13. 12. 2015.
  */
 public interface Document {
-    int generate_new_id();
+    int getUniqueNodeId();
+    int getUniqueBundleId();
 
     void addBundle(Bundle bundle);
     Bundle addBundle();
