@@ -1,6 +1,7 @@
 package cz.ufal.udapi.main;
 
 import cz.ufal.udapi.core.*;
+import cz.ufal.udapi.core.impl.DefaultNode;
 import cz.ufal.udapi.core.io.DocumentReader;
 import cz.ufal.udapi.core.io.DocumentWriter;
 import cz.ufal.udapi.core.io.TreexIOException;
@@ -77,7 +78,7 @@ public class Main {
 
         for (Bundle bundle : document.getBundles()) {
             for (NLPTree tree : bundle.getTrees()) {
-                for (Node node : tree.getRoot().getDescendants()) {
+                for (Node node : ((DefaultNode)tree.getRoot()).getDescendantsF()) {
                     //noop
                 }
             }
