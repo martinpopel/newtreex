@@ -26,6 +26,10 @@ public class CoNLLUReader implements DocumentReader {
 
     private final Reader reader;
     private final Pattern idRangePattern = Pattern.compile("(\\d+)-(\\d+)");
+    private static final String EMPTY_STRING = "";
+    private static final String TAB = "\\t";
+    private static final String DASH = "-";
+    private static final char HASH = '#';
 
     public CoNLLUReader(Reader reader) {
         this.reader = reader;
@@ -78,7 +82,7 @@ public class CoNLLUReader implements DocumentReader {
             while ((currLine = bufferedReader.readLine()) != null)
             {
                 String trimLine = currLine.trim();
-                if ("".equals(trimLine)) {
+                if (EMPTY_STRING.equals(trimLine)) {
                     //end of sentence
                     List<String> finalWords = words;
                     executor.submit(() -> processSentence(document, finalWords));
@@ -121,7 +125,7 @@ public class CoNLLUReader implements DocumentReader {
         parents.add(0);
 
         for (String word : words) {
-            if (word.startsWith("#")) {
+            if (word.charAt(0) == HASH) {
                 //comment
                 //TODO: process comments, e.g. sent_id
                 tree.addComment(word);
@@ -138,7 +142,7 @@ public class CoNLLUReader implements DocumentReader {
     }
 
     private void processWord(NLPTree tree, Node root, List<Node> nodes, List<Integer> parents, String word) {
-        String[] fields = word.split("\\t", 10);
+        String[] fields = word.split(TAB, 10);
         String     id = fields[0];
         String   form = fields[1];
         String  lemma = fields[2];
@@ -153,7 +157,7 @@ public class CoNLLUReader implements DocumentReader {
             misc = fields[9];
         }
 
-        if (-1 == id.indexOf("-")) {
+        if (-1 == id.indexOf(DASH)) {
             Node child = root.createChild();
             child.setForm(form);
             child.setLemma(lemma);
