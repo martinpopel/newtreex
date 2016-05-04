@@ -30,8 +30,7 @@ public class CoNLLUReader implements DocumentReader {
     private static final String TAB = "\\t";
     private static final String DASH = "-";
     private static final char HASH = '#';
-    private static final int BUFFER = 32 * 1024;
-    private static final Pattern tabPattern = Pattern.compile(TAB);//.split(this, limit)
+    private static final Pattern tabPattern = Pattern.compile(TAB);
 
     public CoNLLUReader(Reader reader) {
         this.reader = reader;
@@ -76,7 +75,7 @@ public class CoNLLUReader implements DocumentReader {
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
-        try (BufferedReader bufferedReader = new BufferedReader(reader, BUFFER))
+        try (BufferedReader bufferedReader = new BufferedReader(reader))
         {
             String currLine;
             List<String> words = new ArrayList<>();
