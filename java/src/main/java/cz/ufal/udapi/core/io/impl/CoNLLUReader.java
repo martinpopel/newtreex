@@ -25,11 +25,13 @@ import java.util.regex.Pattern;
 public class CoNLLUReader implements DocumentReader {
 
     private final Reader reader;
-    private final Pattern idRangePattern = Pattern.compile("(\\d+)-(\\d+)");
+    private static final Pattern idRangePattern = Pattern.compile("(\\d+)-(\\d+)");
     private static final String EMPTY_STRING = "";
     private static final String TAB = "\\t";
     private static final String DASH = "-";
     private static final char HASH = '#';
+    private static final int BUFFER = 32 * 1024;
+    private static final Pattern tabPattern = Pattern.compile(TAB);//.split(this, limit)
 
     public CoNLLUReader(Reader reader) {
         this.reader = reader;
@@ -74,7 +76,7 @@ public class CoNLLUReader implements DocumentReader {
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
-        try (BufferedReader bufferedReader = new BufferedReader(reader))
+        try (BufferedReader bufferedReader = new BufferedReader(reader, BUFFER))
         {
             String currLine;
             List<String> words = new ArrayList<>();
@@ -142,7 +144,8 @@ public class CoNLLUReader implements DocumentReader {
     }
 
     private void processWord(NLPTree tree, Node root, List<Node> nodes, List<Integer> parents, String word) {
-        String[] fields = word.split(TAB, 10);
+
+        String[] fields = tabPattern.split(word, 10);
         String     id = fields[0];
         String   form = fields[1];
         String  lemma = fields[2];
