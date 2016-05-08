@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use autodie;
 use Udapi::Core::Bundle;
+use Udapi::Core::Node::Root;
 use Carp;
 
 sub new {
@@ -23,14 +24,15 @@ sub create_bundle {
     return $bundle;
 }
 
-my ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING, $PARENT, $ROOT, $ORD,) = (0..10);
+my ($ORD, $ROOT, $PARENT, $FIRSTCHILD, $NEXTSIBLING, $MISC) = (0..5);
+my $DESCENDANTS = 6;
 
 sub _read_conllu_tree_from_fh {
     my ($self, $fh, $error_context) = @_;
 
     # We could use _create_root($bundle),
     # but the $bundle is not known yet, it will be specified later.
-    my $root = Udapi::Core::Node->_create_root();
+    my $root = Udapi::Core::Node::Root->new();
     my @nodes = ($root);
     my @parents = (0);
     my ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc );
@@ -48,8 +50,9 @@ sub _read_conllu_tree_from_fh {
                 # TODO multiword tokens
                 next LINE;
             }
-            my $new_node = bless [undef, undef, undef, undef, undef, $root, scalar(@nodes),
-                                  $form, $lemma, $upos, $xpos, $feats, $deprel, $deps, $misc], 'Udapi::Core::Node';
+            my $new_node = bless [scalar(@nodes), $root, undef, undef, undef, $misc,
+                                  $form, $lemma, $upos, $xpos, $feats, $deprel, $deps], 'Udapi::Core::Node';
+
             push @nodes, $new_node;
             push @parents, $head;
             # TODO deps
