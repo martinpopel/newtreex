@@ -30,8 +30,9 @@ sub _should_process_bundle {
 
 sub _should_process_tree {
     my ($self, $tree) = @_;
-    # TODO: check whether $tree->selector and $tree->language match $self->zones
-    return 1;
+    return 1 if $self->zones eq 'all';
+    return 1 if any {$tree->zone eq $_} split /,/, $self->zones; # TODO allow regexes in zones, any {$tree->zone =~ /^$_$/}
+    return 0;
 }
 
 sub process_bundle {

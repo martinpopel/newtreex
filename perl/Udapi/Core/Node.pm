@@ -4,40 +4,36 @@ use warnings;
 use Carp qw(confess cluck);
 
 my @ATTRS;
-my ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING, # private (no getter nor setter)
-    $PARENT, $ROOT, $ORD,                    # public getter
-    $FORM, $LEMMA, $UPOS, $XPOS, $FEATS, $DEPREL, $DEPS, $MISC);
-my $SENTENCE = $MISC+1;
+my (
+    $ORD, $ROOT, $PARENT, $FIRSTCHILD, $NEXTSIBLING, $MISC, # both root and node
+    $FORM, $LEMMA, $UPOS, $XPOS, $FEATS, $DEPREL, $DEPS,    # node only
+);
 
+# The following variables are used in "use Class::XSAccessor::Array {...}",
+# so they must be initialized within an BEGIN block (but defined outside).
 BEGIN {
-    @ATTRS = qw(descendants bundle firstchild nextsibling
-            parent root ord
-            form lemma upos xpos feats deprel deps misc);
-    ($DESCENDANTS, $BUNDLE, $FIRSTCHILD, $NEXTSIBLING,
-    $PARENT, $ROOT, $ORD,
-    $FORM, $LEMMA, $UPOS, $XPOS, $FEATS, $DEPREL, $DEPS, $MISC)
-    = (0..$#ATTRS);
+    @ATTRS = qw(ord root parent firstchild nextsibling misc
+                form lemma upos xpos feats deprel deps);
+    ($ORD, $ROOT, $PARENT, $FIRSTCHILD, $NEXTSIBLING, $MISC) = (0..5);
+    ($FORM, $LEMMA, $UPOS, $XPOS, $FEATS, $DEPREL, $DEPS)    = (6..12);
 }
 
 use Class::XSAccessor::Array {
-    setters => { map {('set_'.$ATTRS[$_] => $_)} ($FORM..$MISC) },
-    getters => { map {(       $ATTRS[$_] => $_)} ($PARENT..$MISC) },
+    setters => { map {('set_'.$ATTRS[$_] => $_)} ($MISC..$DEPS) },
+    getters => { map {(       $ATTRS[$_] => $_)} (0..12) },
 };
+
+# Some methods need access to $self->[$ROOT][$DESCENDANTS],
+# but we cannot use $self->[$ROOT]->descendants() which returns an array,
+# we need the internal hashref, so we can modify it.
+# $self->[$ROOT][$BUNDLE] is faster than $self->[$ROOT]->bundle;
+my ($DESCENDANTS, $BUNDLE, $ZONE) = (6, 8);
+
 
 sub new {
     my ($class, %h) = @_;
     my $array = [ map {$h{$_}} @ATTRS];
     return bless $array, $class;
-}
-
-sub _create_root {
-    my ($class, $bundle) = @_;
-    my $root = bless [], $class;
-    $root->[$DESCENDANTS] = [];
-    $root->[$ORD] = 0;
-    $root->[$BUNDLE] = $bundle;
-    $root->[$ROOT] = $root;
-    return $root;
 }
 
 sub set_parent {
@@ -101,11 +97,6 @@ sub set_parent {
 sub remove {
     my ($self, $arg_ref) = @_;
     my $root = $self->[$ROOT];
-    if ( $root == $self ) {
-        confess 'Tree root cannot be removed using $root->remove().'
-              . ' Use $bundle->remove_tree($selector) instead';
-    }
-
     my $parent = $self->[$PARENT];
     if ($arg_ref && $self->[$FIRSTCHILD]){
         my $what_to_do = $arg_ref->{children} || '';
@@ -206,7 +197,6 @@ sub create_child {
 # No $args, no sort, fastest
 sub _descendantsF {
     #my ($self) = @_;
-    return @{$_[0][$DESCENDANTS]} if $_[0][$DESCENDANTS];
     my @stack = $_[0][$FIRSTCHILD] || return;
     my @descs = ();
     while (@stack) {
@@ -221,26 +211,15 @@ sub _descendantsF {
 # The official API method, used e.g. my @d = $n->descendants({add_self=>1, first_only=>1}).
 sub descendants {
     #my ($self, $args) = @_;
-    if (!$_[1]) { # !$args
-        return @{$_[0][$DESCENDANTS]} if $_[0][$DESCENDANTS];
-        goto &Udapi::Core::Node::_descendants;
-    }
+    goto &Udapi::Core::Node::_descendants if !$_[1]; # !$args (most common case)
     @_ = ($_[0], $_[1]{add_self}, $_[1]{first_only}, $_[1]{last_only}, $_[1]{except});
     goto &Udapi::Core::Node::_descendants;
 }
 
 sub _descendants {
     my ($self, $add_self, $first_only, $last_only, $except) = @_;
-    if (!$except && $self->[$DESCENDANTS]){
-        if ($first_only){
-            return $self if $add_self;
-            return $self->[$DESCENDANTS][0];
-        }
-        return $self->[$DESCENDANTS][-1] if $last_only;
-        return @{$self->[$DESCENDANTS]};
-    }
-    $except ||= 0;
 
+    $except ||= 0;
     return () if $self == $except;
     my @descs = ();
     my @stack = $self->[$FIRSTCHILD] || ();
@@ -282,16 +261,15 @@ sub is_descendant_of {
     return 0;
 }
 
+sub zone { $_[0]->[$ROOT][$ZONE]; }
+
 sub bundle { $_[0]->[$ROOT][$BUNDLE]; }
 
 sub document { $_[0]->[$ROOT][$BUNDLE]->document; }
 
 sub address { $_[0]->bundle->id . '-' . $_[0]->[$ORD]; } #???
 
-sub is_root { !$_[0]->[$PARENT]; }
-
-sub log_fatal { confess @_; }
-sub log_warn { cluck @_; }
+sub is_root { return 0; }
 
 sub prev_node {
     my ($self) = @_;
@@ -347,7 +325,7 @@ sub _shift_to_node {
     # we should raise an exception (which could be ignored with skip_if_descendant=>1).
     if (!$without_children && Udapi::Core::Node::is_descendant_of($reference_node, $self)){
         return if $skip_if_descendant;
-        log_fatal '$reference_node is a descendant of $self.'
+        confess '$reference_node is a descendant of $self.'
                 . ' Maybe you have forgotten {without_children=>1}. ' . "\n";
     }
 
@@ -485,24 +463,7 @@ sub _shift_to_node {
 
 sub destroy {
     my ($self) = @_;
-    foreach my $node (@{$self->[$DESCENDANTS]}){
-        undef @$node;
-    }
-    undef @{$self->[$DESCENDANTS]};
     undef @$self;
-    return;
-}
-
-sub sentence {
-    my ($self) = @_;
-    confess 'sentence() can be called only on root' if !$self->is_root;
-    return $self->[$SENTENCE];
-}
-
-sub set_sentence {
-    my ($self, $sent) = @_;
-    confess 'set_sentence() can be called only on root' if !$self->is_root;
-    $self->[$SENTENCE] = $sent;
     return;
 }
 
