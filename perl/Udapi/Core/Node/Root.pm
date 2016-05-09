@@ -52,7 +52,8 @@ sub descendants {
     #my ($self, $args) = @_;
     return @{$_[0][$DESCENDANTS]} if !$_[1]; # !$args (most common case)
     if ($_[1]{except}){
-        # TODO
+        @_ = ($_[0], $_[1]{add_self}, $_[1]{first_only}, $_[1]{last_only}, $_[1]{except});
+        goto &Udapi::Core::Node::_descendants;
     }
     if ($_[1]{first_only}){
         return $_[0] if $_[1]{add_self};
@@ -76,7 +77,7 @@ sub is_descendant_of { return 0; }
 # foreach $node ($root->descendants) {
 #    say $node->form . "-" . $node->parent->form;
 # }
-# It is useful if even root returns some special value.
+# It is useful if even the root returns some special value.
 # Otherwise, we would have to write:
 #   say $node->form . "-" . ($node->parent->is_root ? '<ROOT>' : $node->parent->form);
 #
