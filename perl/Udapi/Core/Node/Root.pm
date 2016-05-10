@@ -6,19 +6,19 @@ use Carp qw(confess cluck);
 my @ATTRS;
 my (
     $ORD, $ROOT, $PARENT, $FIRSTCHILD, $NEXTSIBLING, $MISC, # both root and node
-    $DESCENDANTS, $BUNDLE, $ZONE, $SENTENCE,                # root only
+    $DESCENDANTS, $BUNDLE, $ZONE, $SENTENCE, $ID            # root only
 );
 
 BEGIN {
     @ATTRS = qw(ord root parent firstchild nextsibling misc
-                descendants bundle zone sentence);
+                descendants bundle zone sentence id);
     ($ORD, $ROOT, $PARENT, $FIRSTCHILD, $NEXTSIBLING, $MISC) = (0..5);
-    ($DESCENDANTS, $BUNDLE, $ZONE, $SENTENCE)                = (6..9);
+    ($DESCENDANTS, $BUNDLE, $ZONE, $SENTENCE, $ID)           = (6..10);
 }
 
 use Class::XSAccessor::Array {
-    setters => { _set_zone=>$ZONE, _set_bundle=>$BUNDLE, set_misc=>$MISC, set_sentence=>$SENTENCE },
-    getters => { zone=>$ZONE, bundle=>$BUNDLE, misc=>$MISC, sentence=>$SENTENCE },
+    setters => { _set_zone=>$ZONE, _set_bundle=>$BUNDLE, set_misc=>$MISC, set_sentence=>$SENTENCE, set_id=>$ID },
+    getters => { zone=>$ZONE, bundle=>$BUNDLE, misc=>$MISC, sentence=>$SENTENCE, id=>$ID },
 };
 
 sub new {
