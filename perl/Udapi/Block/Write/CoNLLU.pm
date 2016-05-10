@@ -9,6 +9,10 @@ sub process_tree {
     # Empty sentences are not allowed in CoNLL-U.
     return if !@nodes;
 
+    my $bundle_id = $tree->bundle->id;
+    my $zone = $tree->zone;
+    say "# sent_id $bundle_id" . ($zone eq 'und' ? '' : "/$zone");
+
     my $comment = $tree->misc;
     if (length $comment){
         chomp $comment;

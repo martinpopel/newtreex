@@ -1,6 +1,6 @@
 package Udapi::Core::Reader;
 use Udapi::Core::Common;
-#extends 'Udapi::Core::Block';
+extends 'Udapi::Core::Block';
 
 has_ro zone => (
   default => 'keep',
@@ -38,23 +38,23 @@ sub process_document {
     if ($self->_buffer) {
         $bundle = @orig_bundles ? shift @orig_bundles : $doc->create_bundle();
         $bundleNo++;
-        $bundle->add_tree($root);
+        $bundle->add_tree($self->_buffer);
         $self->_set_buffer(undef);
     }
 
-    while (my $root = $self->read_tree()){
+    while (my $root = $self->read_tree($doc)){
         my $add_to_the_last_bundle = 0;
 
         my $tree_id = $root->id;
         if (defined $tree_id) {
-            my ($bundle_id, $zone) = split /\//, $tree_id; # TODO: zone separator is "/"???
+            my ($bundle_id, $zone) = split /\//, $tree_id;
             if (defined $zone){
                 confess "'$zone' is not a valid zone name (from tree_id='$tree_id')"
                     if $zone !~ /^[a-z-]+(_[A-Za-z0-9-])?$/;
                 $root->_set_zone($zone);
             }
             $add_to_the_last_bundle = 1 if $bundle_id eq $last_bundle_id;
-            $last_bundle_id = $bundle_id
+            $last_bundle_id = $bundle_id;
             $root->set_id(undef);
         }
 
@@ -70,7 +70,15 @@ sub process_document {
                 return;
             }
 
-            $bundle = @orig_bundles ? shift @orig_bundles : $doc->create_bundle();
+            if (@orig_bundles){
+                $bundle = shift @orig_bundles;
+                if ($last_bundle_id && $last_bundle_id ne $bundle->id){
+                    warn 'Mismatch in bundle IDs: '.$bundle->id. " vs. $last_bundle_id. Keeping the former one.";
+                }
+            } else {
+                $bundle = $doc->create_bundle();
+                $bundle->set_id($last_bundle_id);
+            }
             $bundleNo++;
         }
 
