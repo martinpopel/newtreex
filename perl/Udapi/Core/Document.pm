@@ -24,6 +24,34 @@ sub create_bundle {
     return $bundle;
 }
 
+# Based on $root->id the tree is added either to the last existing bundle or to a new bundle.
+# $root->id should contain "$bundle_id/$zone".
+# The "/$zone" part is optional. If missing, zone='und' is used for the new tree.
+sub add_tree {
+    my ($self, $root) = @_;
+    my $add_to_the_last_bundle = 1;
+    my $tree_id = $root->id;
+    if (!defined $tree_id) {
+        $self->create_bundle()->add_tree($root);
+    }
+    else {
+        my ($bundle_id, $zone) = split /\//, $tree_id;
+        if (defined $zone){
+            confess "'$zone' is not a valid zone name (from tree_id='$tree_id')"
+                if $zone !~ /^[a-z-]+(_[A-Za-z0-9-])?$/;
+            $root->_set_zone($zone);
+        }
+        my $last_bundle = $self->{_bundles}[-1];
+        if (!$last_bundle || $last_bundle->id ne $bundle_id){
+            $last_bundle = $self->create_bundle();
+            $last_bundle->set_id($bundle_id);
+        }
+        $root->set_id(undef);
+        $last_bundle->add_tree($root);
+    }
+    return;
+}
+
 my ($ORD, $ROOT, $PARENT, $FIRSTCHILD, $NEXTSIBLING, $MISC) = (0..5);
 my $DESCENDANTS = 6;
 
@@ -35,7 +63,7 @@ sub _read_conllu_tree_from_fh {
     my $root = Udapi::Core::Node::Root->new();
     my @nodes = ($root);
     my @parents = (0);
-    my ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc );
+    my ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc);
     my $comment = '';
 
     LINE:
@@ -43,7 +71,11 @@ sub _read_conllu_tree_from_fh {
         chomp $line;
         last LINE if $line eq '';
         if ($line =~ s/^#// ){
-            $comment = $comment . $line . "\n";
+            if ($line =~ /^\s*sent_id\s+(\S+)/) {
+                $root->set_id($1);
+            } else {
+                $comment = $comment . $line . "\n";
+            }
         } else {
             ( $id, $form, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc ) = split /\t/, $line;
             if (index($id, '-', 1) >=0){
