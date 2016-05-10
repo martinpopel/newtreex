@@ -1,7 +1,9 @@
 package cz.ufal.udapi.core.impl;
 
+import cz.ufal.udapi.core.Bundle;
 import cz.ufal.udapi.core.NLPTree;
 import cz.ufal.udapi.core.Node;
+import cz.ufal.udapi.exception.TreexException;
 
 import java.util.*;
 
@@ -14,6 +16,7 @@ public class DefaultNode implements Node {
 
     private final int id;
     private int ord = -1;
+    private boolean isRemoved;
 
     private String form;
     private String lemma;
@@ -25,14 +28,15 @@ public class DefaultNode implements Node {
     private String deps;
     private String misc;
 
-    private final List<Node> children = new ArrayList<>(0);
+    private Optional<Node> firstChild = Optional.empty();
+    private Optional<Node> nextSibling = Optional.empty();
 
     private Optional<Node> parent;
 
     public DefaultNode(NLPTree tree, Node parent) {
         this.parent = Optional.ofNullable(parent);
         this.tree = tree;
-        this.id = tree.getDocument().generate_new_id();
+        this.id = tree.getDocument().getUniqueNodeId();
     }
 
     public DefaultNode(NLPTree tree) {
@@ -41,24 +45,91 @@ public class DefaultNode implements Node {
 
     @Override
     public void remove() {
-        getParent().ifPresent(node -> node.removeChild(this));
-        getTree().normalizeOrder();
+        remove(EnumSet.noneOf(Node.RemoveArg.class));
+    }
+
+    private String getAddress() {
+        return getTree().getBundle().getId() + "-" + getOrd();
     }
 
     @Override
-    public void removeChild(Node child) {
-        children.remove(child);
+    public void remove(EnumSet<Node.RemoveArg> args) {
+        //already removed
+        if (isRemoved) return;
+
+        if (isRoot()) {
+            throw new TreexException("Tree root cannot be removed using remove().");
+        }
+
+        Optional<Node> parent = getParent();
+        if (args.contains(RemoveArg.REHANG)) {
+            for (Node child : getChildren()) {
+                child.setParent(parent.get());
+            }
+        }
+
+        if (args.contains(RemoveArg.WARN)) {
+            System.err.println(getAddress() + " is being removed by remove, but it has (unexpected) children");
+        }
+
+        List<Node> toRemove = getDescendantsF();
+        toRemove.add(this);
+        if (!toRemove.isEmpty()) {
+            List<Node> allNodes = tree.getDescendants();
+            allNodes.removeAll(toRemove);
+
+            //update ord of the nodes in the tree
+            getTree().normalizeOrder();
+        }
+
+        //Disconnect the node from its parent (& siblings) and delete all attributes
+        Optional<Node> node = parent.get().getFirstChild();
+        if (node.isPresent() && node.get() == this) {
+            ((DefaultNode)parent.get()).setFirstChild(this.getNextSibling());
+        } else {
+            while (node.isPresent() && (!node.get().getNextSibling().isPresent() || this != node.get().getNextSibling().get())) {
+                node = node.get().getNextSibling();
+            }
+            if (node.isPresent()) {
+                node.get().setNextSibling(getNextSibling());
+            }
+        }
+
+        for (Node removedNode : toRemove) {
+            ((DefaultNode)removedNode).isRemoved = true;
+        }
     }
 
     @Override
-    public void addChild(Node childToAdd) {
-        children.add(childToAdd);
+    public NLPTree getTree() {
+        return tree;
     }
 
     @Override
-    public List<Node> getReferencingNodes() {
-        //TODO: implement
-        return null;
+    public Bundle getBundle() {
+        return tree.getBundle();
+    }
+
+    public List<Node> getDescendantsF() {
+
+        if (isRoot()) return Collections.unmodifiableList(tree.getDescendants());
+
+        if (!getFirstChild().isPresent()) {
+            return new ArrayList<>();
+        }
+
+        Deque<Node> stack = new ArrayDeque<>();
+        stack.push(getFirstChild().get());
+
+        List<Node> descs = new ArrayList<>();
+        while (!stack.isEmpty()) {
+            Node node = stack.pop();
+            descs.add(node);
+            node.getNextSibling().ifPresent(next -> stack.push(next));
+            node.getFirstChild().ifPresent(first -> stack.push(first));
+        }
+
+        return descs;
     }
 
     @Override
@@ -69,23 +140,43 @@ public class DefaultNode implements Node {
     }
 
     protected Node createNode() {
-        return new DefaultNode(tree);
+        DefaultNode newNode = new DefaultNode(tree);
+        //if (isRoot())
+        tree.getDescendants().add(newNode);
+        newNode.ord = tree.getDescendants().size();
+        return newNode;
     }
 
-    protected NLPTree getTree() {
-        return tree;
+    @Override
+    public List<Node> getChildren(EnumSet<ChildrenArg> args) {
+
+        List<Node> result = new ArrayList<>();
+
+        Optional<Node> child = getFirstChild();
+        while (child.isPresent()) {
+            result.add(child.get());
+            child = child.get().getNextSibling();
+        }
+
+        if (!args.isEmpty()) {
+            if (args.contains(ChildrenArg.ADD_SELF)) {
+                result.add(this);
+            }
+            if (args.contains(ChildrenArg.FIRST_ONLY)) {
+                return getFirstLastNode(result, true);
+            }
+            if (args.contains(ChildrenArg.LAST_ONLY)) {
+                return getFirstLastNode(result, false);
+            }
+        }
+
+        result.sort((o1, o2) -> o1.getOrd() - o2.getOrd());
+        return result;
     }
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>(children);
-    }
-
-    @Override
-    public List<Node> getOrderedChildren() {
-        List<Node> children = getChildren();
-        children.sort((o1, o2) -> o1.getOrd() - o2.getOrd());
-        return children;
+        return getChildren(EnumSet.noneOf(Node.ChildrenArg.class));
     }
 
     @Override
@@ -93,24 +184,55 @@ public class DefaultNode implements Node {
         return parent;
     }
 
+    public void setParent(Node parent) {
+        setParent(parent, false);
+    }
+
     @Override
-    public void setParent(Node node, boolean ...skipCyles) {
+    public void setParent(Node parent, boolean skipCycles) {
 
-        //check cycle
-        if (skipCyles.length == 1 && skipCyles[0] == true &&
-                (this.equals(node) || node.isDescendantOf(this))) {
-            //skip cycle
-            return;
+        if (null == parent) {
+            throw new TreexException("Not allowed to set null parent.");
         }
 
-        //fix children of my parent
-        if (parent.isPresent()) {
-            parent.get().removeChild(this);
+        //check cycles
+        if (this == parent) {
+            if (skipCycles) return;
+            throw new TreexException("Bundle " + tree.getBundle().getId() + ": Attempt to set parent of " + ord
+                    + " to itself (cycle).");
+        }
+        if (firstChild.isPresent()) {
+            Optional<Node> grandpa = parent.getParent();
+            while (grandpa.isPresent()) {
+                if (grandpa.get() == this) {
+                    if (skipCycles) return;
+                    throw new TreexException("Bundle " + tree.getBundle().getId() + ": Attempt to set parent of " + ord
+                            + " to the node "+parent.getId() + ", which would lead to a cycle.");
+                }
+                grandpa = grandpa.get().getParent();
+            }
         }
 
-        //add self as the last child of my new parent
-        this.parent = Optional.of(node);
-        node.addChild(this);
+        //Disconnect the node from its original parent
+        Optional<Node> origParent = getParent();
+        if (origParent.isPresent()) {
+            Optional<Node> node = origParent.get().getFirstChild();
+            if (node.isPresent() && this == node.get()) {
+                ((DefaultNode)origParent.get()).setFirstChild(nextSibling);
+            } else {
+                while (node.isPresent() && (!node.get().getNextSibling().isPresent() || this != node.get().getNextSibling().get())) {
+                    node = node.get().getNextSibling();
+                }
+                if (node.isPresent()) {
+                    node.get().setNextSibling(nextSibling);
+                }
+            }
+        }
+
+        //Attach the node to its parent and linked list of siblings.
+        this.parent = Optional.of(parent);
+        this.nextSibling = parent.getFirstChild();
+        ((DefaultNode)parent).setFirstChild(Optional.of(this));
     }
 
     @Override
@@ -120,29 +242,90 @@ public class DefaultNode implements Node {
 
     @Override
     public boolean isRoot() {
-        return tree.getRoot().equals(this);
+        return tree.getRoot() == this;
     }
 
     @Override
-    public boolean isLeaf() {
-        return 0 == children.size();
+    public List<Node> getDescendants(EnumSet<Node.DescendantsArg> args, Optional<Node> except) {
+
+        if (args.isEmpty()) {
+            if (isRoot()) {
+                return Collections.unmodifiableList(tree.getDescendants());
+            } else {
+                return getDescendantsInner(args, except);
+            }
+        }
+
+        return getDescendantsInner(args, except);
     }
 
     @Override
     public List<Node> getDescendants() {
-        List<Node> descendants = new ArrayList<>();
-        for (Node child : children) {
-            descendants.add(child);
-            descendants.addAll(child.getDescendants());
-        }
-        return descendants;
+        return getDescendants(EnumSet.noneOf(Node.DescendantsArg.class), Optional.empty());
     }
 
-    @Override
-    public List<Node> getOrderedDescendants() {
-        List<Node> descendants = getDescendants();
-        descendants.sort((o1, o2) -> o1.getOrd() - o2.getOrd());
-        return descendants;
+    private List<Node> getDescendantsInner(EnumSet<Node.DescendantsArg> args, Optional<Node> except) {
+        if (isRoot()) {
+            if (args.contains(DescendantsArg.FIRST_ONLY)) {
+                if (args.contains(DescendantsArg.ADD_SELF)) {
+                    return Arrays.asList(this);
+                }
+                return Arrays.asList(tree.getDescendants().get(0));
+            }
+        }
+
+        if (except.isPresent() && this == except.get()) {
+            return new ArrayList<>();
+        }
+
+        List<Node> descs = new ArrayList<>();
+        Deque<Node> stack = new ArrayDeque<>();
+        getFirstChild().ifPresent(first -> stack.push(first));
+        Node node;
+        while (!stack.isEmpty()) {
+            node = stack.pop();
+            node.getNextSibling().ifPresent(next -> stack.push(next));
+            if (except.isPresent() && except.get() == node) {
+                continue;
+            }
+            descs.add(node);
+            node.getFirstChild().ifPresent(first -> stack.push(first));
+        }
+
+        if (args.contains(DescendantsArg.ADD_SELF)) {
+            descs.add(this);
+        }
+
+        if (args.contains(DescendantsArg.FIRST_ONLY)) {
+            return getFirstLastNode(descs, true);
+        }
+
+        if (args.contains(DescendantsArg.LAST_ONLY)) {
+            return getFirstLastNode(descs, false);
+        }
+
+        descs.sort((o1, o2) -> o1.getOrd() - o2.getOrd());
+        return descs;
+    }
+
+    private List<Node> getFirstLastNode(List<Node> descs, boolean first) {
+        if (!descs.isEmpty()) {
+            Node firstLast = descs.get(0);
+            for (int i = 1; i < descs.size(); i++) {
+                Node next = descs.get(i);
+                if (first) {
+                    if (next.getOrd() < firstLast.getOrd()) {
+                        firstLast = next;
+                    }
+                } else {
+                    if (next.getOrd() > firstLast.getOrd()) {
+                        firstLast = next;
+                    }
+                }
+            }
+            return Arrays.asList(firstLast);
+        }
+        return new ArrayList<>();
     }
 
     @Override
@@ -170,65 +353,49 @@ public class DefaultNode implements Node {
 
     @Override
     public Optional<Node> getNextSibling() {
-        if (parent.isPresent()) {
-            List<Node> parentChildren = parent.get().getChildren();
+        return nextSibling;
+    }
 
-            int index = parentChildren.indexOf(this);
-            if (index != -1 && index < parentChildren.size() - 1) {
-                return Optional.of(parentChildren.get(index + 1));
-            }
-        }
-
-        return Optional.empty();
+    @Override
+    public void setNextSibling(Optional<Node> newNextSibling) {
+        this.nextSibling = newNextSibling;
     }
 
     @Override
     public Optional<Node> getNextNode() {
-
-        int myOrd = getOrd();
-
-        int nextNodeOrd = -1;
-        Optional<Node> nextNode = Optional.empty();
-        //find closest higher ord
-        for (Node descendant : getRoot().getDescendants()) {
-            int descendantOrd = descendant.getOrd();
-            if (descendantOrd > myOrd) {
-                if (!nextNode.isPresent() || descendantOrd < nextNodeOrd) {
-                    nextNodeOrd = descendantOrd;
-                    nextNode = Optional.of(descendant);
-                }
-            }
+        int ord = getOrd();
+        List<Node> rootDescendants = tree.getDescendants();
+        if (ord == rootDescendants.size()) {
+            return Optional.empty();
         }
-
-        return nextNode;
+        return Optional.of(rootDescendants.get(ord));
     }
 
     @Override
     public Optional<Node> getPrevNode() {
 
-        int myOrd = getOrd();
-
-        int prevNodeOrd = -1;
-        Optional<Node> prevNode = Optional.empty();
-        //find closest lower ord
-        for (Node descendant : getRoot().getDescendants()) {
-            int descendantOrd = descendant.getOrd();
-            if (descendantOrd < myOrd) {
-                if (!prevNode.isPresent() || descendantOrd > prevNodeOrd) {
-                    prevNodeOrd = descendantOrd;
-                    prevNode = Optional.of(descendant);
-                }
-            }
+        int ord = getOrd() - 1;
+        if (ord < 0) {
+            return Optional.empty();
         }
 
-        return prevNode;
+        if (0 == ord) {
+            return Optional.of(getRoot());
+        }
+
+        return Optional.of(tree.getDescendants().get(ord-1));
     }
 
     @Override
     public boolean isDescendantOf(Node node) {
+
+        if (!node.getFirstChild().isPresent()) {
+            return false;
+        }
+
         Optional<Node> pathParent = parent;
         while (pathParent.isPresent()) {
-            if (pathParent.get().equals(node)) {
+            if (pathParent.get() == node) {
                 return true;
             } else {
                 pathParent = pathParent.get().getParent();
@@ -237,124 +404,213 @@ public class DefaultNode implements Node {
         return false;
     }
 
-    public void shiftAfterNode(Node node, boolean withoutChildren) {
-        if (this.equals(node)) return;
-        if (node.isDescendantOf(this)) return;
-
-        shiftToNode(node, true, withoutChildren);
+    public void shiftAfterNode(Node node) {
+        shiftAfterNode(node, EnumSet.noneOf(ShiftArg.class));
     }
 
-    public void shiftBeforeNode(Node node, boolean withoutChildren) {
-        if (this.equals(node)) return;
-        if (node.isDescendantOf(this)) return;
-
-        shiftToNode(node, false, withoutChildren);
+    public void shiftAfterNode(Node node, EnumSet<ShiftArg> args) {
+        shiftToNode(node, true, false, args);
     }
 
-    public void shiftAfterSubtree(Node node, boolean withoutChildren) {
-        //get last descendants according to ord
-        List<Node> descendants = node.getDescendants();
-        descendants.add(node);
-        descendants.remove(this);
-        descendants.sort((o1, o2) -> o1.getOrd() - o2.getOrd());
+    public void shiftBeforeNode(Node node) {
+        shiftBeforeNode(node, EnumSet.noneOf(ShiftArg.class));
+    }
 
+    public void shiftBeforeNode(Node node, EnumSet<ShiftArg> args) {
+        shiftToNode(node, false, false, args);
+    }
 
-        if (0 == descendants.size()) {
-            //nothing to do
+    public void shiftBeforeSubtree(Node node) {
+        shiftBeforeSubtree(node, EnumSet.noneOf(ShiftArg.class));
+    }
+
+    public void shiftBeforeSubtree(Node node, EnumSet<ShiftArg> args) {
+        shiftToNode(node, false, true, args);
+    }
+
+    public void shiftAfterSubtree(Node node) {
+        shiftAfterSubtree(node, EnumSet.noneOf(ShiftArg.class));
+    }
+
+    public void shiftAfterSubtree(Node node, EnumSet<ShiftArg> args) {
+        shiftToNode(node, true, true, args);
+    }
+
+    private void shiftToNode(Node referenceNode, boolean after, boolean subtree, EnumSet<ShiftArg> args) {
+
+        //node.shiftAfterNode(node) should result in no action.
+        if (!subtree && this == referenceNode) {
             return;
-        } else {
-            Node lastDescendant = descendants.get(descendants.size()-1);
-            shiftToNode(lastDescendant, true, withoutChildren);
-        }
-    }
-
-    public void shiftBeforeSubtree(Node node, boolean withoutChildren) {
-        //get last descendants according to ord
-        List<Node> descendants = node.getDescendants();
-        descendants.add(node);
-        descendants.remove(this);
-        descendants.sort((o1, o2) -> o1.getOrd() - o2.getOrd());
-
-        if (0 == descendants.size()) {
-            //nothing to do
-            return;
-        } else {
-            Node firstDescendant = descendants.get(0);
-            shiftToNode(firstDescendant, false, withoutChildren);
-        }
-    }
-
-    private void shiftToNode(Node node, boolean after, boolean withoutChildren) {
-        List<Node> allNodes = getRoot().getDescendants();
-
-        int maxOrd = 10000;
-        for (Node descendant : allNodes) {
-            if (descendant.getOrd() == -1) {
-                descendant.setOrd(maxOrd++);
-            }
         }
 
-        List<Node> nodesToMove;
+        boolean withoutChildren = args.contains(ShiftArg.WITHOUT_CHILDREN);
+        boolean skipIfDescendant = args.contains(ShiftArg.SKIP_IF_DESCENDANT);
 
-        if (withoutChildren) {
-            nodesToMove = new ArrayList<>(1);
-            nodesToMove.add(this);
-        } else {
-            nodesToMove = this.getDescendants();
-            nodesToMove.add(this);
-            nodesToMove.sort((o1, o2) -> o1.getOrd() - o2.getOrd());
+        if (!firstChild.isPresent()) {
+            withoutChildren = true;
         }
-        //order them
-        allNodes.sort((o1, o2) -> o1.getOrd() - o2.getOrd());
 
-        Set<Node> isMoving = new HashSet<>(nodesToMove);
-
-        int counter = 1;
-        boolean nodesMoved = false;
-
-        for (Node aNode : allNodes) {
-            if (isMoving.contains(aNode)) {
-                //skip nodes which are moving
-                continue;
+        if (!withoutChildren && referenceNode.isDescendantOf(this)) {
+            if (skipIfDescendant) {
+                return;
             }
 
-            if (after) {
-                aNode.setOrd(counter++);
-            }
+            System.err.println("Node " + referenceNode + " is a descendant of " + this
+                    + ". Maybe you have forgotten ShiftArg.WITHOUT_CHILDREN.");
+        }
 
-            if (aNode.equals(node)) {
-                for (Node nodeToMove : nodesToMove) {
-                    (nodeToMove).setOrd(counter++);
+        //For shiftSubtree* methods, we need to find the real reference node first.
+        if (subtree) {
+            if (withoutChildren) {
+                Node newRef = null;
+                if (after) {
+
+                    if (this != referenceNode) {
+                        newRef = referenceNode;
+                    }
+
+                    for (Node node : ((DefaultNode)referenceNode).getDescendantsF()) {
+                        if (this == node) continue;
+                        if (null == newRef || node.getOrd() > newRef.getOrd()) {
+                            newRef = node;
+                        }
+                    }
+                } else {
+                    if (this != referenceNode) {
+                        newRef = referenceNode;
+                    }
+
+                    for (Node node : ((DefaultNode)referenceNode).getDescendantsF()) {
+                        if (this == node) continue;
+                        if (null == newRef || node.getOrd() < newRef.getOrd()) {
+                            newRef = node;
+                        }
+                    }
                 }
-                nodesMoved = true;
-            }
+                if (null == newRef) {
+                    return;
+                }
+                referenceNode = newRef;
+            } else {
+                //$reference_node, 1, !$after, $after, $self
+                EnumSet<DescendantsArg> descendantsArgs = EnumSet.of(DescendantsArg.ADD_SELF);
+                if (after) {
+                    descendantsArgs.add(DescendantsArg.LAST_ONLY);
+                } else {
+                    descendantsArgs.add(DescendantsArg.FIRST_ONLY);
+                }
 
-            if (!after) {
-                aNode.setOrd(counter++);
+                List<Node> descendants = referenceNode.getDescendants(descendantsArgs, Optional.of(this));
+                referenceNode = descendants.get(0);
             }
         }
 
-        if (!nodesMoved) {
-            for (Node nodeToMove : nodesToMove) {
-                nodeToMove.setOrd(counter++);
-            }
+        //convert shiftAfter* to shiftBefore*
+        List<Node> allNodes = tree.getDescendants();
+        int referenceOrd = referenceNode.getOrd();
+        if (after) {
+            referenceOrd++;
         }
-    }
 
-    @Override
-    public int getDepth() {
-        int depth = 0;
-        Optional<Node> pathParent = parent;
-        while (pathParent.isPresent()) {
-            depth++;
-            pathParent = parent.get().getParent();
+        //without children means moving just one node, which is easier
+        if (withoutChildren) {
+            int myOrd = getOrd();
+            if (referenceOrd > myOrd+1) {
+                for (int newOrd = myOrd; newOrd < referenceOrd-1; newOrd++) {
+                    Node ordNode = allNodes.get(newOrd);
+                    allNodes.set(newOrd-1, ordNode);
+                    ordNode.setOrd(newOrd);
+                }
+                allNodes.set(referenceOrd-2, this);
+                setOrd(referenceOrd-1);
+            } else if (referenceOrd < myOrd) {
+                for (int newOrd = myOrd; newOrd > referenceOrd; newOrd--) {
+                    Node ordNode = allNodes.get(newOrd-2);
+                    allNodes.set(newOrd-1, ordNode);
+                    ordNode.setOrd(newOrd);
+                }
+                allNodes.set(referenceOrd-1, this);
+                setOrd(referenceOrd);
+            }
+            return;
         }
-        return depth;
+
+        //which nodes are to be moved?
+        //this and all its descendants
+        List<Node> nodesToMove = getDescendants(EnumSet.of(DescendantsArg.ADD_SELF), Optional.empty());
+        int firstOrd = nodesToMove.get(0).getOrd();
+        int lastOrd = nodesToMove.get(nodesToMove.size()-1).getOrd();
+
+        //TODO: optimization in case of no "gaps"
+
+        //First, move a node from position sourceOrd to position targetOrd RIGH-ward.
+        //sourceOrd iterates decreasingly over nodes which are not moving.
+        int targetOrd = lastOrd;
+        int sourceOrd = lastOrd-1;
+        int moveOrd = nodesToMove.size()-2;
+
+        RIGHTSWIPE:
+        while(sourceOrd >= referenceOrd) {
+            while (moveOrd >= 0 && allNodes.get(sourceOrd-1) == nodesToMove.get(moveOrd)) {
+                sourceOrd--;
+                moveOrd--;
+                if (sourceOrd < referenceOrd) {
+                    break RIGHTSWIPE;
+                }
+            }
+            Node ordNode = allNodes.get(sourceOrd-1);
+            allNodes.set(targetOrd-1, ordNode);
+            ordNode.setOrd(targetOrd);
+            targetOrd--;
+            sourceOrd--;
+        }
+
+        //Second, move a node from position sourceOrd to position targetOrd LEFT-ward.
+        //sourceOrd iterates increasingly over nodes which are not moving.
+        targetOrd = firstOrd;
+        sourceOrd = firstOrd+1;
+        moveOrd = 1;
+
+        LEFTSWIPE:
+        while (sourceOrd < referenceOrd) {
+            while (moveOrd < nodesToMove.size() && allNodes.get(sourceOrd-1) == nodesToMove.get(moveOrd)) {
+                sourceOrd++;
+                moveOrd++;
+                if (sourceOrd >= referenceOrd) {
+                    break LEFTSWIPE;
+                }
+            }
+            Node ordNode = allNodes.get(sourceOrd-1);
+            allNodes.set(targetOrd-1, ordNode);
+            ordNode.setOrd(targetOrd);
+            targetOrd++;
+            sourceOrd++;
+        }
+
+        //Third, move nodesToMove to targetOrd RIGHT-ward
+        if (referenceOrd < firstOrd) {
+            targetOrd = referenceOrd;
+        }
+        for (Node node : nodesToMove) {
+            allNodes.set(targetOrd-1, node);
+            node.setOrd(targetOrd++);
+        }
+
     }
 
     @Override
     public boolean precedes(Node anotherNode) {
         return ord < anotherNode.getOrd();
+    }
+
+    @Override
+    public Optional<Node> getFirstChild() {
+        return firstChild;
+    }
+
+
+    void setFirstChild(Optional<Node> newFirstChild) {
+        this.firstChild = newFirstChild;
     }
 
     @Override
@@ -454,5 +710,10 @@ public class DefaultNode implements Node {
 
     public void setMisc(String misc) {
         this.misc = misc;
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultNode[ord='"+ord+"', form='"+form+"']";
     }
 }

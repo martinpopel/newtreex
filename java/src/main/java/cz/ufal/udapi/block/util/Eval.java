@@ -4,9 +4,7 @@ import cz.ufal.udapi.core.*;
 import cz.ufal.udapi.exception.TreexException;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -14,10 +12,16 @@ import java.util.Map;
  *
  * Example usage:
  * Util::Eval node="println doc"
+ *
+ * cat UD_Czech/cs-ud-dev.conllu | udapi.groovy Read::CoNLLU Util::Eval
+ *     node='if (c.self.upos == "ADP" && !c.self.precedes(c.self.parent.get()))
+ *     {println c.tree.root.getDescendants().collect{String val = "";
+ *     if (it == c.self) { val = "***" } else if (it == c.self.parent.get())
+ *     {val = "+++"}; val += it.form}.join(" ")}' | head
  */
 public class Eval extends Block {
 
-    Method evalMethod;
+    private final Method evalMethod;
 
     private static final String DOC = "doc";
     private static final String BUNDLE = "bundle";
@@ -74,9 +78,9 @@ public class Eval extends Block {
         }
 
         if (getParams().containsKey(TREE) || getParams().containsKey(NODE)) {
-            for (Sentence sentence : bundle.getSentences()) {
-                if (shouldProcessTree(sentence.getTree())) {
-                    processTree(sentence.getTree(), bundleNo);
+            for (NLPTree tree : bundle.getTrees()) {
+                if (shouldProcessTree(tree)) {
+                    processTree(tree, bundleNo);
                 }
             }
         }

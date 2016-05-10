@@ -1,6 +1,5 @@
 package cz.ufal.udapi.core;
 
-import cz.ufal.udapi.core.impl.DefaultBundle;
 import cz.ufal.udapi.core.impl.DefaultDocument;
 import cz.ufal.udapi.exception.TreexException;
 
@@ -81,8 +80,6 @@ public class Run {
 
         while (!wasLastDocument) {
             Document newDocument = new DefaultDocument();
-            Bundle bundle = new DefaultBundle(newDocument);
-            newDocument.addBundle(bundle);
 
             docNumber++;
             int blockNumber = 0;
@@ -91,7 +88,10 @@ public class Run {
                 if (!quiet) {
                     System.err.println("Applying block " + blockNumber + "/" + numberOfBlocks + " " + blockName);
                 }
-                blockInstances.get(blockName).processDocument(newDocument);
+                Block block = blockInstances.get(blockName);
+                block.beforeProcessDocument(newDocument);
+                block.processDocument(newDocument);
+                block.afterProcessDocument(newDocument);
             }
 
             //TODO:
@@ -227,9 +227,6 @@ public class Run {
     }
 
     private String[] tokenize(String scenarioString) {
-        System.out.println("scenarioString->");
-        System.out.println(scenarioString);
-        System.out.println("end scnarioString");
         List<String> tokens = new ArrayList<>();
 
         boolean insideApostrophes = false;

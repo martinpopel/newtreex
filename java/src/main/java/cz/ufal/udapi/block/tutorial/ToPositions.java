@@ -12,7 +12,7 @@ import java.util.Map;
  * <code>
  *     for a in *&#47;*dev*.conllu; do
  *         printf '%50s ' $a;
- *         cat $a | udapi.groovy Read::CoNLLU Tutorial::Adpositions;
+ *         cat $a | udapi.pl Read::CoNLLU Tutorial::ToPositions;
  *     done | tee ~/results.txt
  *
  *     # https://lindat.mff.cuni.cz/services/pmltq/#!/treebank/ud_cs/help
@@ -24,25 +24,17 @@ import java.util.Map;
  *     ]
  * </code>
  */
-public class Adpositions extends Block {
-
-    private int prepositions;
-    private int postpositions;
+public class ToPositions extends Block {
 
     private static final String ADP = "ADP";
 
     @Override
     public void processNode(Node node, int bundleNo) {
-        // TODO: Your task: distinguish prepositions and postpositions
-        if (ADP.equals(node.getUpos())) {
-            prepositions++;
+        if (node.getParent().isPresent()) {
+            if (ADP.equals(node.getUpos()) && node.precedes(node.getParent().get())) {
+                node.shiftAfterSubtree(node.getParent().get());
+            }
         }
     }
 
-    @Override
-    public void processEnd() {
-        int all = prepositions + postpositions;
-        System.out.printf("prepositions %5.1f%%, postpositions %5.1f%%\n",
-                prepositions*100 / (float)all, postpositions*100 / (float)all);
-    }
 }

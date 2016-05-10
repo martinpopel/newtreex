@@ -1,6 +1,8 @@
 package cz.ufal.udapi.core;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -8,29 +10,26 @@ import java.util.Optional;
  */
 public interface Node {
 
+    enum RemoveArg {
+        REHANG, WARN
+    }
+
+    enum ChildrenArg {
+        ADD_SELF, FIRST_ONLY, LAST_ONLY
+    }
+
+    enum DescendantsArg {
+        ADD_SELF, FIRST_ONLY, LAST_ONLY
+    }
+
+    enum ShiftArg {
+        WITHOUT_CHILDREN, SKIP_IF_DESCENDANT
+    }
+
     /**
      * Remove node from the tree. Only non-root nodes can be removed.
      */
     void remove();
-
-    /**
-     * Remove child node.
-     *
-     * @param child
-     */
-    void removeChild(Node child);
-
-    /**
-     * Add child to given node.
-     *
-     * @param childToAdd
-     */
-    void addChild(Node childToAdd);
-
-    /**
-     * Return all nodes that have a reference of the given type (e.g. 'alignment', 'a/lex.rf') to this node.
-     */
-    List<Node> getReferencingNodes();
 
     /**
      * Creates new child of the given node and returns it.
@@ -40,7 +39,7 @@ public interface Node {
 
     List<Node> getChildren();
 
-    List<Node> getOrderedChildren();
+    List<Node> getChildren(EnumSet<ChildrenArg> args);
 
     /**
      * Returns parent node.
@@ -48,17 +47,17 @@ public interface Node {
      */
     Optional<Node> getParent();
 
-    void setParent(Node node, boolean ...skipCycles);
+    void setParent(Node node);
+
+    void setParent(Node node, boolean skipCycles);
 
     Node getRoot();
 
     boolean isRoot();
 
-    boolean isLeaf();
-
     List<Node> getDescendants();
 
-    List<Node> getOrderedDescendants();
+    List<Node> getDescendants(EnumSet<DescendantsArg> args, Optional<Node> except);
 
     List<Node> getSiblings();
 
@@ -66,13 +65,13 @@ public interface Node {
 
     Optional<Node> getNextSibling();
 
+    void setNextSibling(Optional<Node> newNextSibling);
+
     Optional<Node> getPrevNode();
 
     Optional<Node> getNextNode();
 
     boolean isDescendantOf(Node node);
-
-    int getDepth();
 
     int getId();
 
@@ -116,13 +115,29 @@ public interface Node {
 
     void setOrd(int ord);
 
-    void shiftAfterNode(Node node, boolean withoutChildren);
+    void shiftAfterNode(Node node);
 
-    void shiftBeforeNode(Node node, boolean withoutChildren);
+    void shiftAfterNode(Node node, EnumSet<ShiftArg> args);
 
-    void shiftAfterSubtree(Node node, boolean withoutChildren);
+    void shiftBeforeNode(Node node);
 
-    void shiftBeforeSubtree(Node node, boolean withoutChildren);
+    void shiftBeforeNode(Node node, EnumSet<ShiftArg> args);
+
+    void shiftAfterSubtree(Node node);
+
+    void shiftAfterSubtree(Node node, EnumSet<ShiftArg> args);
+
+    void shiftBeforeSubtree(Node node);
+
+    void shiftBeforeSubtree(Node node, EnumSet<ShiftArg> args);
 
     boolean precedes(Node anotherNode);
+
+    Optional<Node> getFirstChild();
+
+    void remove(EnumSet<RemoveArg> args);
+
+    NLPTree getTree();
+
+    Bundle getBundle();
 }

@@ -4,6 +4,8 @@ import cz.ufal.udapi.core.Block;
 import cz.ufal.udapi.core.NLPTree;
 import cz.ufal.udapi.exception.TreexException;
 
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -20,15 +22,25 @@ public class Sentences extends Block {
 
     public static final String FATAL = "fatal";
 
+    private final PrintStream ps;
+
     public Sentences(Map<String, String> params) {
         super(params);
+        if (!params.containsKey(IF_MISSING)) {
+            params.put(IF_MISSING, DETOKENIZE);
+        }
+
+        try {
+            ps = new PrintStream(System.out, true, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new TreexException(e);
+        }
     }
 
     @Override
     public void processTree(NLPTree tree, int bundleNo) {
 
-        //TODO: select correct sentence or refactor
-        String sentence = tree.getBundle().getSentences().get(0).getText();
+        String sentence = tree.getSentence();
         if (null == sentence) {
             if (getParams().containsKey(IF_MISSING)) {
                 String ifMissing = getParams().get(IF_MISSING);
@@ -47,7 +59,7 @@ public class Sentences extends Block {
             }
         }
 
-        System.out.println(sentence);
+        ps.println(sentence);
     }
 
 }
