@@ -24,6 +24,13 @@ class Bundle(object):
         else:
             raise Exception("More than one tree with zone="+zone+" in the bundle")
         
+    def create_tree(self,zone=None):
 
+        root = Node()
+        root.ord = 0
+        root._aux['descendants'] = [] 
 
+        root.set_zone(zone)
+        self.trees.append(root)
+        return root
 

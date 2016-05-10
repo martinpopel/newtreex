@@ -14,10 +14,27 @@ class Conllu(Block):
         fh = sys.stdout
 
         for bundle in document.bundles:
+
+            tree_number = 0
+
             for root in bundle:
                 # Skip empty sentences (no nodes, just a comment). They are not allowed in CoNLL-U.                                                                               
+                tree_number += 1
+                if tree_number > 1:
+                    fh.write("#UDAPI_BUNDLE_CONTINUES\n")
+
+
                 if root.descendants():
-                    fh.write(root._aux['comment'])
+
+                    try: # undefined comment allowed
+                        fh.write(root._aux['comment'])
+                    except:
+                        pass
+
+                    try:
+                        fh.write('#UDAPI_ZONE=' + root.zone()+"\n")
+                    except:
+                        pass
 
                     for node in root.descendants():
 

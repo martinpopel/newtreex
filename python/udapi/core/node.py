@@ -231,6 +231,8 @@ class Node(object):
 
     def zone(self):
         return self._aux['zone']
+        # TODO: applicable only for root, other nodes must climb up first
 
     def set_zone(self,zone):
         self._aux['zone'] = zone
+        # TODO: applicable only for root, other nodes must climb up first

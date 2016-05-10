@@ -21,6 +21,11 @@ class Document(object):
     def __iter__(self):
         return iter(self.bundles)
 
+    def create_bundle(self):
+        bundle = Bundle()
+        self.bundles.append(bundle)
+        return bundle
+
     def load(self,args):
 
         fh = None
@@ -49,7 +54,7 @@ class Document(object):
                 if not nodes:
                     bundle = Bundle()
                     self.bundles.append(bundle)
-                    root = Node()
+                    root = Node() # TODO: nahradit bundle.create_tree, az bude odladene
                     root.ord = 0
                     root._aux['comment'] = comment # TODO: ulozit nekam poradne
                     nodes = [root]
@@ -86,7 +91,7 @@ class Document(object):
                 comment = ''
 
 
-    def store(self,args):
+    def storex(self,args):
 
         try:
             fh = args['filehandle']
@@ -120,3 +125,9 @@ class Document(object):
                     fh.write("\n")
 
         fh.close()
+
+    def store(self,args = {}):  # TODO: to je otazka, jestli by ten ukladaci kod nemel byt spis v Document, at nema core zavislost na blocich
+
+        from udapi.block.write.conllu import Conllu
+        writer = Conllu()
+        writer.process_document(self)
