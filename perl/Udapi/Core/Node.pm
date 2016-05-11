@@ -488,27 +488,4 @@ sub precedes {
     return $self->[$ORD] < $another_node->[$ORD];
 }
 
-sub copy_node {
-    my ($self) = @_;
-    my @new = @$self;
-    @new[$ROOT, $PARENT, $FIRSTCHILD, $NEXTSIBLING] = undef;
-    return bless \@new, ref $self;
-}
-
-sub copy_subtree {
-    my ($self) = @_;
-    my $new_self = $self->copy_node();
-
-    foreach my $child ($self->children){
-        my $new_child = $child->copy_subtree();
-
-        $new_child->set_parent($to);
-        $newself->[$PARENT] = $parent;
-        $self->[$NEXTSIBLING] = $parent->[$FIRSTCHILD];
-        $parent->[$FIRSTCHILD] = $self;
-        $self->copy_tree($from_child, $to_child);
-    }
-    return;
-}
-
 1;

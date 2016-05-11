@@ -6,20 +6,9 @@ has_ro to_zone => (required=>1);
 
 sub process_tree {
     my ( $self, $root ) = @_;
-    my $bundle = $root->bundle;
-    my $new_root = $bundle->create_tree($self->to_zone);
-    $self->copy_tree($root, $new_root);
-    return;
-}
-
-sub copy_tree {
-    my ($self, $from, $to) = @_;
-    foreach my $from_child ($from->children){
-        my $to_child = $from_child->clone();
-        # we could use
-        $to_child->set_parent($to);
-        $self->copy_tree($from_child, $to_child);
-    }
+    my $new_root = $root->copy_tree();
+    $new_root->set_zone($self->to_zone);
+    $root->bundle->add_tree($new_root);
     return;
 }
 
@@ -39,6 +28,15 @@ Udapi::Block::Util::CopyTree - copy tree to another zone
 
   # on the command line
   Util::CopyTree zones=en to_zone=en_backup
+
+=head1 DESCRIPTION
+
+Note that the parameter C<to_zone> specifies just one target zone.
+So if you use C<Util::CopyTree zones=all to_zone=en_backup>
+and you have more than one zone in some bundle,
+you will get an error I<Tree with zone 'en_backup' already exists in bundle...>.
+In future, a parameter C<to_zone_regex> may be added,
+which would allow to specify a renaming pattern for copying more zones at once.
 
 =head1 AUTHOR
 

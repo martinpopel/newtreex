@@ -2,6 +2,7 @@ package Udapi::Core::Node::Root;
 use strict;
 use warnings;
 use Carp qw(confess cluck);
+use List::Util qw(any);
 
 my @ATTRS;
 my (
@@ -120,6 +121,38 @@ sub destroy {
 sub remove {
     confess 'Tree root cannot be removed using $root->remove().'
           . ' Use $bundle->remove_tree($selector) instead';
+}
+
+sub copy_tree {
+    my ($self) = @_;
+    my $new_root = _copy_subtree($self);
+    my @new_nodes = Udapi::Core::Node::_descendants($new_root);
+    foreach my $new_node ($new_root, @new_nodes){
+        $new_node->[$ROOT] = $new_root;
+    }
+    $new_root->[$DESCENDANTS] = \@new_nodes;
+    return $new_root;
+}
+
+# This subroutine is not public because:
+# - It is meant to be called only from Udapi::Core::Node::Root::copy_tree (and recursively from itself).
+# - It keeps $new_node[$NEXTSIBLING] and $new_node[$PARENT] pointing to the original nodes.
+#   Of course, $new_node's descendants have $NEXTSIBLING and $PARENT set up correctly.
+#   So _copy_subtree should be called only on the root.
+# - It is not a method because it is defined only here in Udapi::Core::Node::Root,
+#   but in the recursive calls it is called also with ref $node eq Udapi::Core::Node.
+sub _copy_subtree {
+    my ($node) = @_;
+    my $new_node = bless [@$node], ref $node;
+    my $prev_child = undef;
+    foreach my $child ($node->children){
+        my $new_child = _copy_subtree($child);
+        $new_child->[$PARENT] = $new_node;
+        $new_child->[$NEXTSIBLING] = $prev_child;
+        $prev_child = $new_child;
+    }
+    $new_node->[$FIRSTCHILD] = $prev_child;
+    return $new_node;
 }
 
 1;
