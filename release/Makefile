@@ -1,6 +1,6 @@
 VERSION = 0.1.1111
 
-OUTDIR = Udapi-$(VERSION)/
+OUTDIR = Udapi-$(VERSION)
 
 all: clone doc
 
@@ -16,5 +16,9 @@ doc:
 	export PYTHONPATH=../python/:$PYTHONPATH && pydoc -w udapi.core.node.Node
 	mv udapi.core.node.Node.html $(OUTDIR)/doc/python
 
+tgz:
+	tar -czf $(OUTDIR).tgz $(OUTDIR)
+
 clean:
 	rm -rf $(OUTDIR)
+
