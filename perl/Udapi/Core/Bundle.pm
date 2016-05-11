@@ -5,6 +5,7 @@ use autodie;
 use Carp;
 use List::Util qw(any);
 use Udapi::Core::Node;
+use Udapi::Core::Node::Root;
 
 my ($TREES, $ID, $DOC);
 BEGIN {
@@ -27,7 +28,7 @@ sub trees { return @{$_[0][$TREES]}; }
 
 sub create_tree {
     my ($self, $zone) = @_;
-    my $root = Udapi::Core::Node->_create_root($self);
+    my $root = Udapi::Core::Node::Root->new($self);
     $root->_set_zone($zone);
     $self->add_tree($root);
     return $root;
