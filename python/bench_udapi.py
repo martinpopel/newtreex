@@ -11,7 +11,7 @@ import sys
 import os
 import gc
 
-sys.path.append( os.path.dirname(os.path.abspath(__file__)) + '/udapi/')
+sys.path.append( os.path.dirname(os.path.abspath(__file__)) + '/src/udapi/')
 from udapi.core.document import Document, Node
 from udapi.core.node import RuntimeException
 
