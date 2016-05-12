@@ -27,7 +27,7 @@ use Class::XSAccessor::Array {
 # but we cannot use $self->[$ROOT]->descendants() which returns an array,
 # we need the internal hashref, so we can modify it.
 # $self->[$ROOT][$BUNDLE] is faster than $self->[$ROOT]->bundle;
-my ($DESCENDANTS, $BUNDLE, $ZONE) = (6, 8);
+my ($DESCENDANTS, $BUNDLE, $ZONE) = (6..8);
 
 
 sub new {

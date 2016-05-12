@@ -48,6 +48,7 @@ sub set_zone {
 sub parent {return undef;}
 sub root {return $_[0];}
 sub ord {return 0;}
+sub document {return $_[0][$BUNDLE]->document;}
 
 sub descendants {
     #my ($self, $args) = @_;
