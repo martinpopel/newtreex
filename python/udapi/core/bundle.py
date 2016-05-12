@@ -6,6 +6,7 @@ import re
 from node import Node
 
 class Bundle(object):
+    """Bundle can be used for embracing two or more Universal Dependency trees that are associated in some way (e.g. parallel translations) inside a document"""
 
     __slots__ = [ "trees", "_aux" ]
 

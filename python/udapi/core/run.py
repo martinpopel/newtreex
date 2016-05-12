@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.INFO)
 sys.path.append( os.path.dirname(os.path.abspath(__file__)) + '/../../')
 
 class Run(object):
+    """Processing unit that processes Universal Dependencies data; typically a sequence of blocks."""
 
     def __init__(self, scenario_string="", command_line_argv=[]):
         self.scenario_string = scenario_string

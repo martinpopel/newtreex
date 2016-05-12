@@ -4,9 +4,12 @@ import codecs
 import re
 
 from node import Node
+from root import Root
 from bundle import Bundle
 
 class Document(object):
+
+    """Document is a container for Universal Dependency trees"""
 
     attrnames = ["ord", "form", "lemma", "upostag", "xpostag", "feats", "head", "deprel", "deps", "misc"]
     # ZZ: TODO: poresit tolerovani jeho absence misc
@@ -54,8 +57,7 @@ class Document(object):
                 if not nodes:
                     bundle = Bundle()
                     self.bundles.append(bundle)
-                    root = Node() # TODO: nahradit bundle.create_tree, az bude odladene
-                    root.ord = 0
+                    root = Root() # TODO: nahradit bundle.create_tree, az bude odladene
                     root._aux['comment'] = comment # TODO: ulozit nekam poradne
                     nodes = [root]
                     bundle.trees.append(root)

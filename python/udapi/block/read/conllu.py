@@ -2,6 +2,7 @@ from udapi.core.basereader import BaseReader
 from udapi.core.document import Document
 from udapi.core.bundle import Bundle
 from udapi.core.node import Node
+from udapi.core.root import Root
 import codecs
 import re
 
@@ -60,8 +61,7 @@ class Conllu(BaseReader):
                 if not nodes:
                     bundle = Bundle()
                     document.bundles.append(bundle)
-                    root = Node()
-                    root.ord = 0
+                    root = Root()
                     root._aux['comment'] = comment # TODO: ulozit nekam poradne
                     nodes = [root]
                     bundle.trees.append(root)
@@ -85,7 +85,7 @@ class Conllu(BaseReader):
                 try:   # TODO: poresit multitokeny
                     node.ord = int(node.ord)
                 except ValueError:
-                    node.ord = 0                        
+                    pass # node.ord = 0                        
 
 
             else: # an empty line is guaranteed even after the last sentence in a conll-u file

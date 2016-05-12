@@ -29,6 +29,7 @@ class RuntimeException(TreexException):
 
 
 class Node(object):
+    """Class for representing non-root nodes in Universal Dependency trees"""
 
     __slots__ = [
                    # (A) features following the CoNLL-U documentation
@@ -229,10 +230,3 @@ class Node(object):
         import sys
         sys.stderr.write("INFO "+message+"\n")
 
-    def zone(self):
-        return self._aux['zone']
-        # TODO: applicable only for root, other nodes must climb up first
-
-    def set_zone(self,zone):
-        self._aux['zone'] = zone
-        # TODO: applicable only for root, other nodes must climb up first
