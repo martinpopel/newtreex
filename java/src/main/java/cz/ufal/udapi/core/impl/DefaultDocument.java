@@ -11,19 +11,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by martin.vojtek on 13. 12. 2015.
  */
 public class DefaultDocument implements Document {
-    private final AtomicInteger nodeUniqueId = new AtomicInteger();
-    private final AtomicInteger bundleUniqueId = new AtomicInteger();
+    private int nodeUniqueId;
 
     private List<Bundle> bundles = new ArrayList<>();
 
     @Override
     public int getUniqueNodeId() {
-        return nodeUniqueId.incrementAndGet();
-    }
-
-    @Override
-    public int getUniqueBundleId() {
-        return bundleUniqueId.incrementAndGet();
+        return ++nodeUniqueId;
     }
 
     public DefaultDocument() {

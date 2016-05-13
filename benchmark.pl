@@ -32,7 +32,7 @@ my @COMMANDS = (
     pytreex    => "python -u python/bench_pytreex.py $iter $IN /tmp/out.conllu",
     udapi     => "python -u python/bench_udapi.py $iter $IN /tmp/out.conllu",
     perl       => "perl/bench.pl $iter $IN /tmp/out.conllu",
-    java       => "java -jar java/build/libs/newtreex.jar $iter $IN /tmp/out.conllu",
+    java       => "java -jar java/build/libs/udapi.jar $iter $IN /tmp/out.conllu",
     cpp_raw    => "cpp_raw/benchmark $iter $IN /tmp/out.conllu",
 );
 my %COMMANDS_HASH = @COMMANDS;

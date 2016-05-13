@@ -2,7 +2,7 @@ package cz.ufal.udapi.core.impl;
 
 import cz.ufal.udapi.core.Bundle;
 import cz.ufal.udapi.core.Document;
-import cz.ufal.udapi.core.NLPTree;
+import cz.ufal.udapi.core.Root;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,24 +12,28 @@ import java.util.List;
  */
 public class DefaultBundle implements Bundle {
 
-    private List<NLPTree> trees = new ArrayList<>();
+    private List<Root> trees = new ArrayList<>();
     private Document document;
-    private int id;
+    private String id;
 
     public DefaultBundle(Document document) {
         this.document = document;
-        id = document.getUniqueBundleId();
+    }
+
+    public void addTree(Root root) {
+        root.setBundle(this);
+        trees.add(root);
     }
 
     @Override
-    public NLPTree addTree() {
-        NLPTree tree = new DefaultTree(document, this);
+    public Root addTree() {
+        Root tree = new DefaultRoot(document, this);
         trees.add(tree);
         return tree;
     }
 
     @Override
-    public List<NLPTree> getTrees() {
+    public List<Root> getTrees() {
         return trees;
     }
 
@@ -43,7 +47,12 @@ public class DefaultBundle implements Bundle {
         return document;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        this.id = id;
     }
 }

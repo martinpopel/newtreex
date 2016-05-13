@@ -1,5 +1,6 @@
 package cz.ufal.udapi.core;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,17 +23,11 @@ public class Block {
         return params;
     }
 
-    public void processStart() {
+    public void processStart() {}
 
-    }
+    public void processEnd() {}
 
-    public void processEnd() {
-
-    }
-
-    public void beforeProcessDocument(Document document) {
-
-    }
+    public void beforeProcessDocument(Document document) {}
 
     public void processDocument(Document document) {
         int bundleNo = 1;
@@ -46,38 +41,31 @@ public class Block {
         }
     }
 
-    public void afterProcessDocument(Document document) {
-
-    }
+    public void afterProcessDocument(Document document) {}
 
     protected boolean shouldProcessBundle(Bundle bundle, int bundleNo) {
-        //TODO: implement
         return true;
     }
 
-    protected boolean shouldProcessTree(NLPTree tree) {
-        //TODO: implement
+    protected boolean shouldProcessTree(Root tree) {
         return true;
     }
 
-    public void beforeProcessBundle(Bundle bundle, int bundleNo) {
-
-    }
+    public void beforeProcessBundle(Bundle bundle, int bundleNo) {}
 
     public void processBundle(Bundle bundle, int bundleNo) {
-        for (NLPTree tree : bundle.getTrees()) {
+        for (Root tree : bundle.getTrees()) {
             if (shouldProcessTree(tree)) {
                 processTree(tree, bundleNo);
             }
         }
     }
 
-    public void afterProcessBundle(Bundle bundle, int bundleNo) {
+    public void afterProcessBundle(Bundle bundle, int bundleNo) {}
 
-    }
-
-    public void processTree(NLPTree tree, int bundleNo) {
-        for (Node node : tree.getRoot().getDescendants()) {
+    public void processTree(Root tree, int bundleNo) {
+        //wrap with ArrayList to prevent ConcurrentModificationException
+        for (Node node : new ArrayList<>(tree.getDescendants())) {
             processNode(node, bundleNo);
         }
     }

@@ -1,7 +1,7 @@
 package cz.ufal.udapi.block.write;
 
 import cz.ufal.udapi.core.*;
-import cz.ufal.udapi.exception.TreexException;
+import cz.ufal.udapi.exception.UdapiException;
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -24,7 +24,7 @@ public class Treex extends Block {
         try {
             ps = new PrintStream(System.out, true, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            throw new TreexException(e);
+            throw new UdapiException(e);
         }
     }
 
@@ -57,7 +57,7 @@ public class Treex extends Block {
     }
 
     @Override
-    public void processTree(NLPTree tree, int bundleNo) {
+    public void processTree(Root tree, int bundleNo) {
         StringBuilder rootId = new StringBuilder("a-");
         rootId.append(bundleNo);
         String sentence = tree.getSentence();
@@ -74,15 +74,15 @@ public class Treex extends Block {
         say.append(in).append("  <trees>\n").append(in).append("    <a_tree id='").append(treeId).append("'>");
 
         ps.println(say.toString());
-        printSubTree(tree.getRoot(), treeId, SPACES_12);
+        printSubTree(true, tree.getNode(), treeId, SPACES_12);
 
         StringBuilder postTree = new StringBuilder(in);
         postTree.append("    </a_tree>\n").append(in).append("  </trees>\n").append(in).append("</zone>");
         ps.println(postTree.toString());
     }
 
-    public void printSubTree(Node node, StringBuilder treeId, String indent) {
-        if (!node.isRoot()) {
+    public void printSubTree(boolean isRoot, Node node, StringBuilder treeId, String indent) {
+        if (!isRoot) {
             StringBuilder toPrint = new StringBuilder(indent);
             toPrint.append("<LM id='").append(treeId).append("-n").append(node.getOrd()).append("'>");
             ps.println(toPrint.toString());
@@ -106,9 +106,9 @@ public class Treex extends Block {
             toPrint.append(in).append("<deprel>").append(node.getDeprel()).append("</deprel>\n");
         }
 
-        if (!node.isRoot()) {
+        if (!isRoot) {
             toPrint.append(in).append("<conll><pos>");
-            toPrint.append(null != node.getPostag() ? node.getPostag() : "");
+            toPrint.append(null != node.getXpos() ? node.getXpos() : "");
             toPrint.append("</pos><feat>");
             toPrint.append(null != node.getFeats() ? node.getFeats() : "");
             toPrint.append("</feat></conll>\n");
@@ -120,11 +120,11 @@ public class Treex extends Block {
         if (!children.isEmpty()) {
             ps.println(in + "<children>");
             for (Node child : children) {
-                printSubTree(child, treeId, in.toString()+"  ");
+                printSubTree(false, child, treeId, in.toString()+"  ");
             }
             ps.println(in + "</children>");
         }
-        if (!node.isRoot()) {
+        if (!isRoot) {
             ps.println(indent + "</LM>");
         }
     }

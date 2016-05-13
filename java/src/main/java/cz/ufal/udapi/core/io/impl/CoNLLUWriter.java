@@ -2,7 +2,7 @@ package cz.ufal.udapi.core.io.impl;
 
 import cz.ufal.udapi.core.*;
 import cz.ufal.udapi.core.io.DocumentWriter;
-import cz.ufal.udapi.core.io.TreexIOException;
+import cz.ufal.udapi.core.io.UdapiIOException;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -10,9 +10,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,16 +43,24 @@ public class CoNLLUWriter implements DocumentWriter{
 
 
             for (Bundle bundle : document.getBundles()) {
-                for (NLPTree tree : bundle.getTrees()) {
+                for (Root tree : bundle.getTrees()) {
 
-                    List<Node> descendants = tree.getRoot().getDescendants();
+                    List<Node> descendants = tree.getDescendants();
 
                     //do not write empty sentences
                     if (descendants.size() > 0) {
 
+                        if (null != bundle.getId() && !"".equals(bundle.getId())) {
+                            sb.append("# sent_id ");
+                            sb.append(bundle.getId());
+                            sb.append(tree.DEFAULT_ZONE.equals(tree.getZone()) ? "" : "/" + tree.getZone());
+                            sb.append(NEW_LINE);
+                        }
+
                         List<String> comments = tree.getComments();
 
                         for (String comment : comments) {
+                            sb.append("#");
                             sb.append(comment);
                             sb.append(NEW_LINE);
                         }
@@ -85,36 +91,45 @@ public class CoNLLUWriter implements DocumentWriter{
     public void writeDocument(Document document, Writer writer) {
         try (BufferedWriter bufferedWriter = new BufferedWriter(writer)) {
             for (Bundle bundle : document.getBundles()) {
-                for (NLPTree tree : bundle.getTrees()) {
-
-                    List<Node> descendants = tree.getRoot().getDescendants();
-
-                    //do not write empty sentences
-                    if (descendants.size() > 0) {
-
-                        List<String> comments = tree.getComments();
-
-                        for (String comment : comments) {
-                            bufferedWriter.write(comment, 0, comment.length());
-                            bufferedWriter.newLine();
-                        }
-
-                        //TODO: multiword
-
-
-                        for (Node descendant : descendants) {
-                            StringBuilder sb = new StringBuilder();
-                            buildLine(sb, descendant);
-                            String line = sb.toString();
-                            bufferedWriter.write(line, 0, line.length());
-                            bufferedWriter.newLine();
-                        }
-                        bufferedWriter.newLine();
-                    }
+                for (Root tree : bundle.getTrees()) {
+                    processTree(bufferedWriter, tree);
                 }
             }
         } catch (IOException e) {
-            throw new TreexIOException(e);
+            throw new UdapiIOException(e);
+        }
+    }
+
+    public void processTree(BufferedWriter bufferedWriter, Root tree) throws IOException {
+        List<Node> descendants = tree.getDescendants();
+        Bundle bundle = tree.getBundle();
+        //do not write empty sentences
+        if (descendants.size() > 0) {
+
+            if (null != bundle.getId() && !"".equals(bundle.getId())) {
+                String sentId = "# sent_id " + bundle.getId() + (tree.DEFAULT_ZONE.equals(tree.getZone()) ? "" : "/" + tree.getZone());
+                bufferedWriter.write(sentId, 0, sentId.length());
+                bufferedWriter.newLine();
+            }
+
+            List<String> comments = tree.getComments();
+
+            for (String comment : comments) {
+                bufferedWriter.write("#", 0, 1);
+                bufferedWriter.write(comment, 0, comment.length());
+                bufferedWriter.newLine();
+            }
+
+            //TODO: multiword
+
+            for (Node descendant : descendants) {
+                StringBuilder sb = new StringBuilder();
+                buildLine(sb, descendant);
+                String line = sb.toString();
+                bufferedWriter.write(line, 0, line.length());
+                bufferedWriter.newLine();
+            }
+            bufferedWriter.newLine();
         }
     }
 
@@ -127,7 +142,7 @@ public class CoNLLUWriter implements DocumentWriter{
         sb.append(TAB);
         sb.append(getString(node.getUpos()));
         sb.append(TAB);
-        sb.append(getString(node.getPostag()));
+        sb.append(getString(node.getXpos()));
         sb.append(TAB);
         sb.append(getString(node.getFeats()));
         sb.append(TAB);

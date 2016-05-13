@@ -2,17 +2,19 @@ package cz.ufal.udapi.core.io.impl;
 
 import cz.ufal.udapi.core.Bundle;
 import cz.ufal.udapi.core.Document;
-import cz.ufal.udapi.core.NLPTree;
+import cz.ufal.udapi.core.Root;
 import cz.ufal.udapi.core.Node;
 import cz.ufal.udapi.core.impl.DefaultDocument;
+import cz.ufal.udapi.core.impl.DefaultRoot;
 import cz.ufal.udapi.core.io.DocumentReader;
-import cz.ufal.udapi.core.io.TreexIOException;
+import cz.ufal.udapi.core.io.UdapiIOException;
 
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +33,7 @@ public class CoNLLUReader implements DocumentReader {
     private static final String DASH = "-";
     private static final char HASH = '#';
     private static final Pattern tabPattern = Pattern.compile(TAB);
+    private static final Pattern sentIdPattern = Pattern.compile("^#\\s*sent_id\\s+(\\S+)");
 
     public CoNLLUReader(Reader reader) {
         this.reader = reader;
@@ -40,7 +43,7 @@ public class CoNLLUReader implements DocumentReader {
         try {
             reader = new FileReader(Paths.get(inCoNLL).toFile());
         } catch (FileNotFoundException e) {
-            throw new TreexIOException("Provided CoNLL file '"+inCoNLL+"' not found.");
+            throw new UdapiIOException("Provided CoNLL file '"+inCoNLL+"' not found.");
         }
     }
 
@@ -48,7 +51,7 @@ public class CoNLLUReader implements DocumentReader {
         try {
             reader = new FileReader(inCoNLL.toFile());
         } catch (FileNotFoundException e) {
-            throw new TreexIOException("Provided CoNLL file '"+inCoNLL+"' not found.");
+            throw new UdapiIOException("Provided CoNLL file '"+inCoNLL+"' not found.");
         }
     }
 
@@ -56,7 +59,7 @@ public class CoNLLUReader implements DocumentReader {
         try {
             reader = new FileReader(inCoNLL);
         } catch (FileNotFoundException e) {
-            throw new TreexIOException("Provided CoNLL file '"+inCoNLL.getAbsolutePath()+"' not found.");
+            throw new UdapiIOException("Provided CoNLL file '"+inCoNLL.getAbsolutePath()+"' not found.");
         }
     }
 
@@ -69,11 +72,11 @@ public class CoNLLUReader implements DocumentReader {
     }
 
     @Override
-    public void readInDocument(final Document document) throws TreexIOException {
-
-        //default bundle
+    public void readInDocument(final Document document) throws UdapiIOException {
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        int sentenceId = 1;
 
         try (BufferedReader bufferedReader = new BufferedReader(reader))
         {
@@ -86,7 +89,8 @@ public class CoNLLUReader implements DocumentReader {
                 if (EMPTY_STRING.equals(trimLine)) {
                     //end of sentence
                     List<String> finalWords = words;
-                    executor.submit(() -> processSentence(document, finalWords));
+                    final int finalSentenceId = sentenceId++;
+                    executor.submit(() -> processSentenceWithBundle(finalSentenceId, document, finalWords));
                     words = new ArrayList<>();
                 } else {
                     words.add(trimLine);
@@ -94,11 +98,12 @@ public class CoNLLUReader implements DocumentReader {
             }
             //process last sentence if there was no empty line after it
             List<String> finalWords = words;
-            executor.submit(() -> processSentence(document, finalWords));
+            final int finalSentenceId = sentenceId++;
+            executor.submit(() -> processSentenceWithBundle(finalSentenceId,document, finalWords));
         }
         catch (IOException e)
         {
-            throw new TreexIOException(e);
+            throw new UdapiIOException(e);
         }
 
         executor.shutdown();
@@ -109,16 +114,108 @@ public class CoNLLUReader implements DocumentReader {
         }
     }
 
-    private void processSentence(final Document document, List<String> words) {
+    @Override
+    public Optional<Root> readTree(BufferedReader bufferedReader, final Document document) throws UdapiIOException {
+        try {
+            String currLine;
+            List<String> words = new ArrayList<>();
+
+            while ((currLine = bufferedReader.readLine()) != null)
+            {
+                String trimLine = currLine.trim();
+                if (EMPTY_STRING.equals(trimLine)) {
+                    //end of sentence
+                    List<String> finalWords = words;
+                    Root root = processSentence(document, finalWords);
+                    if (null != root) {
+                        return Optional.of(root);
+                    }
+                    words = new ArrayList<>();
+                } else {
+                    words.add(trimLine);
+                }
+            }
+            //process last sentence if there was no empty line after it
+            List<String> finalWords = words;
+            Root root = processSentence(document, finalWords);
+            if (null == root) {
+                return Optional.empty();
+            }
+            return Optional.of(root);
+        }
+        catch (IOException e)
+        {
+            throw new UdapiIOException(e);
+        }
+    }
+
+    @Override
+    public Optional<Root> readTree(final Document document) throws UdapiIOException {
+        try (BufferedReader bufferedReader = new BufferedReader(reader))
+        {
+            return readTree(bufferedReader, document);
+        }
+        catch (IOException e)
+        {
+            throw new UdapiIOException(e);
+        }
+    }
+
+    private void processSentenceWithBundle(int sentenceId, final Document document, List<String> words) {
+
+        Root tree = processSentence(document, words);
+
+        String treeId = tree.getId();
+        //add tree to correct bundle
+        // Based on treeId the tree is added either to the last existing bundle or to a new bundle.
+        // treeId should contain bundleId/zone.
+        // The "/zone" part is optional. If missing, zone='und' is used for the new tree.
+        if (null == treeId) {
+            Bundle newBundle = document.addBundle();
+            newBundle.addTree(tree);
+            newBundle.setId(String.valueOf(sentenceId));
+        } else {
+            String bundleId;
+            int slashIndex = treeId.indexOf("/");
+
+            if (-1 != slashIndex) {
+                bundleId = treeId.substring(0, slashIndex);
+                if (slashIndex < treeId.length()-1) {
+                    tree.setZone(treeId.substring(slashIndex+1));
+                    tree.validateZone();
+                }
+            } else {
+                bundleId = treeId;
+            }
+
+            if (document.getBundles().isEmpty()) {
+                Bundle newBundle = document.addBundle();
+                newBundle.setId(bundleId);
+                newBundle.addTree(tree);
+            } else {
+                Bundle lastBundle = document.getBundles().get(document.getBundles().size() - 1);
+                if (null != bundleId && !bundleId.equals(lastBundle)) {
+                    Bundle newBundle = document.addBundle();
+                    newBundle.setId(bundleId);
+                    newBundle.addTree(tree);
+                } else {
+                    lastBundle.addTree(tree);
+                }
+            }
+        }
+        tree.setId(null);
+    }
+
+    private Root processSentence(final Document document, List<String> words) {
+
         //ignore empty sentences
         if (words.isEmpty()) {
-            return;
+            return null;
         }
-        Bundle bundle = document.addBundle();
 
-        NLPTree tree = bundle.addTree();
+        Root tree = new DefaultRoot(document);
 
-        Node root = tree.getRoot();
+        Node root = tree.getNode();
 
         List<Node> nodes = new ArrayList<>();
         nodes.add(root);
@@ -127,9 +224,17 @@ public class CoNLLUReader implements DocumentReader {
 
         for (String word : words) {
             if (word.charAt(0) == HASH) {
-                //comment
-                //TODO: process comments, e.g. sent_id
-                tree.addComment(word);
+                Matcher sentIdMatcher = sentIdPattern.matcher(word);
+                if (sentIdMatcher.matches()) {
+                    tree.setId(sentIdMatcher.group(1));
+                } else {
+                    //comment
+                    if (word.length() > 1) {
+                        tree.addComment(word.substring(1));
+                    } else {
+                        tree.addComment(EMPTY_STRING);
+                    }
+                }
             } else {
                 //process word
                 processWord(tree, root, nodes, parents, word);
@@ -140,9 +245,11 @@ public class CoNLLUReader implements DocumentReader {
         for (int i = 1; i < nodes.size(); i++) {
             nodes.get(i).setParent(nodes.get(parents.get(i)));
         }
+
+        return tree;
     }
 
-    private void processWord(NLPTree tree, Node root, List<Node> nodes, List<Integer> parents, String word) {
+    private void processWord(Root tree, Node root, List<Node> nodes, List<Integer> parents, String word) {
 
         String[] fields = tabPattern.split(word, 10);
         String     id = fields[0];
@@ -164,7 +271,7 @@ public class CoNLLUReader implements DocumentReader {
             child.setForm(form);
             child.setLemma(lemma);
             child.setUpos(upos);
-            child.setPostag(postag);
+            child.setXpos(postag);
             child.setFeats(feats);
             child.setHead(head);
             child.setDeprel(deprel);

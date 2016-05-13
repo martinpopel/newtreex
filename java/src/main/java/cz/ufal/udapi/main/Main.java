@@ -4,7 +4,7 @@ import cz.ufal.udapi.core.*;
 import cz.ufal.udapi.core.impl.DefaultNode;
 import cz.ufal.udapi.core.io.DocumentReader;
 import cz.ufal.udapi.core.io.DocumentWriter;
-import cz.ufal.udapi.core.io.TreexIOException;
+import cz.ufal.udapi.core.io.UdapiIOException;
 import cz.ufal.udapi.core.io.impl.CoNLLUReader;
 import cz.ufal.udapi.core.io.impl.CoNLLUWriter;
 
@@ -56,7 +56,7 @@ public class Main {
         try {
             fileReader = new FileReader(Paths.get(inCoNLL).toFile());
         } catch (FileNotFoundException e) {
-            throw new TreexIOException("Provided CoNLL file '"+inCoNLL+"' not found.");
+            throw new UdapiIOException("Provided CoNLL file '"+inCoNLL+"' not found.");
         }
 
         DocumentReader coNLLUReader = new CoNLLUReader(fileReader);
@@ -68,8 +68,8 @@ public class Main {
         }
 
         for (Bundle bundle : document.getBundles()) {
-            for (NLPTree tree : bundle.getTrees()) {
-                for (Node node : tree.getRoot().getDescendants()) {
+            for (Root tree : bundle.getTrees()) {
+                for (Node node : tree.getDescendants()) {
                     //noop
                 }
             }
@@ -77,8 +77,8 @@ public class Main {
         System.out.println("iter");
 
         for (Bundle bundle : document.getBundles()) {
-            for (NLPTree tree : bundle.getTrees()) {
-                for (Node node : ((DefaultNode)tree.getRoot()).getDescendantsF()) {
+            for (Root tree : bundle.getTrees()) {
+                for (Node node : ((DefaultNode)tree.getNode()).getDescendantsF()) {
                     //noop
                 }
             }
@@ -86,8 +86,8 @@ public class Main {
         System.out.println("iterF");
 
         for (Bundle bundle : document.getBundles()) {
-            for (NLPTree tree : bundle.getTrees()) {
-                for (Node child : tree.getRoot().getChildren()) {
+            for (Root tree : bundle.getTrees()) {
+                for (Node child : tree.getNode().getChildren()) {
                     for (Node node : child.getDescendants()) {
                         //noop
                     }
@@ -97,8 +97,8 @@ public class Main {
         System.out.println("iterS");
 
         for (Bundle bundle : document.getBundles()) {
-            for (NLPTree tree : bundle.getTrees()) {
-                Optional<Node> node = Optional.of(tree.getRoot());
+            for (Root tree : bundle.getTrees()) {
+                Optional<Node> node = Optional.of(tree.getNode());
                 while (node.isPresent()) {
                     node = node.get().getNextNode();
                     //noop
@@ -108,7 +108,7 @@ public class Main {
         System.out.println("iterN");
 
         for (Bundle bundle : document.getBundles()) {
-            for (NLPTree tree : bundle.getTrees()) {
+            for (Root tree : bundle.getTrees()) {
                 for (Node node : tree.getDescendants()) {
                     String form_lemma_tag = node.getForm() + node.getLemma();
                 }
@@ -117,7 +117,7 @@ public class Main {
         System.out.println("read");
 
         for (Bundle bundle : document.getBundles()) {
-            for (NLPTree tree : bundle.getTrees()) {
+            for (Root tree : bundle.getTrees()) {
                 for (Node node : tree.getDescendants()) {
                     node.setDeprel("dep");
                 }
@@ -129,7 +129,7 @@ public class Main {
         }
 
         for (Bundle bundle : document.getBundles()) {
-            for (NLPTree tree : bundle.getTrees()) {
+            for (Root tree : bundle.getTrees()) {
                 List<Node> descendants = tree.getDescendants();
                 for (Node node : descendants) {
                     int rand_index = myrand(descendants.size());
@@ -143,7 +143,7 @@ public class Main {
         }
 
         for (Bundle bundle : document.getBundles()) {
-            for (NLPTree tree : bundle.getTrees()) {
+            for (Root tree : bundle.getTrees()) {
                 for (Node node : new ArrayList<Node>(tree.getDescendants())) {
                     if (myrand(10) == 0) {
                         node.remove();
@@ -157,7 +157,7 @@ public class Main {
         }
 
         for (Bundle bundle : document.getBundles()) {
-            for (NLPTree tree : bundle.getTrees()) {
+            for (Root tree : bundle.getTrees()) {
                 for (Node node : new ArrayList<Node>(tree.getDescendants())) {
                     if (myrand(10) == 0) {
                         Node nodeChild = node.createChild();
@@ -174,7 +174,7 @@ public class Main {
         }
 
         for (Bundle bundle : document.getBundles()) {
-            for (NLPTree tree : bundle.getTrees()) {
+            for (Root tree : bundle.getTrees()) {
                 List<Node> nodes = new ArrayList(tree.getDescendants());
                 for (Node node : nodes) {
                     int rand_index = myrand(nodes.size());

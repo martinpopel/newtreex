@@ -1,9 +1,9 @@
 package cz.ufal.udapi.core.impl;
 
 import cz.ufal.udapi.core.Bundle;
-import cz.ufal.udapi.core.NLPTree;
+import cz.ufal.udapi.core.Root;
 import cz.ufal.udapi.core.Node;
-import cz.ufal.udapi.exception.TreexException;
+import cz.ufal.udapi.exception.UdapiException;
 
 import java.util.*;
 
@@ -12,7 +12,7 @@ import java.util.*;
  */
 public class DefaultNode implements Node {
 
-    private final NLPTree tree;
+    protected final Root tree;
 
     private final int id;
     private int ord = -1;
@@ -21,7 +21,7 @@ public class DefaultNode implements Node {
     private String form;
     private String lemma;
     private String upos;
-    private String postag;
+    private String xpos;
     private String feats;
     private String head;
     private String deprel;
@@ -33,13 +33,13 @@ public class DefaultNode implements Node {
 
     private Optional<Node> parent;
 
-    public DefaultNode(NLPTree tree, Node parent) {
+    public DefaultNode(Root tree, Node parent) {
         this.parent = Optional.ofNullable(parent);
         this.tree = tree;
         this.id = tree.getDocument().getUniqueNodeId();
     }
 
-    public DefaultNode(NLPTree tree) {
+    public DefaultNode(Root tree) {
         this(tree, null);
     }
 
@@ -56,10 +56,6 @@ public class DefaultNode implements Node {
     public void remove(EnumSet<Node.RemoveArg> args) {
         //already removed
         if (isRemoved) return;
-
-        if (isRoot()) {
-            throw new TreexException("Tree root cannot be removed using remove().");
-        }
 
         Optional<Node> parent = getParent();
         if (args.contains(RemoveArg.REHANG)) {
@@ -83,9 +79,9 @@ public class DefaultNode implements Node {
         }
 
         //Disconnect the node from its parent (& siblings) and delete all attributes
-        Optional<Node> node = parent.get().getFirstChild();
+        Optional<Node> node = toDefaultNode(parent.get()).getFirstChild();
         if (node.isPresent() && node.get() == this) {
-            ((DefaultNode)parent.get()).setFirstChild(this.getNextSibling());
+            toDefaultNode(parent.get()).setFirstChild(this.getNextSibling());
         } else {
             while (node.isPresent() && (!node.get().getNextSibling().isPresent() || this != node.get().getNextSibling().get())) {
                 node = node.get().getNextSibling();
@@ -96,12 +92,12 @@ public class DefaultNode implements Node {
         }
 
         for (Node removedNode : toRemove) {
-            ((DefaultNode)removedNode).isRemoved = true;
+            toDefaultNode(removedNode).isRemoved = true;
         }
     }
 
     @Override
-    public NLPTree getTree() {
+    public Root getTree() {
         return tree;
     }
 
@@ -111,9 +107,6 @@ public class DefaultNode implements Node {
     }
 
     public List<Node> getDescendantsF() {
-
-        if (isRoot()) return Collections.unmodifiableList(tree.getDescendants());
-
         if (!getFirstChild().isPresent()) {
             return new ArrayList<>();
         }
@@ -126,7 +119,7 @@ public class DefaultNode implements Node {
             Node node = stack.pop();
             descs.add(node);
             node.getNextSibling().ifPresent(next -> stack.push(next));
-            node.getFirstChild().ifPresent(first -> stack.push(first));
+            toDefaultNode(node).getFirstChild().ifPresent(first -> stack.push(first));
         }
 
         return descs;
@@ -192,13 +185,13 @@ public class DefaultNode implements Node {
     public void setParent(Node parent, boolean skipCycles) {
 
         if (null == parent) {
-            throw new TreexException("Not allowed to set null parent.");
+            throw new UdapiException("Not allowed to set null parent.");
         }
 
         //check cycles
         if (this == parent) {
             if (skipCycles) return;
-            throw new TreexException("Bundle " + tree.getBundle().getId() + ": Attempt to set parent of " + ord
+            throw new UdapiException("Bundle " + tree.getBundle().getId() + ": Attempt to set parent of " + ord
                     + " to itself (cycle).");
         }
         if (firstChild.isPresent()) {
@@ -206,7 +199,7 @@ public class DefaultNode implements Node {
             while (grandpa.isPresent()) {
                 if (grandpa.get() == this) {
                     if (skipCycles) return;
-                    throw new TreexException("Bundle " + tree.getBundle().getId() + ": Attempt to set parent of " + ord
+                    throw new UdapiException("Bundle " + tree.getBundle().getId() + ": Attempt to set parent of " + ord
                             + " to the node "+parent.getId() + ", which would lead to a cycle.");
                 }
                 grandpa = grandpa.get().getParent();
@@ -216,9 +209,9 @@ public class DefaultNode implements Node {
         //Disconnect the node from its original parent
         Optional<Node> origParent = getParent();
         if (origParent.isPresent()) {
-            Optional<Node> node = origParent.get().getFirstChild();
+            Optional<Node> node = toDefaultNode(origParent.get()).getFirstChild();
             if (node.isPresent() && this == node.get()) {
-                ((DefaultNode)origParent.get()).setFirstChild(nextSibling);
+                toDefaultNode(origParent.get()).setFirstChild(nextSibling);
             } else {
                 while (node.isPresent() && (!node.get().getNextSibling().isPresent() || this != node.get().getNextSibling().get())) {
                     node = node.get().getNextSibling();
@@ -231,49 +224,36 @@ public class DefaultNode implements Node {
 
         //Attach the node to its parent and linked list of siblings.
         this.parent = Optional.of(parent);
-        this.nextSibling = parent.getFirstChild();
-        ((DefaultNode)parent).setFirstChild(Optional.of(this));
-    }
-
-    @Override
-    public Node getRoot() {
-        return tree.getRoot();
+        this.nextSibling = toDefaultNode(parent).getFirstChild();
+        toDefaultNode(parent).setFirstChild(Optional.of(this));
     }
 
     @Override
     public boolean isRoot() {
-        return tree.getRoot() == this;
+        return false;
     }
 
     @Override
-    public List<Node> getDescendants(EnumSet<Node.DescendantsArg> args, Optional<Node> except) {
+    public List<Node> getDescendants(EnumSet<Node.DescendantsArg> args, Node except) {
 
         if (args.isEmpty()) {
-            if (isRoot()) {
-                return Collections.unmodifiableList(tree.getDescendants());
-            } else {
-                return getDescendantsInner(args, except);
-            }
+            return getDescendantsInner(args, Optional.of(except));
         }
 
-        return getDescendantsInner(args, except);
+        return getDescendantsInner(args, Optional.of(except));
+    }
+
+    @Override
+    public List<Node> getDescendants(EnumSet<Node.DescendantsArg> args) {
+        return getDescendantsInner(args, Optional.empty());
     }
 
     @Override
     public List<Node> getDescendants() {
-        return getDescendants(EnumSet.noneOf(Node.DescendantsArg.class), Optional.empty());
+        return getDescendantsInner(EnumSet.noneOf(Node.DescendantsArg.class), Optional.empty());
     }
 
-    private List<Node> getDescendantsInner(EnumSet<Node.DescendantsArg> args, Optional<Node> except) {
-        if (isRoot()) {
-            if (args.contains(DescendantsArg.FIRST_ONLY)) {
-                if (args.contains(DescendantsArg.ADD_SELF)) {
-                    return Arrays.asList(this);
-                }
-                return Arrays.asList(tree.getDescendants().get(0));
-            }
-        }
-
+    protected List<Node> getDescendantsInner(EnumSet<Node.DescendantsArg> args, Optional<Node> except) {
         if (except.isPresent() && this == except.get()) {
             return new ArrayList<>();
         }
@@ -289,7 +269,7 @@ public class DefaultNode implements Node {
                 continue;
             }
             descs.add(node);
-            node.getFirstChild().ifPresent(first -> stack.push(first));
+            toDefaultNode(node).getFirstChild().ifPresent(first -> stack.push(first));
         }
 
         if (args.contains(DescendantsArg.ADD_SELF)) {
@@ -306,6 +286,10 @@ public class DefaultNode implements Node {
 
         descs.sort((o1, o2) -> o1.getOrd() - o2.getOrd());
         return descs;
+    }
+
+    private DefaultNode toDefaultNode(Node node) {
+        return (DefaultNode)node;
     }
 
     private List<Node> getFirstLastNode(List<Node> descs, boolean first) {
@@ -375,12 +359,9 @@ public class DefaultNode implements Node {
     public Optional<Node> getPrevNode() {
 
         int ord = getOrd() - 1;
-        if (ord < 0) {
-            return Optional.empty();
-        }
 
         if (0 == ord) {
-            return Optional.of(getRoot());
+            return Optional.of(tree.getNode());
         }
 
         return Optional.of(tree.getDescendants().get(ord-1));
@@ -389,7 +370,7 @@ public class DefaultNode implements Node {
     @Override
     public boolean isDescendantOf(Node node) {
 
-        if (!node.getFirstChild().isPresent()) {
+        if (!toDefaultNode(node).getFirstChild().isPresent()) {
             return false;
         }
 
@@ -469,7 +450,7 @@ public class DefaultNode implements Node {
                         newRef = referenceNode;
                     }
 
-                    for (Node node : ((DefaultNode)referenceNode).getDescendantsF()) {
+                    for (Node node : toDefaultNode(referenceNode).getDescendantsF()) {
                         if (this == node) continue;
                         if (null == newRef || node.getOrd() > newRef.getOrd()) {
                             newRef = node;
@@ -480,7 +461,7 @@ public class DefaultNode implements Node {
                         newRef = referenceNode;
                     }
 
-                    for (Node node : ((DefaultNode)referenceNode).getDescendantsF()) {
+                    for (Node node : toDefaultNode(referenceNode).getDescendantsF()) {
                         if (this == node) continue;
                         if (null == newRef || node.getOrd() < newRef.getOrd()) {
                             newRef = node;
@@ -500,7 +481,7 @@ public class DefaultNode implements Node {
                     descendantsArgs.add(DescendantsArg.FIRST_ONLY);
                 }
 
-                List<Node> descendants = referenceNode.getDescendants(descendantsArgs, Optional.of(this));
+                List<Node> descendants = referenceNode.getDescendants(descendantsArgs, this);
                 referenceNode = descendants.get(0);
             }
         }
@@ -537,7 +518,7 @@ public class DefaultNode implements Node {
 
         //which nodes are to be moved?
         //this and all its descendants
-        List<Node> nodesToMove = getDescendants(EnumSet.of(DescendantsArg.ADD_SELF), Optional.empty());
+        List<Node> nodesToMove = getDescendants(EnumSet.of(DescendantsArg.ADD_SELF));
         int firstOrd = nodesToMove.get(0).getOrd();
         int lastOrd = nodesToMove.get(nodesToMove.size()-1).getOrd();
 
@@ -603,11 +584,9 @@ public class DefaultNode implements Node {
         return ord < anotherNode.getOrd();
     }
 
-    @Override
-    public Optional<Node> getFirstChild() {
+    Optional<Node> getFirstChild() {
         return firstChild;
     }
-
 
     void setFirstChild(Optional<Node> newFirstChild) {
         this.firstChild = newFirstChild;
@@ -664,12 +643,12 @@ public class DefaultNode implements Node {
         this.upos = upos;
     }
 
-    public String getPostag() {
-        return postag;
+    public String getXpos() {
+        return xpos;
     }
 
-    public void setPostag(String postag) {
-        this.postag = postag;
+    public void setXpos(String xpos) {
+        this.xpos = xpos;
     }
 
     public String getFeats() {

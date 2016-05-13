@@ -2,7 +2,6 @@ package cz.ufal.udapi.core;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -51,13 +50,13 @@ public interface Node {
 
     void setParent(Node node, boolean skipCycles);
 
-    Node getRoot();
-
     boolean isRoot();
 
     List<Node> getDescendants();
 
-    List<Node> getDescendants(EnumSet<DescendantsArg> args, Optional<Node> except);
+    List<Node> getDescendants(EnumSet<DescendantsArg> args);
+
+    List<Node> getDescendants(EnumSet<DescendantsArg> args, Node except);
 
     List<Node> getSiblings();
 
@@ -87,9 +86,9 @@ public interface Node {
 
     void setUpos(String upos);
 
-    String getPostag();
+    String getXpos();
 
-    void setPostag(String postag);
+    void setXpos(String xpos);
 
     String getFeats();
 
@@ -133,11 +132,9 @@ public interface Node {
 
     boolean precedes(Node anotherNode);
 
-    Optional<Node> getFirstChild();
-
     void remove(EnumSet<RemoveArg> args);
 
-    NLPTree getTree();
+    Root getTree();
 
     Bundle getBundle();
 }

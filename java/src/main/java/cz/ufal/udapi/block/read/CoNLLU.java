@@ -1,41 +1,49 @@
 package cz.ufal.udapi.block.read;
 
-import cz.ufal.udapi.core.Block;
 import cz.ufal.udapi.core.Document;
+import cz.ufal.udapi.core.Root;
 import cz.ufal.udapi.core.io.DocumentReader;
-import cz.ufal.udapi.core.io.TreexIOException;
+import cz.ufal.udapi.core.io.UdapiIOException;
 import cz.ufal.udapi.core.io.impl.CoNLLUReader;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Created by mvojtek on 3/26/16.
  */
-public class CoNLLU extends Block {
+public class CoNLLU extends cz.ufal.udapi.block.common.Reader {
 
     public CoNLLU(Map<String, String> params) {
         super(params);
     }
 
+    private DocumentReader coNLLUReader;
+    BufferedReader reader;
+
     @Override
-    public void processDocument(Document document) {
+    public void processStart() {
+        reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
+        coNLLUReader = new CoNLLUReader(reader);
+    }
 
-        boolean inAvailable;
+    @Override
+    protected Optional<Root> readTree(Document document) {
+        return coNLLUReader.readTree(reader, document);
+    }
 
+    @Override
+    public void processEnd() {
         try {
-            inAvailable = System.in.available() > 0;
+            if (null != reader) {
+                reader.close();
+            }
         } catch (IOException e) {
-            throw new TreexIOException("Error when reading input stream.", e);
-        }
-
-        if (inAvailable) {
-            DocumentReader coNLLUReader = new CoNLLUReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
-            coNLLUReader.readInDocument(document);
-        } else {
-            throw new TreexIOException("Expected CoNNLU on the standard input.");
+            throw new UdapiIOException("Faield to close reader.", e);
         }
     }
 }

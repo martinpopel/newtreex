@@ -1,7 +1,7 @@
 package cz.ufal.udapi.block.util;
 
 import cz.ufal.udapi.core.*;
-import cz.ufal.udapi.exception.TreexException;
+import cz.ufal.udapi.exception.UdapiException;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -41,7 +41,7 @@ public class Eval extends Block {
         try {
             evalMethod = Class.forName("groovy.util.Eval").getMethod("me", String.class, Object.class, String.class);
         } catch (Exception e) {
-            throw new TreexException("No groovy.util.Eval.me method available.", e);
+            throw new UdapiException("No groovy.util.Eval.me method available.", e);
         }
     }
 
@@ -78,7 +78,7 @@ public class Eval extends Block {
         }
 
         if (getParams().containsKey(TREE) || getParams().containsKey(NODE)) {
-            for (NLPTree tree : bundle.getTrees()) {
+            for (Root tree : bundle.getTrees()) {
                 if (shouldProcessTree(tree)) {
                     processTree(tree, bundleNo);
                 }
@@ -88,7 +88,7 @@ public class Eval extends Block {
     }
 
     @Override
-    public void processTree(NLPTree tree, int bundleNo) {
+    public void processTree(Root tree, int bundleNo) {
         if (getParams().containsKey(TREE)) {
             Map<String, Object> params = new HashMap<>();
             params.put(VAR_SELF, tree);
@@ -100,7 +100,7 @@ public class Eval extends Block {
         }
 
         if (getParams().containsKey(NODE)) {
-            for (Node descendant : tree.getRoot().getDescendants()) {
+            for (Node descendant : tree.getDescendants()) {
                 Map<String, Object> params = new HashMap<>();
                 params.put(VAR_SELF, descendant);
                 params.put(VAR_TREE, tree);
@@ -134,7 +134,7 @@ public class Eval extends Block {
         try {
             evalMethod.invoke(null, "c", arguments, script);
         } catch (Exception e) {
-            throw new TreexException("Failed to evaluate expression", e);
+            throw new UdapiException("Failed to evaluate expression", e);
         }
     }
 }

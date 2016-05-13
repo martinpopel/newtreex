@@ -7,7 +7,6 @@ import java.util.List;
  */
 public interface Document {
     int getUniqueNodeId();
-    int getUniqueBundleId();
 
     void addBundle(Bundle bundle);
     Bundle addBundle();

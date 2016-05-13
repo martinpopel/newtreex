@@ -3,7 +3,7 @@ package cz.ufal.udapi.block.read;
 import cz.ufal.udapi.core.Block;
 import cz.ufal.udapi.core.Bundle;
 import cz.ufal.udapi.core.Document;
-import cz.ufal.udapi.core.io.TreexIOException;
+import cz.ufal.udapi.core.io.UdapiIOException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,7 +23,7 @@ public class Sentences extends Block {
         try {
             inAvailable = System.in.available() > 0;
         } catch (IOException e) {
-            throw new TreexIOException("Error when reading input stream.", e);
+            throw new UdapiIOException("Error when reading input stream.", e);
         }
 
         if (inAvailable) {
@@ -37,7 +37,7 @@ public class Sentences extends Block {
                     bundle.addTree().setSentence(currLine);
                 }
             } catch (IOException e) {
-                throw new TreexIOException(e);
+                throw new UdapiIOException(e);
             }
         }
 

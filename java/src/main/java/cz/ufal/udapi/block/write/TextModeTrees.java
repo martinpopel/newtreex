@@ -1,9 +1,8 @@
 package cz.ufal.udapi.block.write;
 
 import cz.ufal.udapi.core.Block;
-import cz.ufal.udapi.core.NLPTree;
-import cz.ufal.udapi.core.io.TreexIOException;
-import cz.ufal.udapi.exception.TreexException;
+import cz.ufal.udapi.core.Root;
+import cz.ufal.udapi.exception.UdapiException;
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -53,7 +52,7 @@ public class TextModeTrees extends Block {
         try {
             ps = new PrintStream(System.out, true, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            throw new TreexException(e);
+            throw new UdapiException(e);
         }
 
         if (indent > 0) {
@@ -82,7 +81,7 @@ public class TextModeTrees extends Block {
     }
 
     @Override
-    public void processTree(NLPTree xtree, int bundleNo) {
+    public void processTree(Root xtree, int bundleNo) {
 
         Map<Integer, Node> tree = new HashMap<>();
 
@@ -100,7 +99,7 @@ public class TextModeTrees extends Block {
         Deque<Node> stack = new ArrayDeque<>();
         stack.push(rootNode);
 
-        for (cz.ufal.udapi.core.Node descendant : xtree.getRoot().getDescendants()) {
+        for (cz.ufal.udapi.core.Node descendant : xtree.getDescendants()) {
             int index = descendant.getOrd();
             Node newNode = new Node();
             newNode.index = index;

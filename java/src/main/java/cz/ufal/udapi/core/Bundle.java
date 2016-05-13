@@ -6,9 +6,11 @@ import java.util.List;
  * Created by martin.vojtek on 13. 12. 2015.
  */
 public interface Bundle {
-    NLPTree addTree();
-    List<NLPTree> getTrees();
+    void addTree(Root root);
+    Root addTree();
+    List<Root> getTrees();
     void setDocument(Document document);
     Document getDocument();
-    int getId();
+    String getId();
+    void setId(String id);
 }

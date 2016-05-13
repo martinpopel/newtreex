@@ -1,8 +1,8 @@
 package cz.ufal.udapi.block.write;
 
 import cz.ufal.udapi.core.Block;
-import cz.ufal.udapi.core.NLPTree;
-import cz.ufal.udapi.exception.TreexException;
+import cz.ufal.udapi.core.Root;
+import cz.ufal.udapi.exception.UdapiException;
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -33,12 +33,12 @@ public class Sentences extends Block {
         try {
             ps = new PrintStream(System.out, true, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            throw new TreexException(e);
+            throw new UdapiException(e);
         }
     }
 
     @Override
-    public void processTree(NLPTree tree, int bundleNo) {
+    public void processTree(Root tree, int bundleNo) {
 
         String sentence = tree.getSentence();
         if (null == sentence) {
@@ -46,12 +46,12 @@ public class Sentences extends Block {
                 String ifMissing = getParams().get(IF_MISSING);
                 if (DETOKENIZE.equals(ifMissing)) {
                     // TODO SpaceAfter=No
-                    sentence = tree.getRoot().getDescendants().stream().map(node -> node.getForm()).collect(Collectors.joining(" "));
+                    sentence = tree.getDescendants().stream().map(node -> node.getForm()).collect(Collectors.joining(" "));
                 } else  if (EMPTY.equals(ifMissing)) {
                     sentence = "";
                 } else {
                     if (FATAL.equals(ifMissing)) {
-                        throw new TreexException("Sentence " + bundleNo + " is undefined");
+                        throw new UdapiException("Sentence " + bundleNo + " is undefined");
                     }
                 }
             } else {

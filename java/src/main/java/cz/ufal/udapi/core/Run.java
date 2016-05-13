@@ -1,7 +1,7 @@
 package cz.ufal.udapi.core;
 
 import cz.ufal.udapi.core.impl.DefaultDocument;
-import cz.ufal.udapi.exception.TreexException;
+import cz.ufal.udapi.exception.UdapiException;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -111,7 +111,7 @@ public class Run {
         for (String blockName : blockItems.keySet()) {
 
             if (null == blockName || "".equals(blockName.trim())) {
-                throw new TreexException("Failed to recognize block name.");
+                throw new UdapiException("Failed to recognize block name.");
             }
 
             String className = null;
@@ -142,7 +142,7 @@ public class Run {
                 Class blockClass = Class.forName(normalizePackage(className));
                 blocks.put(blockName, blockClass);
             } catch (ClassNotFoundException e) {
-                throw new TreexException("Failed to instantiate block " + blockName + ".", e);
+                throw new UdapiException("Failed to instantiate block " + blockName + ".", e);
             }
         }
 
@@ -294,7 +294,12 @@ public class Run {
         try {
             return (Block)blockClass.getConstructor(Map.class).newInstance(blockParameters);
         } catch (Exception e) {
-            throw new TreexException("Failed to instantiate block.", e);
+            //fallback to default constructor
+            try {
+                return (Block)blockClass.getConstructor().newInstance();
+            } catch (Exception other) {
+                throw new UdapiException("Failed to instantiate block.", other);
+            }
         }
 
     }
