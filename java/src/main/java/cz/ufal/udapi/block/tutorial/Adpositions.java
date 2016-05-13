@@ -3,10 +3,9 @@ package cz.ufal.udapi.block.tutorial;
 import cz.ufal.udapi.core.Block;
 import cz.ufal.udapi.core.Node;
 
-import java.util.Map;
-
 /**
- * Created by mvojtek on 4/17/16.
+ * This class is useful for tutorial purposes.
+ * After small changes it should count prepositions and postpositions.
  *
  * Example usage:
  * <code>
@@ -23,6 +22,8 @@ import java.util.Map;
  *       ]
  *     ]
  * </code>
+ *
+ * @author Martin Vojtek
  */
 public class Adpositions extends Block {
 
@@ -43,6 +44,6 @@ public class Adpositions extends Block {
     public void processEnd() {
         int all = prepositions + postpositions;
         System.out.printf("prepositions %5.1f%%, postpositions %5.1f%%\n",
-                prepositions*100 / (float)all, postpositions*100 / (float)all);
+                prepositions * 100 / (float) all, postpositions * 100 / (float) all);
     }
 }

@@ -8,19 +8,31 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by mvojtek on 3/25/16.
+ * The purpose of Run class is to run scenarios.
+ * Scenario is composed from blocks with parameters.
+ * This class is called by udapi.groovy script.
+ *
+ * @author Martin Vojtek
  */
 public class Run {
 
     private boolean dumpScenario;
     private boolean quiet;
     private List<String> fileNames = new ArrayList<>();
-    private Map<String,String> globalParams = new HashMap<>();
+    private Map<String, String> globalParams = new HashMap<>();
     private List<String> scenarios = new ArrayList();
 
     private static final String BLOCK_PACKAGE_PREFIX = "cz.ufal.udapi.block.";
     private static final String UD_BLOCK_PREFIX = "Udapi::Block::";
 
+    /**
+     * Entrypoint for scenario execution.
+     * Execution of scenario files is not implemented yet.
+     *
+     * @param dumpScenario if the scenario should be dumped
+     * @param quiet manimalize logging
+     * @param arguments scenario [-- input_files]\nscenario is a sequence of blocks and scenarios (Scen::* modules or *.scen files)
+     */
     public void run(boolean dumpScenario, boolean quiet, String... arguments) {
 
         this.dumpScenario = dumpScenario;
@@ -46,6 +58,9 @@ public class Run {
         execute();
     }
 
+    /**
+     * Executes scenario.
+     */
     public void execute() {
 
         if (dumpScenario) {
@@ -55,7 +70,7 @@ public class Run {
         String scenarioString = constructScenarioStringWithQuotedWhitespace();
 
         List<String> blockNames = new ArrayList<>(); //we need to process blocks in correct order
-        Map<String, Map<String,String>> blockItems = parseScenarioString(scenarioString, blockNames);
+        Map<String, Map<String, String>> blockItems = parseScenarioString(scenarioString, blockNames);
 
         //load blocks
 
@@ -75,13 +90,11 @@ public class Run {
 
         //the main processing
         int numberOfBlocks = blockNames.size();
-        int docNumber = 0;
         boolean wasLastDocument = false;
 
         while (!wasLastDocument) {
             Document newDocument = new DefaultDocument();
 
-            docNumber++;
             int blockNumber = 0;
             for (String blockName : blockNames) {
                 blockNumber++;
@@ -104,6 +117,12 @@ public class Run {
         }
     }
 
+    /**
+     * Loads classes for given blocks.
+     *
+     * @param blockItems blocks for which the classes will be loaded by class loader
+     * @return Map of block name/classes.
+     */
     private Map<String, Class> loadBlocks(Map<String, Map<String, String>> blockItems) {
         Map<String, Class> blocks = new HashMap<>();
 
@@ -157,6 +176,11 @@ public class Run {
         return fullClassName;
     }
 
+    /**
+     * Quotes whitespaces in the string.
+     *
+     * @return with quoted whitespaces
+     */
     private String constructScenarioStringWithQuotedWhitespace() {
         StringBuilder scenarioString = new StringBuilder();
 
@@ -185,7 +209,14 @@ public class Run {
         return scenarioString.toString();
     }
 
-    private Map<String, Map<String,String>> parseScenarioString(String scenarioString, List<String> blockNames) {
+    /**
+     * Parses string to blocks with parameters.
+     *
+     * @param scenarioString
+     * @param blockNames
+     * @return parsed scenario. Key is block name, value is Map of parameters.
+     */
+    private Map<String, Map<String, String>> parseScenarioString(String scenarioString, List<String> blockNames) {
         scenarioString = scenarioString.replaceAll("(?m)#.+$", ""); //delete comments ended by a newline or last line
         scenarioString = scenarioString.replaceAll("\\s+", " "); //collapse whitespaces
         scenarioString = scenarioString.replaceAll("^ ", "");
@@ -203,14 +234,14 @@ public class Run {
                 String name = token.substring(0, equalsIndex);
                 String value;
                 if (equalsIndex < token.length() - 1) { // there are some characters after =
-                    value = token.substring(equalsIndex+1, token.length());
+                    value = token.substring(equalsIndex + 1, token.length());
 
                     //fix quotes and apostrophes
                     if (value.matches("'.*'")) {
-                        value = value.substring(1,value.length()-1);
+                        value = value.substring(1, value.length() - 1);
                         value = value.replaceAll("\\\\'", "'");
                     } else if (value.matches("\".*\"")) {
-                        value = value.substring(1,value.length()-1);
+                        value = value.substring(1, value.length() - 1);
                         value = value.replaceAll("\\\\\"", "\"");
                     }
                     result.get(key).put(name, value);
@@ -226,6 +257,12 @@ public class Run {
         return result;
     }
 
+    /**
+     * Tokenizes scenario.
+     *
+     * @param scenarioString the string representing scenario
+     * @return tokens of scenario
+     */
     private String[] tokenize(String scenarioString) {
         List<String> tokens = new ArrayList<>();
 
@@ -238,7 +275,7 @@ public class Run {
 
             char currentChar = scenarioString.charAt(i);
 
-            switch(currentChar) {
+            switch (currentChar) {
                 case ' ':
                     if (!insideApostrophes && !insideQuotes) {
                         tokens.add(buffer.toString().trim());
@@ -282,6 +319,14 @@ public class Run {
         return tokens.toArray(new String[0]);
     }
 
+    /**
+     * Makes new instance of block of given class.
+     * Constructor is called with given parameters.
+     *
+     * @param blockClass the class of block to load
+     * @param parameters parameters of the block to load with
+     * @return instantiated block
+     */
     private Block createBlock(Class blockClass, Map<String, String> parameters) {
 
         //initialize with global parameters
@@ -292,11 +337,11 @@ public class Run {
         blockParameters.putAll(parameters);
 
         try {
-            return (Block)blockClass.getConstructor(Map.class).newInstance(blockParameters);
+            return (Block) blockClass.getConstructor(Map.class).newInstance(blockParameters);
         } catch (Exception e) {
             //fallback to default constructor
             try {
-                return (Block)blockClass.getConstructor().newInstance();
+                return (Block) blockClass.getConstructor().newInstance();
             } catch (Exception other) {
                 throw new UdapiException("Failed to instantiate block.", other);
             }

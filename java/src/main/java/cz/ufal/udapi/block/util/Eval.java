@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by mvojtek on 3/27/16.
+ * Eval block is useful for quick prototyping.
  *
  * Example usage:
  * Util::Eval node="println doc"
@@ -18,6 +18,8 @@ import java.util.Map;
  *     {println c.tree.root.getDescendants().collect{String val = "";
  *     if (it == c.self) { val = "***" } else if (it == c.self.parent.get())
  *     {val = "+++"}; val += it.form}.join(" ")}' | head
+ *
+ * @author Martin Vojtek
  */
 public class Eval extends Block {
 

@@ -8,7 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by mvojtek on 12/22/15.
+ * Implementation of Bundle.
+ *
+ * Bundle has reference to document and serves the purpose of container for sentence trees.
+ *
+ * @author Martin Vojtek
  */
 public class DefaultBundle implements Bundle {
 

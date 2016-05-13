@@ -1,9 +1,16 @@
 package cz.ufal.udapi.core.io;
 
+import cz.ufal.udapi.exception.UdapiException;
+
 /**
- * Created by mvojtek on 12/21/15.
+ * Exception encapsulating any exception occured during read/write operations.
+ *
+ * @author Martin Vojtek
  */
-public class UdapiIOException extends RuntimeException {
+public class UdapiIOException extends UdapiException {
+    /**
+     * Default constructor.
+     */
     public UdapiIOException() {
     }
 

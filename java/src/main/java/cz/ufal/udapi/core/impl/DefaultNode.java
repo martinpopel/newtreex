@@ -8,7 +8,11 @@ import cz.ufal.udapi.exception.UdapiException;
 import java.util.*;
 
 /**
- * Created by martin.vojtek on 13. 12. 2015.
+ * Default implementation of node.
+ *
+ * Every word in a sentence is represented by a node.
+ *
+ * @author Martin Vojtek
  */
 public class DefaultNode implements Node {
 
@@ -200,7 +204,7 @@ public class DefaultNode implements Node {
                 if (grandpa.get() == this) {
                     if (skipCycles) return;
                     throw new UdapiException("Bundle " + tree.getBundle().getId() + ": Attempt to set parent of " + ord
-                            + " to the node "+parent.getId() + ", which would lead to a cycle.");
+                            + " to the node " + parent.getId() + ", which would lead to a cycle.");
                 }
                 grandpa = grandpa.get().getParent();
             }
@@ -289,7 +293,7 @@ public class DefaultNode implements Node {
     }
 
     private DefaultNode toDefaultNode(Node node) {
-        return (DefaultNode)node;
+        return (DefaultNode) node;
     }
 
     private List<Node> getFirstLastNode(List<Node> descs, boolean first) {
@@ -364,7 +368,7 @@ public class DefaultNode implements Node {
             return Optional.of(tree.getNode());
         }
 
-        return Optional.of(tree.getDescendants().get(ord-1));
+        return Optional.of(tree.getDescendants().get(ord - 1));
     }
 
     @Override
@@ -496,21 +500,21 @@ public class DefaultNode implements Node {
         //without children means moving just one node, which is easier
         if (withoutChildren) {
             int myOrd = getOrd();
-            if (referenceOrd > myOrd+1) {
-                for (int newOrd = myOrd; newOrd < referenceOrd-1; newOrd++) {
+            if (referenceOrd > myOrd + 1) {
+                for (int newOrd = myOrd; newOrd < referenceOrd - 1; newOrd++) {
                     Node ordNode = allNodes.get(newOrd);
-                    allNodes.set(newOrd-1, ordNode);
+                    allNodes.set(newOrd - 1, ordNode);
                     ordNode.setOrd(newOrd);
                 }
-                allNodes.set(referenceOrd-2, this);
-                setOrd(referenceOrd-1);
+                allNodes.set(referenceOrd - 2, this);
+                setOrd(referenceOrd - 1);
             } else if (referenceOrd < myOrd) {
                 for (int newOrd = myOrd; newOrd > referenceOrd; newOrd--) {
-                    Node ordNode = allNodes.get(newOrd-2);
-                    allNodes.set(newOrd-1, ordNode);
+                    Node ordNode = allNodes.get(newOrd - 2);
+                    allNodes.set(newOrd - 1, ordNode);
                     ordNode.setOrd(newOrd);
                 }
-                allNodes.set(referenceOrd-1, this);
+                allNodes.set(referenceOrd - 1, this);
                 setOrd(referenceOrd);
             }
             return;
@@ -520,27 +524,27 @@ public class DefaultNode implements Node {
         //this and all its descendants
         List<Node> nodesToMove = getDescendants(EnumSet.of(DescendantsArg.ADD_SELF));
         int firstOrd = nodesToMove.get(0).getOrd();
-        int lastOrd = nodesToMove.get(nodesToMove.size()-1).getOrd();
+        int lastOrd = nodesToMove.get(nodesToMove.size() - 1).getOrd();
 
         //TODO: optimization in case of no "gaps"
 
         //First, move a node from position sourceOrd to position targetOrd RIGH-ward.
         //sourceOrd iterates decreasingly over nodes which are not moving.
         int targetOrd = lastOrd;
-        int sourceOrd = lastOrd-1;
-        int moveOrd = nodesToMove.size()-2;
+        int sourceOrd = lastOrd - 1;
+        int moveOrd = nodesToMove.size() - 2;
 
         RIGHTSWIPE:
-        while(sourceOrd >= referenceOrd) {
-            while (moveOrd >= 0 && allNodes.get(sourceOrd-1) == nodesToMove.get(moveOrd)) {
+        while (sourceOrd >= referenceOrd) {
+            while (moveOrd >= 0 && allNodes.get(sourceOrd - 1) == nodesToMove.get(moveOrd)) {
                 sourceOrd--;
                 moveOrd--;
                 if (sourceOrd < referenceOrd) {
                     break RIGHTSWIPE;
                 }
             }
-            Node ordNode = allNodes.get(sourceOrd-1);
-            allNodes.set(targetOrd-1, ordNode);
+            Node ordNode = allNodes.get(sourceOrd - 1);
+            allNodes.set(targetOrd - 1, ordNode);
             ordNode.setOrd(targetOrd);
             targetOrd--;
             sourceOrd--;
@@ -549,20 +553,20 @@ public class DefaultNode implements Node {
         //Second, move a node from position sourceOrd to position targetOrd LEFT-ward.
         //sourceOrd iterates increasingly over nodes which are not moving.
         targetOrd = firstOrd;
-        sourceOrd = firstOrd+1;
+        sourceOrd = firstOrd + 1;
         moveOrd = 1;
 
         LEFTSWIPE:
         while (sourceOrd < referenceOrd) {
-            while (moveOrd < nodesToMove.size() && allNodes.get(sourceOrd-1) == nodesToMove.get(moveOrd)) {
+            while (moveOrd < nodesToMove.size() && allNodes.get(sourceOrd - 1) == nodesToMove.get(moveOrd)) {
                 sourceOrd++;
                 moveOrd++;
                 if (sourceOrd >= referenceOrd) {
                     break LEFTSWIPE;
                 }
             }
-            Node ordNode = allNodes.get(sourceOrd-1);
-            allNodes.set(targetOrd-1, ordNode);
+            Node ordNode = allNodes.get(sourceOrd - 1);
+            allNodes.set(targetOrd - 1, ordNode);
             ordNode.setOrd(targetOrd);
             targetOrd++;
             sourceOrd++;
@@ -573,7 +577,7 @@ public class DefaultNode implements Node {
             targetOrd = referenceOrd;
         }
         for (Node node : nodesToMove) {
-            allNodes.set(targetOrd-1, node);
+            allNodes.set(targetOrd - 1, node);
             node.setOrd(targetOrd++);
         }
 
@@ -693,6 +697,6 @@ public class DefaultNode implements Node {
 
     @Override
     public String toString() {
-        return "DefaultNode[ord='"+ord+"', form='"+form+"']";
+        return "DefaultNode[ord='" + ord + "', form='" + form + "']";
     }
 }

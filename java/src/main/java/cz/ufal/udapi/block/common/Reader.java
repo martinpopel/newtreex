@@ -12,7 +12,11 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Created by martin.vojtek on 13. 5. 2016.
+ * Reader is base class for more specific readers, e.g. CoNLLU.
+ *
+ * This class is zone and bundle aware.
+ *
+ * @author Martin Vojtek
  */
 public abstract class Reader extends Block {
 
@@ -22,14 +26,33 @@ public abstract class Reader extends Block {
 
     public static final String PARAM_BUNDLES_PER_DOC = "bundlesPerDoc";
 
+    /**
+     * What should be the zone of the new trees.
+     . Default="keep" means keep the zone saved in the input file (or use "und" if no zone is specified).
+     */
     private String zone = KEEP_ZONE;
 
+    /**
+     * Create a new document after each N bundles read. Default=0 means unlimited.
+     */
     private int bundlesPerDoc = 0;
 
+    /**
+     * Helper class during loading.
+     */
     private Optional<Root> buffer = Optional.empty();
 
+    /**
+     * Reads tree and loads it into the document.
+     *
+     * @param document document to read into
+     * @return Root of read tree
+     */
     protected abstract Optional<Root> readTree(Document document);
 
+    /**
+     * @return true if the reader supports multiple zones
+     */
     boolean isMultizoneReader() {
         return true;
     }
@@ -45,11 +68,15 @@ public abstract class Reader extends Block {
             try {
                 this.bundlesPerDoc = Integer.parseInt(params.get(bundlesPerDoc));
             } catch (Exception e) {
-                throw new UdapiException("Invalid format of "+PARAM_BUNDLES_PER_DOC+" parameter: "+bundlesPerDoc);
+                throw new UdapiException("Invalid format of " + PARAM_BUNDLES_PER_DOC + " parameter: " + bundlesPerDoc);
             }
         }
     }
 
+
+    /**
+     * Processes document. This method is called by Run class.
+     */
     @Override
     public void processDocument(Document document) {
 
@@ -87,8 +114,8 @@ public abstract class Reader extends Block {
 
                 if (-1 != slashIndex) {
                     bundleId = treeId.substring(0, slashIndex);
-                    if (slashIndex < treeId.length()-1) {
-                        tree.setZone(treeId.substring(slashIndex+1));
+                    if (slashIndex < treeId.length() - 1) {
+                        tree.setZone(treeId.substring(slashIndex + 1));
                         tree.validateZone();
                     }
                 } else {
@@ -119,7 +146,7 @@ public abstract class Reader extends Block {
                 if (!originalBundles.isEmpty()) {
                     bundle = originalBundles.remove(0);
                     if (null != lastBundleId && !lastBundleId.equals(bundle.getId())) {
-                        System.err.println("Mismach in bundle IDs: " + bundle.getId() + " vs "+lastBundleId+". Keeping the former one.");
+                        System.err.println("Mismach in bundle IDs: " + bundle.getId() + " vs " + lastBundleId + ". Keeping the former one.");
                     }
                 } else {
                     bundle = document.addBundle();

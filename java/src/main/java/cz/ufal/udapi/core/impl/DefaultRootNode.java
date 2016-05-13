@@ -6,7 +6,9 @@ import cz.ufal.udapi.core.Root;
 import java.util.*;
 
 /**
- * Created by martin.vojtek on 13. 12. 2015.
+ * Represents technical root of the sentence.
+ *
+ * @author Martin Vojtek
  */
 public class DefaultRootNode extends DefaultNode {
 

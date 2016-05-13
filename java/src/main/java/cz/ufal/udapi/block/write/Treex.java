@@ -9,7 +9,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by martin.vojtek on 1. 5. 2016.
+ * Serializes internal structure into format used by TrEd tool.
+ * <a href="https://ufal.mff.cuni.cz/tred/">
+ *
+ * @author Martin Vojtek
  */
 public class Treex extends Block {
 
@@ -120,7 +123,7 @@ public class Treex extends Block {
         if (!children.isEmpty()) {
             ps.println(in + "<children>");
             for (Node child : children) {
-                printSubTree(false, child, treeId, in.toString()+"  ");
+                printSubTree(false, child, treeId, in.toString() + "  ");
             }
             ps.println(in + "</children>");
         }

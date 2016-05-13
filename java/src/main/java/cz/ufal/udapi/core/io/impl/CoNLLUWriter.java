@@ -16,9 +16,13 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by mvojtek on 12/22/15.
+ * Writer for CoNLLU format.
+ *
+ * Serializes Document into CoNLLU format.
+ *
+ * @author Martin Vojtek
  */
-public class CoNLLUWriter implements DocumentWriter{
+public class CoNLLUWriter implements DocumentWriter {
 
     private static final String TAB = "\t";
     private static final String UNDERSCORE = "_";
@@ -27,6 +31,12 @@ public class CoNLLUWriter implements DocumentWriter{
 
     private static final int BUFFER = 256 * 1024;
 
+    /**
+     * Serializes document into given path.
+     *
+     * @param document document to serialize
+     * @param path path where the document will be serialized
+     */
     @Override
     public void writeDocument(Document document, Path path) {
 
@@ -88,6 +98,12 @@ public class CoNLLUWriter implements DocumentWriter{
         }
     }
 
+    /**
+     * Serializes document with given writer.
+     *
+     * @param document document to serialize
+     * @param writer writer to write with
+     */
     public void writeDocument(Document document, Writer writer) {
         try (BufferedWriter bufferedWriter = new BufferedWriter(writer)) {
             for (Bundle bundle : document.getBundles()) {
@@ -100,36 +116,47 @@ public class CoNLLUWriter implements DocumentWriter{
         }
     }
 
-    public void processTree(BufferedWriter bufferedWriter, Root tree) throws IOException {
+    /**
+     * Processes one sentence tree.
+     *
+     * @param bufferedWriter writer to write with
+     * @param tree tree to serialize
+     * @throws IOException
+     */
+    public void processTree(BufferedWriter bufferedWriter, Root tree) throws UdapiIOException {
         List<Node> descendants = tree.getDescendants();
         Bundle bundle = tree.getBundle();
         //do not write empty sentences
-        if (descendants.size() > 0) {
+        try {
+            if (descendants.size() > 0) {
 
-            if (null != bundle.getId() && !"".equals(bundle.getId())) {
-                String sentId = "# sent_id " + bundle.getId() + (tree.DEFAULT_ZONE.equals(tree.getZone()) ? "" : "/" + tree.getZone());
-                bufferedWriter.write(sentId, 0, sentId.length());
+                if (null != bundle.getId() && !"".equals(bundle.getId())) {
+                    String sentId = "# sent_id " + bundle.getId() + (tree.DEFAULT_ZONE.equals(tree.getZone()) ? "" : "/" + tree.getZone());
+                    bufferedWriter.write(sentId, 0, sentId.length());
+                    bufferedWriter.newLine();
+                }
+
+                List<String> comments = tree.getComments();
+
+                for (String comment : comments) {
+                    bufferedWriter.write("#", 0, 1);
+                    bufferedWriter.write(comment, 0, comment.length());
+                    bufferedWriter.newLine();
+                }
+
+                //TODO: multiword
+
+                for (Node descendant : descendants) {
+                    StringBuilder sb = new StringBuilder();
+                    buildLine(sb, descendant);
+                    String line = sb.toString();
+                    bufferedWriter.write(line, 0, line.length());
+                    bufferedWriter.newLine();
+                }
                 bufferedWriter.newLine();
             }
-
-            List<String> comments = tree.getComments();
-
-            for (String comment : comments) {
-                bufferedWriter.write("#", 0, 1);
-                bufferedWriter.write(comment, 0, comment.length());
-                bufferedWriter.newLine();
-            }
-
-            //TODO: multiword
-
-            for (Node descendant : descendants) {
-                StringBuilder sb = new StringBuilder();
-                buildLine(sb, descendant);
-                String line = sb.toString();
-                bufferedWriter.write(line, 0, line.length());
-                bufferedWriter.newLine();
-            }
-            bufferedWriter.newLine();
+        } catch (IOException e) {
+            throw new UdapiIOException("Failed to write tree " + tree.getId(), e);
         }
     }
 

@@ -10,12 +10,14 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 /**
- * Created by mvojtek on 3/27/16.
+ * Serializes internal structure into user friendly text format.
+ *
+ * @author Martin Vojtek
  */
 public class TextModeTrees extends Block {
 
-    private static final String H  = "\u2500"; // ─
-    private static final String V  = "\u2502"; // │
+    private static final String H = "\u2500"; // ─
+    private static final String V = "\u2502"; // │
     private static final String LT = "\u2518"; // ┘
     private static final String LB = "\u2510"; // ┐
     private static final String RB = "\u250C"; // ┌
@@ -28,7 +30,7 @@ public class TextModeTrees extends Block {
 
     private final PrintStream ps;
 
-    private static final Pattern replacePattern = Pattern.compile(".*["+H+"|"+RT + "|" + RB + "|"+ RV +"]$");
+    private static final Pattern replacePattern = Pattern.compile(".*[" + H + "|" + RT + "|" + RB + "|" + RV + "]$");
 
     private static final int Hi = 0;
     private static final int Vi = 1;
@@ -68,7 +70,7 @@ public class TextModeTrees extends Block {
                 before.setLength(0);
             }
 
-            int [] spaceSigns = {Vi, RBi, RTi, RVi};
+            int[] spaceSigns = {Vi, RBi, RTi, RVi};
             for (int spaceSign : spaceSigns) {
                 for (int i = 0; i < indent; i++) {
                     before.append(" ");
@@ -133,7 +135,7 @@ public class TextModeTrees extends Block {
             int maxSonOrSelf = node.index;
             if (!node.sons.isEmpty()) {
                 minSonOrSelf = Math.min(node.index, node.sons.get(0).index);
-                maxSonOrSelf = Math.max(node.index, node.sons.get(node.sons.size()-1).index);
+                maxSonOrSelf = Math.max(node.index, node.sons.get(node.sons.size() - 1).index);
             }
             int fillLen = tree.get(minSonOrSelf).depth;
             for (int i = minSonOrSelf; i < maxSonOrSelf + 1; i++) {
@@ -218,7 +220,7 @@ public class TextModeTrees extends Block {
             // sorting stack to minimize crossing of edges
             Node[] stackNodes = stack.toArray(new Node[0]);
 
-            Arrays.sort(stackNodes, (Node a, Node b)->{
+            Arrays.sort(stackNodes, (Node a, Node b) -> {
                 if (a.index == b.index) {
                     return 0;
                 }

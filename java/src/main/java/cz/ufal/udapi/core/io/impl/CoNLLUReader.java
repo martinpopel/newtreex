@@ -22,7 +22,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by mvojtek on 12/21/15.
+ * Reader of files in CoNLLU format.
+ *
+ * @author Martin Vojtek
  */
 public class CoNLLUReader implements DocumentReader {
 
@@ -43,7 +45,7 @@ public class CoNLLUReader implements DocumentReader {
         try {
             reader = new FileReader(Paths.get(inCoNLL).toFile());
         } catch (FileNotFoundException e) {
-            throw new UdapiIOException("Provided CoNLL file '"+inCoNLL+"' not found.");
+            throw new UdapiIOException("Provided CoNLL file '" + inCoNLL + "' not found.");
         }
     }
 
@@ -51,7 +53,7 @@ public class CoNLLUReader implements DocumentReader {
         try {
             reader = new FileReader(inCoNLL.toFile());
         } catch (FileNotFoundException e) {
-            throw new UdapiIOException("Provided CoNLL file '"+inCoNLL+"' not found.");
+            throw new UdapiIOException("Provided CoNLL file '" + inCoNLL + "' not found.");
         }
     }
 
@@ -59,7 +61,7 @@ public class CoNLLUReader implements DocumentReader {
         try {
             reader = new FileReader(inCoNLL);
         } catch (FileNotFoundException e) {
-            throw new UdapiIOException("Provided CoNLL file '"+inCoNLL.getAbsolutePath()+"' not found.");
+            throw new UdapiIOException("Provided CoNLL file '" + inCoNLL.getAbsolutePath() + "' not found.");
         }
     }
 
@@ -71,6 +73,12 @@ public class CoNLLUReader implements DocumentReader {
         return document;
     }
 
+    /**
+     * Reads CoNLLU file into given document.
+     *
+     * @param document document to read into
+     * @throws UdapiIOException
+     */
     @Override
     public void readInDocument(final Document document) throws UdapiIOException {
 
@@ -78,13 +86,11 @@ public class CoNLLUReader implements DocumentReader {
 
         int sentenceId = 1;
 
-        try (BufferedReader bufferedReader = new BufferedReader(reader))
-        {
+        try (BufferedReader bufferedReader = new BufferedReader(reader)) {
             String currLine;
             List<String> words = new ArrayList<>();
 
-            while ((currLine = bufferedReader.readLine()) != null)
-            {
+            while ((currLine = bufferedReader.readLine()) != null) {
                 String trimLine = currLine.trim();
                 if (EMPTY_STRING.equals(trimLine)) {
                     //end of sentence
@@ -99,10 +105,8 @@ public class CoNLLUReader implements DocumentReader {
             //process last sentence if there was no empty line after it
             List<String> finalWords = words;
             final int finalSentenceId = sentenceId++;
-            executor.submit(() -> processSentenceWithBundle(finalSentenceId,document, finalWords));
-        }
-        catch (IOException e)
-        {
+            executor.submit(() -> processSentenceWithBundle(finalSentenceId, document, finalWords));
+        } catch (IOException e) {
             throw new UdapiIOException(e);
         }
 
@@ -114,14 +118,24 @@ public class CoNLLUReader implements DocumentReader {
         }
     }
 
+    /**
+     * Reads tree into document and returns it.
+     * Uses BufferedReader owned by external class.
+     *
+     * Close of the reader is responsibility of caller.
+     *
+     * @param bufferedReader
+     * @param document
+     * @return
+     * @throws UdapiIOException
+     */
     @Override
     public Optional<Root> readTree(BufferedReader bufferedReader, final Document document) throws UdapiIOException {
         try {
             String currLine;
             List<String> words = new ArrayList<>();
 
-            while ((currLine = bufferedReader.readLine()) != null)
-            {
+            while ((currLine = bufferedReader.readLine()) != null) {
                 String trimLine = currLine.trim();
                 if (EMPTY_STRING.equals(trimLine)) {
                     //end of sentence
@@ -142,21 +156,23 @@ public class CoNLLUReader implements DocumentReader {
                 return Optional.empty();
             }
             return Optional.of(root);
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             throw new UdapiIOException(e);
         }
     }
 
+    /**
+     * Reads tree into document and returns it.
+     *
+     * @param document document to load into
+     * @return tree of the sentence
+     * @throws UdapiIOException
+     */
     @Override
     public Optional<Root> readTree(final Document document) throws UdapiIOException {
-        try (BufferedReader bufferedReader = new BufferedReader(reader))
-        {
+        try (BufferedReader bufferedReader = new BufferedReader(reader)) {
             return readTree(bufferedReader, document);
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             throw new UdapiIOException(e);
         }
     }
@@ -180,8 +196,8 @@ public class CoNLLUReader implements DocumentReader {
 
             if (-1 != slashIndex) {
                 bundleId = treeId.substring(0, slashIndex);
-                if (slashIndex < treeId.length()-1) {
-                    tree.setZone(treeId.substring(slashIndex+1));
+                if (slashIndex < treeId.length() - 1) {
+                    tree.setZone(treeId.substring(slashIndex + 1));
                     tree.validateZone();
                 }
             } else {
@@ -206,6 +222,13 @@ public class CoNLLUReader implements DocumentReader {
         tree.setId(null);
     }
 
+    /**
+     * Processes sentence.
+     *
+     * @param document document to load into
+     * @param words words of the sentence
+     * @return constructed tree
+     */
     private Root processSentence(final Document document, List<String> words) {
 
         //ignore empty sentences
@@ -249,19 +272,22 @@ public class CoNLLUReader implements DocumentReader {
         return tree;
     }
 
+    /**
+     * Processes word.
+     */
     private void processWord(Root tree, Node root, List<Node> nodes, List<Integer> parents, String word) {
 
         String[] fields = tabPattern.split(word, 10);
-        String     id = fields[0];
-        String   form = fields[1];
-        String  lemma = fields[2];
-        String   upos = fields[3];
-        String postag = fields[4];
-        String  feats = fields[5];
-        String   head = fields[6];
+        String id = fields[0];
+        String form = fields[1];
+        String lemma = fields[2];
+        String upos = fields[3];
+        String xpos = fields[4];
+        String feats = fields[5];
+        String head = fields[6];
         String deprel = fields[7];
-        String   deps = fields[8];
-        String   misc = null;
+        String deps = fields[8];
+        String misc = null;
         if (10 == fields.length) {
             misc = fields[9];
         }
@@ -271,7 +297,7 @@ public class CoNLLUReader implements DocumentReader {
             child.setForm(form);
             child.setLemma(lemma);
             child.setUpos(upos);
-            child.setXpos(postag);
+            child.setXpos(xpos);
             child.setFeats(feats);
             child.setHead(head);
             child.setDeprel(deprel);

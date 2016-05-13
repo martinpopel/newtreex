@@ -1,9 +1,16 @@
 package cz.ufal.udapi.exception;
 
 /**
- * Created by mvojtek on 3/26/16.
+ * General Udapi exception.
+ *
+ * All Udapi exceptions should extend this general exception.
+ *
+ * @author Martin Vojtek
  */
 public class UdapiException extends RuntimeException {
+    /**
+     * Default constructor.
+     */
     public UdapiException() {
         super();
     }

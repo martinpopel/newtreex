@@ -3,10 +3,8 @@ package cz.ufal.udapi.block.tutorial;
 import cz.ufal.udapi.core.Block;
 import cz.ufal.udapi.core.Node;
 
-import java.util.Map;
-
 /**
- * Created by mvojtek on 4/17/16.
+ * This classes changes prepositions into postpositions.
  *
  * Example usage:
  * <code>
@@ -23,6 +21,8 @@ import java.util.Map;
  *       ]
  *     ]
  * </code>
+ *
+ * @author Martin Vojtek
  */
 public class ToPositions extends Block {
 

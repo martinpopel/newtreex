@@ -11,10 +11,17 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Created by mvojtek on 4/17/16.
+ * Reads sentences from standard input into default bundle.
+ *
+ * @author Martin Vojtek
  */
 public class Sentences extends Block {
 
+    /**
+     * Loads sentences into given document.
+     *
+     * @param document document to load into
+     */
     @Override
     public void processDocument(Document document) {
 
@@ -27,8 +34,7 @@ public class Sentences extends Block {
         }
 
         if (inAvailable) {
-            try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8)))
-            {
+            try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8))) {
                 //default bundle
                 Bundle bundle = document.getDefaultBundle();
                 String currLine;

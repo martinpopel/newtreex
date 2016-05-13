@@ -10,7 +10,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Created by mvojtek on 4/17/16.
+ * Serializes internal structure into sentances.
+ *
+ * @author Martin Vojtek
  */
 public class Sentences extends Block {
 
@@ -47,7 +49,7 @@ public class Sentences extends Block {
                 if (DETOKENIZE.equals(ifMissing)) {
                     // TODO SpaceAfter=No
                     sentence = tree.getDescendants().stream().map(node -> node.getForm()).collect(Collectors.joining(" "));
-                } else  if (EMPTY.equals(ifMissing)) {
+                } else if (EMPTY.equals(ifMissing)) {
                     sentence = "";
                 } else {
                     if (FATAL.equals(ifMissing)) {

@@ -10,7 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by martin.vojtek on 13. 12. 2015.
+ * Implementation of Root.
+ *
+ * Serves as a container for technical node.
+ * Maintains descendants in word order.
+ *
+ * @author Martin Vojtek
  */
 public class DefaultRoot implements Root {
 
@@ -105,7 +110,7 @@ public class DefaultRoot implements Root {
     @Override
     public void validateZone() {
         if (!zone.matches("^[a-z-]+(_[A-Za-z0-9-])?$")) {
-            throw new UdapiIOException("'"+zone+"' is not a valid zone name (from treeId='"+id+"')");
+            throw new UdapiIOException("'" + zone + "' is not a valid zone name (from treeId='" + id + "')");
         }
     }
 

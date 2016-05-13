@@ -14,7 +14,10 @@ import java.nio.file.Paths;
 import java.util.*;
 
 /**
- * Created by mvojtek on 12/21/15.
+ * The purpose of this class is to test correct behavior of Node operations
+ * and to provide standard benchmark scenario.
+ *
+ * @author Martin Vojtek
  */
 public class Main {
     private static long seed = 42;
@@ -194,10 +197,6 @@ public class Main {
         DocumentWriter coNLLUWriter = new CoNLLUWriter();
         coNLLUWriter.writeDocument(document, Paths.get(outCoNLL));
         System.out.println("save");
-
-        //document = null;
-        //System.gc(); // suggestion for garbage collection (In Java, it is difficult to force gc).
-        //System.out.println("free");
     }
 
     private static void writeDoc(String fileName, Document document) {

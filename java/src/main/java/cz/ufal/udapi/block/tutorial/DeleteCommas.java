@@ -1,14 +1,10 @@
 package cz.ufal.udapi.block.tutorial;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import cz.ufal.udapi.core.Block;
 import cz.ufal.udapi.core.Node;
 
 /**
- * Created by mvojtek on 4/17/16.
+ * This class deletes commas in the document.
  *
  * Example usage:
  * <code>
@@ -25,6 +21,8 @@ import cz.ufal.udapi.core.Node;
  *       ]
  *     ]
  * </code>
+ *
+ * @author Martin Vojtek
  */
 public class DeleteCommas extends Block {
 

@@ -14,7 +14,9 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Created by mvojtek on 3/26/16.
+ * CoNLLU reader. Loads CoNLLU from the standard input into internal structure.
+ *
+ * @author Martin Vojtek
  */
 public class CoNLLU extends cz.ufal.udapi.block.common.Reader {
 
@@ -23,19 +25,30 @@ public class CoNLLU extends cz.ufal.udapi.block.common.Reader {
     }
 
     private DocumentReader coNLLUReader;
-    BufferedReader reader;
+    private BufferedReader reader;
 
+    /**
+     * Intialize readers.
+     */
     @Override
     public void processStart() {
         reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
         coNLLUReader = new CoNLLUReader(reader);
     }
 
+    /**
+     * Read one tree at a time.
+     * @param document document to read into
+     * @return Loaded tree.
+     */
     @Override
     protected Optional<Root> readTree(Document document) {
         return coNLLUReader.readTree(reader, document);
     }
 
+    /**
+     * Close readers.
+     */
     @Override
     public void processEnd() {
         try {
@@ -43,7 +56,7 @@ public class CoNLLU extends cz.ufal.udapi.block.common.Reader {
                 reader.close();
             }
         } catch (IOException e) {
-            throw new UdapiIOException("Faield to close reader.", e);
+            throw new UdapiIOException("Failed to close reader.", e);
         }
     }
 }
