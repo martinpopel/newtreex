@@ -8,7 +8,7 @@ use Carp;
 
 sub new {
     my ($class) = @_;
-    my $self = {_bundles=>[], };
+    my $self = {_bundles=>[], _highest_bundle_id=>0};
     return bless $self, $class;
 }
 
@@ -18,7 +18,9 @@ sub create_bundle {
     my ($self, $args) = @_;
     # TODO args->{before} args->{after}
     my $bundle = Udapi::Core::Bundle->new();
-    $bundle->set_id(1 + @{$self->{_bundles}});
+    my $id = ++$self->{_highest_bundle_id};
+    $bundle->set_id($id);
+    $bundle->_set_number(1 + @{$self->{_bundles}});
     $bundle->_set_document($self);
     push @{$self->{_bundles}}, $bundle;
     return $bundle;
@@ -26,7 +28,7 @@ sub create_bundle {
 
 # Based on $root->id the tree is added either to the last existing bundle or to a new bundle.
 # $root->id should contain "$bundle_id/$zone".
-# The "/$zone" part is optional. If missing, zone='und' is used for the new tree.
+# The "/$zone" part is optional. If missing, an empty-string zone is used for the new tree.
 sub add_tree {
     my ($self, $root) = @_;
     my $add_to_the_last_bundle = 1;
@@ -38,7 +40,7 @@ sub add_tree {
         my ($bundle_id, $zone) = split /\//, $tree_id;
         if (defined $zone){
             confess "'$zone' is not a valid zone name (from tree_id='$tree_id')"
-                if $zone !~ /^[a-z-]+(_[A-Za-z0-9-])?$/;
+                if $zone !~ /^[a-z-]*(_[A-Za-z0-9-])?$/;
             $root->_set_zone($zone);
         }
         my $last_bundle = $self->{_bundles}[-1];
@@ -48,6 +50,16 @@ sub add_tree {
         }
         $root->set_id(undef);
         $last_bundle->add_tree($root);
+    }
+    return;
+}
+
+sub _remove_bundle {
+    my ($self, $number) = @_;
+    $number--; # the number is 1-based
+    splice @{$self->{_bundles}}, $number, 1;
+    foreach my $index ($number .. -1+@{$self->{_bundles}}){
+        $self->{_bundles}[$index]->_set_number($index+1);
     }
     return;
 }
@@ -73,6 +85,10 @@ sub _read_conllu_tree_from_fh {
         if ($line =~ s/^#// ){
             if ($line =~ /^\s*sent_id\s+(\S+)/) {
                 $root->set_id($1);
+            # TODO: see https://github.com/UniversalDependencies/docs/issues/273
+            # and decide whether it should be "sentence-text:", "text" or what.
+            } elsif ($line =~ /^\s*sentence\s+(.*)$/) {
+                $root->set_sentence($1);
             } else {
                 $comment = $comment . $line . "\n";
             }
@@ -95,6 +111,15 @@ sub _read_conllu_tree_from_fh {
     # If no nodes were read from $fh (so only $root remained in @nodes),
     # we return undef as a sign of failure (end of file or more than one empty line).
     return undef if @nodes==1;
+
+    # Empty sentences are not allowed in CoNLL-U,
+    # but if the users want to save just the sentence string and/or sent_id
+    # they need to create one artificial node and mark it with Empty=Yes.
+    # In that case, we will delete this node, so the tree will have just the (technical) root.
+    # See also Udapi::Block::Write::CoNLLU, which is compatible with this trick.
+    if (@nodes == 2 && $nodes[1][$MISC] eq 'Empty=Yes'){
+        pop @nodes;
+    }
 
     # Set dependency parents (now, all nodes of the tree are created).
     # The following code does the same as

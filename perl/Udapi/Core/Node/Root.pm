@@ -47,6 +47,7 @@ sub set_zone {
 # (eventhough the well-defined value for parent() is 'undef').
 sub parent {return undef;}
 sub root {return $_[0];}
+sub is_root {return 1;}
 sub ord {return 0;}
 sub document {return $_[0][$BUNDLE]->document;}
 
@@ -120,8 +121,10 @@ sub destroy {
 }
 
 sub remove {
-    confess 'Tree root cannot be removed using $root->remove().'
-          . ' Use $bundle->remove_tree($selector) instead';
+    my ($self) = @_;
+    $self->bundle->_remove_tree($self);
+    $self->destroy();
+    return;
 }
 
 sub copy_tree {
@@ -155,5 +158,14 @@ sub _copy_subtree {
     $new_node->[$FIRSTCHILD] = $prev_child;
     return $new_node;
 }
+
+sub address {
+    return $_[0][$BUNDLE]->id . ($_[0][$ZONE] eq '' ? '' : '/' . $_[0][$ZONE]);
+}
+
+sub shift_before_node    { confess 'Cannot call shift_* methods on root';}
+sub shift_after_node     { confess 'Cannot call shift_* methods on root';}
+sub shift_before_subtree { confess 'Cannot call shift_* methods on root';}
+sub shift_after_subtree  { confess 'Cannot call shift_* methods on root';}
 
 1;

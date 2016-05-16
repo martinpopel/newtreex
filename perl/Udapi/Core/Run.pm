@@ -8,7 +8,7 @@ use MooX::Options protect_argv => 0, usage_string => "usage: %c %o scenario [-- 
 use autodie;
 use Exporter;
 use base 'Exporter';
-our @EXPORT_OK = q(treex);
+our @EXPORT_OK = q(udapi_runner);
 
 use List::MoreUtils qw(first_index);
 use Udapi::Core::Document;
@@ -40,7 +40,7 @@ has global_params => (
 );
 
 # A factory subroutine, creating the right runner object
-sub treex {
+sub udapi_runner {
     # ref to array of arguments, or a string containing all arguments as on the command line
     my $arguments = shift;
     if ( ref($arguments) eq 'ARRAY' && scalar @$arguments > 0 ) {
@@ -54,7 +54,7 @@ sub treex {
         $runner->execute();
     }
     elsif ( defined $arguments && ref($arguments) ne 'ARRAY' ) {
-        treex( [ grep { defined $_ && $_ ne '' } split( /\s/, $arguments ) ] );
+        udapi_runner( [ grep { defined $_ && $_ ne '' } split( /\s/, $arguments ) ] );
     }
     else {
         Udapi::Core::Run->new_with_options()->options_usage();
