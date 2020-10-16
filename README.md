@@ -6,7 +6,7 @@ First, run `make data` to download [UD 1.2](http://hdl.handle.net/11234/1-1548) 
 See definition of the [CoNLL-U](https://universaldependencies.github.io/docs/format.html) data format.
 Add your implementation of the New Treex API (TODO: add a link to the specification) in a directory named by the programming language of your choice (python, perl, java, c,...).
 Add possible compilation into the [Makefile](Makefile).
-Edit `@experiments` in [benchmark.pl](benchmark.pl) so it calls a command which runs the benchmark on selected treebanks.
+Edit `@COMMANDS` in [benchmark.pl](benchmark.pl) so it calls a command which runs the benchmark on selected treebanks.
 For correct memory consumption statistics the command should not contain shell metacharacters and it should not execute any child process.
 The command may contain options to run different version of your implementation (e.g. prioritizing speed over memory).
 Finally, run `make benchmark`.
