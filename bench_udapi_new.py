@@ -79,7 +79,7 @@ if debug: doc.store_conllu('udapi-write.conllu')
 
 for bundle in doc:
     for root in bundle:
-        nodes = root.descendants()
+        nodes = root.descendants
         for node in nodes:
             rand_index = myrand(len(nodes))
             try:
@@ -92,7 +92,7 @@ if debug: doc.store_conllu('udapi-rehang.conllu')
 
 for bundle in doc:
     for root in bundle:
-        for node in root.descendants():
+        for node in root.descendants:
             if myrand(10) == 0:
                 node.remove()
 
@@ -101,12 +101,10 @@ if debug: doc.store_conllu('udapi-remove.conllu')
 
 for bundle in doc:
     for root in bundle:
-        for parent in root.descendants():
+        for parent in root.descendants:
             if myrand(10) == 0:
-                child = parent.create_child()
-                child.lemma="x"
-                child.form="x"
-                child.shift(parent,1,0,1)
+                child = parent.create_child(form="x", lemma="x")
+                child.shift_after_subtree(parent)
 
 print("add")
 
@@ -114,14 +112,14 @@ if debug: doc.store_conllu('udapi-add.conllu')
 
 for bundle in doc:
     for root in bundle:
-        nodes = root.descendants()
+        nodes = root.descendants
         for node in nodes:
             rand_index = myrand(len(nodes))
             if myrand(10) == 0: 
-                if not nodes[rand_index].is_descendant_of(node):
-                    node.shift(nodes[rand_index], after=1, move_subtree=1, reference_subtree=0)
+                #if not nodes[rand_index].is_descendant_of(node):
+                node.shift_after_node(nodes[rand_index], skip_if_descendant=True)
             elif myrand(10) == 0:
-                node.shift(nodes[rand_index], after=0, move_subtree=0, reference_subtree=1)
+                node.shift_before_subtree(nodes[rand_index], without_children=True)
 
 print("reorder")
 if debug: doc.store_conllu('udapi-reorder.conllu')
