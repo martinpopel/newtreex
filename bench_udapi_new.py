@@ -84,7 +84,7 @@ for bundle in doc:
             rand_index = myrand(len(nodes))
             try:
                 node.parent = nodes[rand_index]
-            except ValueError:
+            except udapi.CycleError:
                 pass
 
 print("rehang")
